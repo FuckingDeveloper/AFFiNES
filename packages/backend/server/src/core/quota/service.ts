@@ -25,6 +25,8 @@ export type WorkspaceQuotaWithUsage = Omit<
   'humanReadable'
 > & { ownerQuota?: string };
 
+const UNLIMITED_MEMBER_LIMIT = 2_147_483_647;
+
 @Injectable()
 export class QuotaService {
   protected logger = new Logger(QuotaService.name);
@@ -128,10 +130,22 @@ export class QuotaService {
       // get and convert to workspace quota from owner's quota
       const owner = await this.models.workspaceUser.getOwner(workspaceId);
       const ownerQuota = await this.getUserQuota(owner.id);
-
-      return {
+      const mergedQuota: WorkspaceQuota = {
         ...ownerQuota,
         ownerQuota: owner.id,
+      };
+
+      if (env.selfhosted) {
+        mergedQuota.memberLimit = UNLIMITED_MEMBER_LIMIT;
+      }
+
+      return mergedQuota;
+    }
+
+    if (env.selfhosted) {
+      return {
+        ...quota.configs,
+        memberLimit: UNLIMITED_MEMBER_LIMIT,
       };
     }
 
@@ -167,7 +181,9 @@ export class QuotaService {
       storageQuota: formatSize(quota.storageQuota),
       usedStorageQuota: formatSize(quota.usedStorageQuota),
       historyPeriod: formatDate(quota.historyPeriod),
-      memberLimit: quota.memberLimit.toString(),
+      memberLimit: env.selfhosted
+        ? 'Unlimited'
+        : quota.memberLimit.toString(),
       copilotActionLimit: quota.copilotActionLimit
         ? `${quota.copilotActionLimit} times`
         : 'Unlimited',
@@ -208,7 +224,9 @@ export class QuotaService {
       storageQuota: formatSize(quota.storageQuota),
       storageQuotaUsed: formatSize(quota.usedStorageQuota),
       historyPeriod: formatDate(quota.historyPeriod),
-      memberLimit: quota.memberLimit.toString(),
+      memberLimit: env.selfhosted
+        ? 'Unlimited'
+        : quota.memberLimit.toString(),
       memberCount: quota.memberCount.toString(),
       overcapacityMemberCount: quota.overcapacityMemberCount.toString(),
     };
