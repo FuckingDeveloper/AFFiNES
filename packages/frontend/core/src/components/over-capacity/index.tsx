@@ -24,8 +24,7 @@ export const OverCapacityNotification = () => {
   const workspaceDialogService = useService(WorkspaceDialogService);
   const jumpToPricePlan = useCallback(() => {
     workspaceDialogService.open('setting', {
-      activeTab: 'plans',
-      scrollAnchor: 'cloudPricingPlan',
+      activeTab: 'workspace:storage',
     });
   }, [workspaceDialogService]);
 
@@ -45,8 +44,8 @@ export const OverCapacityNotification = () => {
                 t['com.affine.payment.storage-limit.new-description.owner'](),
               actions: [
                 {
-                  key: 'upgrade',
-                  label: t['com.affine.payment.upgrade'](),
+                  key: 'storage',
+                  label: t['Storage'](),
                   onClick: jumpToPricePlan,
                 },
               ],

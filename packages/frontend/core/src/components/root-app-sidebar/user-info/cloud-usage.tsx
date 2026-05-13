@@ -19,8 +19,7 @@ export const CloudUsage = () => {
   const workspaceDialogService = useService(WorkspaceDialogService);
   const handleClick = useCatchEventCallback(() => {
     workspaceDialogService.open('setting', {
-      activeTab: 'plans',
-      scrollAnchor: 'cloudPricingPlan',
+      activeTab: 'account',
     });
   }, [workspaceDialogService]);
 

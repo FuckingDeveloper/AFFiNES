@@ -3,7 +3,6 @@ import { useBlurRoot } from '@affine/core/components/hooks/use-blur-root';
 import { AuthService, SubscriptionService } from '@affine/core/modules/cloud';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { Trans, useI18n } from '@affine/i18n';
-import { track } from '@affine/track';
 import { ArrowLeftSmallIcon } from '@blocksuite/icons/rc';
 import { useLiveData, useService, useServices } from '@toeverything/infra';
 import type { ReactNode } from 'react';
@@ -111,10 +110,8 @@ export const AIOnboardingGeneral = () => {
   }, []);
   const goToPricingPlans = useCallback(() => {
     workspaceDialogService.open('setting', {
-      activeTab: 'plans',
-      scrollAnchor: 'aiPricingPlan',
+      activeTab: 'account',
     });
-    track.$.aiOnboarding.dialog.viewPlans();
     closeAndDismiss();
   }, [closeAndDismiss, workspaceDialogService]);
   const onPrev = useCallback(() => {

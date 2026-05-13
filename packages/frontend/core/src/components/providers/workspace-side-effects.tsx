@@ -30,7 +30,6 @@ import {
   WorkspaceService,
 } from '@affine/core/modules/workspace';
 import { useI18n } from '@affine/i18n';
-import track from '@affine/track';
 import type { DocMode } from '@blocksuite/affine/model';
 import { ZipTransformer } from '@blocksuite/affine/widgets/linked-doc';
 import {
@@ -128,9 +127,8 @@ export const WorkspaceSideEffects = () => {
   useEffect(() => {
     const disposable = AIAppEvents.requestUpgradePlan.subscribe(() => {
       workspaceDialogService.open('setting', {
-        activeTab: 'billing',
+        activeTab: 'account',
       });
-      track.$.paywall.aiAction.viewPlans();
     });
     return () => {
       disposable.unsubscribe();

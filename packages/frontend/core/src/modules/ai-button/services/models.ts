@@ -1,4 +1,4 @@
-import { getPromptModelsQuery, SubscriptionStatus } from '@affine/graphql';
+import { getPromptModelsQuery } from '@affine/graphql';
 import {
   createSignalFromObservable,
   type Signal,
@@ -53,31 +53,14 @@ export class AIModelService extends Service {
   };
 
   setModel = (modelId: string) => {
-    const isSubscribed =
-      this.subscriptionService.subscription.ai$.value?.status ===
-      SubscriptionStatus.Active;
-    const model = this.models.value.find(model => model.id === modelId);
-    if (!isSubscribed && model?.isPro) {
-      return;
-    }
     this.globalStateService.globalState.set(AI_MODEL_ID_KEY, modelId);
   };
 
   private readonly init = async () => {
     await this.initModels();
 
-    // subscribe to ai purchase status
-    const sub = this.subscriptionService.subscription.ai$.subscribe(
-      subscription => {
-        const isSubscribed = subscription?.status === SubscriptionStatus.Active;
-        const model = this.models.value.find(
-          model => model.id === this.modelId.value
-        );
-        if (!isSubscribed && model?.isPro) {
-          this.resetModel();
-        }
-      }
-    );
+    // keep a subscription reference so this service still reacts to lifecycle
+    const sub = this.subscriptionService.subscription.ai$.subscribe(() => {});
     this.disposables.push(() => sub.unsubscribe());
   };
 

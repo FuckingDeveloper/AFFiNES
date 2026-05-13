@@ -45,7 +45,6 @@ import { configureNavigationPanelModule } from './navigation-panel';
 import { configureNotificationModule } from './notification';
 import { configureOpenInApp } from './open-in-app';
 import { configureOrganizeModule } from './organize';
-import { configurePaywallModule } from './paywall';
 import { configurePDFModule } from './pdf';
 import { configurePeekViewModule } from './peek-view';
 import { configurePermissionsModule } from './permissions';
@@ -132,6 +131,5 @@ export function configureCommonModules(framework: Framework) {
   configureIndexerEmbeddingModule(framework);
   configureCommentModule(framework);
   configureDocSummaryModule(framework);
-  configurePaywallModule(framework);
   configureIconPickerModule(framework);
 }

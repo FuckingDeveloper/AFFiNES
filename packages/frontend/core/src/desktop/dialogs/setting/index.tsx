@@ -14,7 +14,6 @@ import type {
 } from '@affine/core/modules/dialogs/constant';
 import { GlobalContextService } from '@affine/core/modules/global-context';
 import { createIsland, type Island } from '@affine/core/utils/island';
-import { ServerDeploymentType } from '@affine/graphql';
 import { Trans, useTranslation } from '@affine/i18n';
 import { ContactWithUsIcon } from '@blocksuite/icons/rc';
 import { FrameworkScope, useLiveData, useService } from '@toeverything/infra';
@@ -53,6 +52,19 @@ interface SettingProps extends ModalProps {
 const isWorkspaceSetting = (key: string): boolean =>
   key.startsWith('workspace:');
 
+const normalizeSettingTab = (tab: SettingTab): SettingTab => {
+  if (tab === 'plans') {
+    return 'appearance';
+  }
+  if (tab === 'billing') {
+    return 'appearance';
+  }
+  if (tab === 'workspace:billing' || tab === 'workspace:license') {
+    return 'workspace:members';
+  }
+  return tab;
+};
+
 const CenteredLoading = () => {
   return (
     <div className={style.centeredLoading}>
@@ -68,7 +80,7 @@ const SettingModalInner = ({
 }: SettingProps) => {
   const [subPageIslands, setSubPageIslands] = useState<Island[]>([]);
   const [settingState, setSettingState] = useState<SettingState>({
-    activeTab: initialActiveTab,
+    activeTab: normalizeSettingTab(initialActiveTab),
     scrollAnchor: initialScrollAnchor,
   });
   const globalContextService = useService(GlobalContextService);
@@ -87,12 +99,6 @@ const SettingModalInner = ({
   const loginStatus = useLiveData(
     currentServer.scope.get(AuthService).session.status$
   );
-  const isSelfhosted = useLiveData(
-    currentServer.config$.selector(
-      c => c.type === ServerDeploymentType.Selfhosted
-    )
-  );
-
   const modalContentRef = useRef<HTMLDivElement>(null);
   const modalContentWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -138,7 +144,7 @@ const SettingModalInner = ({
 
   const onTabChange = useCallback(
     (key: SettingTab) => {
-      setSettingState({ activeTab: key });
+      setSettingState({ activeTab: normalizeSettingTab(key) });
     },
     [setSettingState]
   );
@@ -172,14 +178,14 @@ const SettingModalInner = ({
   );
 
   useEffect(() => {
-    if (
-      isSelfhosted &&
-      (settingState.activeTab === 'plans' ||
-        settingState.activeTab === 'workspace:billing')
-    ) {
-      setSettingState({ activeTab: 'workspace:license' });
+    const normalized = normalizeSettingTab(settingState.activeTab);
+    if (normalized !== settingState.activeTab) {
+      setSettingState(state => ({
+        ...state,
+        activeTab: normalized,
+      }));
     }
-  }, [isSelfhosted, settingState.activeTab]);
+  }, [settingState.activeTab]);
 
   useEffect(() => {
     if (settingState.scrollAnchor) {

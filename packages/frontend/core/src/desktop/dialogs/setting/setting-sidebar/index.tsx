@@ -40,7 +40,7 @@ export const UserInfo = ({
   const account = useLiveData(useService(AuthService).session.account$);
 
   const onClick = useCatchEventCallback(() => {
-    onTabChange('plans', null);
+    onTabChange('account', null);
   }, [onTabChange]);
 
   if (!account) {

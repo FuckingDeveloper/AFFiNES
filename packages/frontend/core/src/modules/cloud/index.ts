@@ -25,8 +25,6 @@ export { InvoicesService } from './services/invoices';
 export type { PublicUserInfo } from './services/public-user';
 export { PublicUserService } from './services/public-user';
 export { RealtimeService } from './services/realtime';
-export { SelfhostGenerateLicenseService } from './services/selfhost-generate-license';
-export { SelfhostLicenseService } from './services/selfhost-license';
 export { ServerService } from './services/server';
 export { ServersService } from './services/servers';
 export { SubscriptionService } from './services/subscription';
@@ -77,8 +75,6 @@ import { GraphQLService } from './services/graphql';
 import { InvoicesService } from './services/invoices';
 import { PublicUserService } from './services/public-user';
 import { RealtimeService } from './services/realtime';
-import { SelfhostGenerateLicenseService } from './services/selfhost-generate-license';
-import { SelfhostLicenseService } from './services/selfhost-license';
 import { ServerService } from './services/server';
 import { ServersService } from './services/servers';
 import { SubscriptionService } from './services/subscription';
@@ -95,8 +91,6 @@ import { CloudDocMetaStore } from './stores/cloud-doc-meta';
 import { InviteInfoStore } from './stores/invite-info';
 import { InvoicesStore } from './stores/invoices';
 import { PublicUserStore } from './stores/public-user';
-import { SelfhostGenerateLicenseStore } from './stores/selfhost-generate-license';
-import { SelfhostLicenseStore } from './stores/selfhost-license';
 import { ServerConfigStore } from './stores/server-config';
 import { ServerListStore } from './stores/server-list';
 import { SubscriptionStore } from './stores/subscription';
@@ -180,8 +174,6 @@ export function configureCloudModule(framework: Framework) {
     .service(InvoicesService)
     .store(InvoicesStore, [GraphQLService])
     .entity(Invoices, [InvoicesStore])
-    .service(SelfhostGenerateLicenseService, [SelfhostGenerateLicenseStore])
-    .store(SelfhostGenerateLicenseStore, [GraphQLService])
     .store(InviteInfoStore, [GraphQLService])
     .service(InvitationService, [AcceptInviteStore, InviteInfoStore])
     .store(AcceptInviteStore, [GraphQLService])
@@ -207,8 +199,6 @@ export function configureCloudModule(framework: Framework) {
     .entity(WorkspaceSubscription, [WorkspaceService, WorkspaceServerService])
     .service(WorkspaceInvoicesService)
     .entity(WorkspaceInvoices, [WorkspaceService, WorkspaceServerService])
-    .service(SelfhostLicenseService, [SelfhostLicenseStore, WorkspaceService])
-    .store(SelfhostLicenseStore, [WorkspaceServerService])
     .service(BlocksuiteWriterInfoService, [WorkspaceServerService])
     .service(DocCreatedByUpdatedBySyncService, [
       WorkspaceService,

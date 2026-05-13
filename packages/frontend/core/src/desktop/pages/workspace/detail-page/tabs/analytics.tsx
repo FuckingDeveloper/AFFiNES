@@ -220,8 +220,7 @@ export const EditorAnalyticsPanel = ({
     membersPageSize < MAX_MEMBERS_PAGE_SIZE;
   const openTeamPricing = useCallback(() => {
     workspaceDialogService.open('setting', {
-      activeTab: 'plans',
-      scrollAnchor: 'cloudPricingPlan',
+      activeTab: 'workspace:members',
     });
   }, [workspaceDialogService]);
   const showTeamPlanToast = useCallback(() => {

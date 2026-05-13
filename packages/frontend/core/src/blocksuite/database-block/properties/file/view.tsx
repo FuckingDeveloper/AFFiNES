@@ -391,8 +391,7 @@ const FileCellComponent: ForwardRefRenderFunction<
   const workspaceDialogService = useService(WorkspaceDialogService);
   const jumpToPricePlan = useCallback(() => {
     workspaceDialogService.open('setting', {
-      activeTab: 'plans',
-      scrollAnchor: 'cloudPricingPlan',
+      activeTab: 'workspace:storage',
     });
   }, [workspaceDialogService]);
   const renderPopoverContent = () => {
@@ -422,10 +421,10 @@ const FileCellComponent: ForwardRefRenderFunction<
 
           <div className={styles.fileInfoContainer}>
             <div className={styles.fileSizeInfo}>
-              The maximum size per file is 100MB
+              The maximum size per file is 2GB
             </div>
             <a className={styles.upgradeLink} onClick={jumpToPricePlan}>
-              Upgrade to Pro
+              View storage details
             </a>
           </div>
         </div>
