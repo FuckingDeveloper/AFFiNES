@@ -201,25 +201,24 @@ function preferredPrismaTargets(targetKey) {
   }
 }
 
-async function pickExistingPrismaTarget(prismaClientDir, candidates) {
+async function pickExistingPrismaTargets(prismaClientDir, candidates) {
   const entries = new Set(await safeReadDir(prismaClientDir));
-  for (const target of candidates) {
-    if (entries.has(`libquery_engine-${target}.so.node`)) {
-      return target;
-    }
-  }
-  return '';
+  return candidates.filter(target =>
+    entries.has(`libquery_engine-${target}.so.node`)
+  );
 }
 
-async function prunePrismaQueryEngines(dirPath, keepTarget) {
-  if (!keepTarget || !(await exists(dirPath))) {
+async function prunePrismaQueryEngines(dirPath, keepTargets) {
+  if (!keepTargets.length || !(await exists(dirPath))) {
     return;
   }
 
-  const keepName = `libquery_engine-${keepTarget}.so.node`;
+  const keepNames = new Set(
+    keepTargets.map(target => `libquery_engine-${target}.so.node`)
+  );
   const entries = await safeReadDir(dirPath);
 
-  if (!entries.includes(keepName)) {
+  if (!entries.some(name => keepNames.has(name))) {
     return;
   }
 
@@ -227,7 +226,7 @@ async function prunePrismaQueryEngines(dirPath, keepTarget) {
     if (
       name.startsWith('libquery_engine-') &&
       name.endsWith('.so.node') &&
-      name !== keepName
+      !keepNames.has(name)
     ) {
       await fs.rm(path.join(dirPath, name), { force: true }).catch(() => {});
     }
@@ -263,34 +262,52 @@ async function prunePrismaEngines(appRoot, targetKey) {
     return;
   }
 
-  const keepTarget = await pickExistingPrismaTarget(
+  const keepTargets = await pickExistingPrismaTargets(
     prismaClientDir,
     preferredPrismaTargets(targetKey)
   );
 
-  if (!keepTarget) {
+  if (!keepTargets.length) {
     debug('no prisma keepTarget detected, skip prisma pruning');
     return;
   }
 
-  await prunePrismaQueryEngines(prismaClientDir, keepTarget);
-  await prunePrismaQueryEngines(prismaPkgDir, keepTarget);
+  await prunePrismaQueryEngines(prismaClientDir, keepTargets);
+  await prunePrismaQueryEngines(prismaPkgDir, keepTargets);
 
-  const keepSchemaEngine = path.join(
-    prismaEnginesDir,
-    `schema-engine-${keepTarget}`
+  const keepSchemaEngines = keepTargets.map(target =>
+    path.join(prismaEnginesDir, `schema-engine-${target}`)
   );
 
-  if ((await exists(prismaBinPath)) && !(await exists(keepSchemaEngine))) {
+  if (
+    (await exists(prismaBinPath)) &&
+    !(await Promise.all(keepSchemaEngines.map(exists))).some(Boolean)
+  ) {
     runPrismaVersion(prismaBinPath, appRoot);
   }
 
-  if (!(await exists(keepSchemaEngine))) {
-    debug(`missing ${keepSchemaEngine}, skip pruning @prisma/engines`);
+  const existingKeepTargets = (
+    await Promise.all(
+      keepTargets.map(async target => ({
+        target,
+        exists: await exists(
+          path.join(prismaEnginesDir, `schema-engine-${target}`)
+        ),
+      }))
+    )
+  )
+    .filter(item => item.exists)
+    .map(item => item.target);
+
+  if (!existingKeepTargets.length) {
+    debug('missing all target schema-engines, skip pruning @prisma/engines');
     return;
   }
 
-  const keepLibQueryEngine = `libquery_engine-${keepTarget}.so.node`;
+  const keepEngineNames = new Set([
+    ...existingKeepTargets.map(target => `schema-engine-${target}`),
+    ...keepTargets.map(target => `libquery_engine-${target}.so.node`),
+  ]);
   const entries = await safeReadDir(prismaEnginesDir);
 
   for (const name of entries) {
@@ -300,8 +317,7 @@ async function prunePrismaEngines(appRoot, targetKey) {
       continue;
     }
 
-    const keep =
-      name === `schema-engine-${keepTarget}` || name === keepLibQueryEngine;
+    const keep = keepEngineNames.has(name);
     if (!keep) {
       await fs
         .rm(path.join(prismaEnginesDir, name), { force: true })

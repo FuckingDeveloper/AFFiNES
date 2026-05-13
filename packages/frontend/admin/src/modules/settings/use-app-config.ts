@@ -124,13 +124,13 @@ export const useAppConfig = () => {
       setUpdates({});
       setPatchedAppConfig(prev => merge({}, prev, savedAppConfig));
       notify.success({
-        title: 'Saved',
-        message: 'Settings have been saved successfully.',
+        title: 'Сохранено',
+        message: 'Настройки успешно сохранены.',
       });
     } catch (e) {
       const error = UserFriendlyError.fromAny(e);
       notify.error({
-        title: 'Failed to save',
+        title: 'Ошибка сохранения',
         message: error.message,
       });
       console.error(e);
@@ -165,13 +165,13 @@ export const useAppConfig = () => {
         setPatchedAppConfig(prev => merge({}, prev, savedAppConfig));
         bumpGroupVersion(module);
         notify.success({
-          title: 'Saved',
-          message: 'Settings have been saved successfully.',
+          title: 'Сохранено',
+          message: 'Настройки успешно сохранены.',
         });
       } catch (e) {
         const error = UserFriendlyError.fromAny(e);
         notify.error({
-          title: 'Failed to save',
+          title: 'Ошибка сохранения',
           message: error.message,
         });
         console.error(e);

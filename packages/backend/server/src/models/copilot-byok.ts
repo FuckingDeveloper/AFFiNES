@@ -18,22 +18,48 @@ export type UpsertAiWorkspaceByokConfigInput = {
 
 @Injectable()
 export class CopilotWorkspaceByokConfigModel extends BaseModel {
+  private missingDelegateWarned = false;
+
+  private get delegate() {
+    const delegate = (this.db as any).aiWorkspaceByokConfig;
+    if (!delegate && !this.missingDelegateWarned) {
+      this.logger.warn(
+        'Prisma delegate "aiWorkspaceByokConfig" is unavailable. ' +
+          'BYOK server profiles will be treated as empty.'
+      );
+      this.missingDelegateWarned = true;
+    }
+    return delegate;
+  }
+
   async list(workspaceId: string) {
-    return await this.db.aiWorkspaceByokConfig.findMany({
+    const delegate = this.delegate;
+    if (!delegate) {
+      return [];
+    }
+    return await delegate.findMany({
       where: { workspaceId },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
   }
 
   async listEnabled(workspaceId: string) {
-    return await this.db.aiWorkspaceByokConfig.findMany({
+    const delegate = this.delegate;
+    if (!delegate) {
+      return [];
+    }
+    return await delegate.findMany({
       where: { workspaceId, enabled: true },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
   }
 
   async get(id: string) {
-    return await this.db.aiWorkspaceByokConfig.findUnique({
+    const delegate = this.delegate;
+    if (!delegate) {
+      return null;
+    }
+    return await delegate.findUnique({
       where: { id },
     });
   }

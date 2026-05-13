@@ -46,7 +46,7 @@ const UserInfo = ({
       </Avatar>
       <div className="flex flex-col font-medium gap-1">
         {name ?? email.split('@')[0]}
-        <span className={adminBadgeClass}>Admin</span>
+        <span className={adminBadgeClass}>Админ</span>
       </div>
     </>
   );
@@ -88,11 +88,11 @@ export function UserDropdown({ isCollapsed }: UserDropdownProps) {
   const handleLogout = useCallback(() => {
     affineFetch('/api/auth/sign-out', { method: 'POST' })
       .then(() => {
-        toast.success('Logged out successfully');
+        toast.success('Выход выполнен успешно');
         return relative();
       })
       .catch(err => {
-        toast.error(`Failed to logout: ${err.message}`);
+        toast.error(`Не удалось выйти: ${err.message}`);
       });
   }, [relative]);
 
@@ -120,7 +120,7 @@ export function UserDropdown({ isCollapsed }: UserDropdownProps) {
             ) : null}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleLogout}>Выйти</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -136,7 +136,7 @@ export function UserDropdown({ isCollapsed }: UserDropdownProps) {
           </AvatarFallback>
         </Avatar>
         <UserName name={currentUser?.name} email={currentUser?.email} />
-        <span className={adminBadgeClass}>Admin</span>
+        <span className={adminBadgeClass}>Админ</span>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -159,7 +159,7 @@ export function UserDropdown({ isCollapsed }: UserDropdownProps) {
             ) : null}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleLogout}>Выйти</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

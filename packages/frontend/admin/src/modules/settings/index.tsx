@@ -33,7 +33,7 @@ export function SettingsPage() {
 
   return (
     <div className="flex h-dvh flex-1 flex-col bg-background">
-      <Header title="Settings" />
+      <Header title="Настройки" />
       <AdminPanel
         expandedModules={expandedModules}
         onExpandedModulesChange={setExpandedModules}
@@ -162,7 +162,7 @@ const AdminPanel = ({
                   <div className="flex flex-col items-start text-left gap-1">
                     <div className="text-base font-semibold">{name}</div>
                     <div className="text-xs text-muted-foreground">
-                      Manage {name.toLowerCase()} settings
+                      Управление настройками: {name.toLowerCase()}
                     </div>
                   </div>
                 </AccordionTrigger>
@@ -179,8 +179,8 @@ const AdminPanel = ({
                           ALL_CONFIG_DESCRIPTORS[module][field];
                         props = {
                           field: `${module}/${field}`,
-                          desc: descriptor.desc,
-                          type: descriptor.type,
+                          desc: descriptor?.desc ?? field,
+                          type: descriptor?.type ?? 'String',
                           options: [],
                           defaultValue: get(sourceConfig, field),
                           onChange: onUpdate,
@@ -190,8 +190,8 @@ const AdminPanel = ({
                           ALL_CONFIG_DESCRIPTORS[module][field.key];
                         props = {
                           field: `${module}/${field.key}${field.sub ? `/${field.sub}` : ''}`,
-                          desc: field.desc ?? descriptor.desc,
-                          type: field.type ?? descriptor.type,
+                          desc: field.desc ?? descriptor?.desc ?? field.key,
+                          type: field.type ?? descriptor?.type ?? 'String',
                           // @ts-expect-error for enum type
                           options: field.options,
                           defaultValue: get(
@@ -243,7 +243,7 @@ const AdminPanel = ({
                         }}
                         disabled={!dirty || saving || hasValidationError}
                       >
-                        {saving ? 'Saving...' : 'Save'}
+                        {saving ? 'Сохранение...' : 'Сохранить'}
                       </Button>
                     </div>
                   </div>

@@ -43,7 +43,7 @@ export function AccountPage() {
 
   return (
     <div className="h-dvh flex-1 flex-col flex">
-      <Header title="Accounts" />
+      <Header title="Аккаунты" />
 
       <DataTable
         data={users}

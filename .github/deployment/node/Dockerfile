@@ -11,10 +11,6 @@ COPY ./packages/frontend/apps/mobile/dist /app/static/mobile
 # Keep server sourcemap for stacktraces, but don't ship frontend/node_modules sourcemaps.
 ARG TARGETARCH
 ARG TARGETVARIANT
-# Needed for Prisma engine resolution (and potential engine download during cleanup).
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends openssl ca-certificates && \
-  rm -rf /var/lib/apt/lists/*
 
 RUN AFFINE_DOCKER_CLEAN=1 TARGETARCH="${TARGETARCH}" TARGETVARIANT="${TARGETVARIANT}" node ./scripts/docker-clean.mjs
 
@@ -27,9 +23,29 @@ COPY --from=assets /app /app
 COPY --from=affine_stable /app/dist /opt/affine-stable-dist
 COPY --from=affine_stable /app/node_modules /app/node_modules
 
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends openssl libjemalloc2 && \
-  rm -rf /var/lib/apt/lists/*
+# node:22-bookworm-slim in this environment may not include system OpenSSL
+# libs, while Prisma in /app/node_modules ships linux-*-openssl-3.0.x engines.
+# Copy OpenSSL runtime bits from the known-good affine_stable image instead of
+# relying on apt-get during build.
+RUN --mount=type=bind,from=affine_stable,source=/,target=/mnt/affine-stable,readonly \
+  set -eux; \
+  cp /mnt/affine-stable/usr/bin/openssl /usr/bin/openssl; \
+  if [ -d /mnt/affine-stable/usr/lib/aarch64-linux-gnu ]; then \
+    mkdir -p /usr/lib/aarch64-linux-gnu /lib/aarch64-linux-gnu; \
+    cp /mnt/affine-stable/usr/lib/aarch64-linux-gnu/libssl.so.3 /usr/lib/aarch64-linux-gnu/libssl.so.3; \
+    cp /mnt/affine-stable/usr/lib/aarch64-linux-gnu/libcrypto.so.3 /usr/lib/aarch64-linux-gnu/libcrypto.so.3; \
+    cp /mnt/affine-stable/lib/aarch64-linux-gnu/libssl.so.3 /lib/aarch64-linux-gnu/libssl.so.3; \
+    cp /mnt/affine-stable/lib/aarch64-linux-gnu/libcrypto.so.3 /lib/aarch64-linux-gnu/libcrypto.so.3; \
+  elif [ -d /mnt/affine-stable/usr/lib/x86_64-linux-gnu ]; then \
+    mkdir -p /usr/lib/x86_64-linux-gnu /lib/x86_64-linux-gnu; \
+    cp /mnt/affine-stable/usr/lib/x86_64-linux-gnu/libssl.so.3 /usr/lib/x86_64-linux-gnu/libssl.so.3; \
+    cp /mnt/affine-stable/usr/lib/x86_64-linux-gnu/libcrypto.so.3 /usr/lib/x86_64-linux-gnu/libcrypto.so.3; \
+    cp /mnt/affine-stable/lib/x86_64-linux-gnu/libssl.so.3 /lib/x86_64-linux-gnu/libssl.so.3; \
+    cp /mnt/affine-stable/lib/x86_64-linux-gnu/libcrypto.so.3 /lib/x86_64-linux-gnu/libcrypto.so.3; \
+  else \
+    echo "Unsupported library layout in affine_stable image"; \
+    exit 1; \
+  fi
 
 # The local build may contain a host-native server-native.node (e.g. macOS),
 # which can't run in Linux containers. Reuse the Linux native addon from the
@@ -49,7 +65,9 @@ RUN set -eux; \
 # Local server bundle currently imports a few packages that are not present in
 # the upstream stable image dependencies. Install those extra runtime packages
 # in an isolated temp project and merge them into /app/node_modules.
-RUN set -eux; \
+RUN --mount=type=tmpfs,target=/root/.npm \
+  --mount=type=tmpfs,target=/tmp/runtime-deps \
+  set -eux; \
   mkdir -p /tmp/runtime-deps; \
   printf '%s\n' \
     '{' \
@@ -57,18 +75,16 @@ RUN set -eux; \
     '  "private": true,' \
     '  "dependencies": {' \
     '    "@as-integrations/express5": "^1.1.2",' \
-    '    "@inquirer/prompts": "^7.10.1",' \
-    '    "commander": "^13.1.0",' \
-    '    "zod-to-json-schema": "^3.20.0"' \
+    '    "@inquirer/prompts": "^7.10.1"' \
     '  }' \
     '}' \
     > /tmp/runtime-deps/package.json; \
   cd /tmp/runtime-deps; \
-  npm install --omit=dev --no-audit --no-fund; \
+  npm install --omit=dev --no-audit --no-fund --no-package-lock; \
   cp -an /tmp/runtime-deps/node_modules/. /app/node_modules/
 
-# Enable jemalloc by preloading the library
-ENV LD_PRELOAD=libjemalloc.so.2
+# jemalloc preload is intentionally disabled in local builds to avoid
+# hard dependency on apt during image build in restricted networks.
 
 EXPOSE 3010
 

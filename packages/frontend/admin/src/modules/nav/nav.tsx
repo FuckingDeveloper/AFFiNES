@@ -34,28 +34,28 @@ export function Nav({ isCollapsed = false }: NavProps) {
           <NavItem
             to={ROUTES.admin.dashboard}
             icon={<BarChart3Icon size={18} />}
-            label="Dashboard"
+            label="Панель"
             isCollapsed={isCollapsed}
           />
         )}
         <NavItem
           to={ROUTES.admin.accounts}
           icon={<AccountIcon fontSize={20} />}
-          label="Accounts"
+          label="Аккаунты"
           isCollapsed={isCollapsed}
         />
         {environment.isSelfHosted ? null : (
           <NavItem
             to={ROUTES.admin.workspaces}
             icon={<LayoutDashboardIcon size={18} />}
-            label="Workspaces"
+            label="Рабочие пространства"
             isCollapsed={isCollapsed}
           />
         )}
         <NavItem
           to={ROUTES.admin.queue}
           icon={<ListChecksIcon size={18} />}
-          label="Queue"
+          label="Очередь"
           isCollapsed={isCollapsed}
         />
         {/* <NavItem
@@ -68,7 +68,7 @@ export function Nav({ isCollapsed = false }: NavProps) {
         <NavItem
           to={ROUTES.admin.about}
           icon={<SelfhostIcon fontSize={20} />}
-          label="About"
+          label="О AFFiNE"
           isCollapsed={isCollapsed}
         />
       </nav>

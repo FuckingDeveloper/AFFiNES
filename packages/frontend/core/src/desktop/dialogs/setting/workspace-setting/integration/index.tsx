@@ -72,14 +72,19 @@ export const IntegrationSetting = ({
       />
       <ul className={list}>
         {integrationList.map(item => {
+          if (!item) {
+            return null;
+          }
           const title =
             typeof item.name === 'string'
               ? t[item.name]()
               : t[item.name.i18nKey]();
           const desc =
-            typeof item.desc === 'string'
-              ? t[item.desc]()
-              : t[item.desc.i18nKey]();
+            item.desc == null
+              ? ''
+              : typeof item.desc === 'string'
+                ? t[item.desc]()
+                : t[item.desc.i18nKey]();
           return (
             <li key={item.id}>
               <IntegrationCard
