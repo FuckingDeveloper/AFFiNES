@@ -175,6 +175,104 @@
           "description": "Whether require email verification before accessing restricted resources(not implemented).\n@default true",
           "default": true
         },
+        "enterprise.enabled": {
+          "type": "boolean",
+          "description": "Whether enterprise authentication backends are enabled.\n@default false",
+          "default": false
+        },
+        "enterprise.autoRegister": {
+          "type": "boolean",
+          "description": "Whether users authenticated by enterprise backends can be auto-created.\n@default false",
+          "default": false
+        },
+        "enterprise.allowedEmailDomains": {
+          "type": "array",
+          "description": "Optional allow list for enterprise auth in the form of email domains.\n@default []",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "enterprise.ldap.enabled": {
+          "type": "boolean",
+          "description": "Whether LDAP authentication backend is enabled.\n@default false",
+          "default": false
+        },
+        "enterprise.ldap.url": {
+          "type": "string",
+          "description": "LDAP server URL (ldap:// or ldaps://).\n@default \"\"",
+          "default": ""
+        },
+        "enterprise.ldap.bindDN": {
+          "type": "string",
+          "description": "LDAP service bind DN used to search users.\n@default \"\"",
+          "default": ""
+        },
+        "enterprise.ldap.bindCredentials": {
+          "type": "string",
+          "description": "LDAP service bind password.\n@default \"\"",
+          "default": ""
+        },
+        "enterprise.ldap.searchBase": {
+          "type": "string",
+          "description": "LDAP search base DN.\n@default \"\"",
+          "default": ""
+        },
+        "enterprise.ldap.searchFilter": {
+          "type": "string",
+          "description": "LDAP search filter with placeholders {{email}} and {{username}}.\n@default \"(|(mail={{email}})(userPrincipalName={{email}})(uid={{username}}))\"",
+          "default": "(|(mail={{email}})(userPrincipalName={{email}})(uid={{username}}))"
+        },
+        "enterprise.ldap.nameAttribute": {
+          "type": "string",
+          "description": "LDAP attribute used as display name when auto-registering users.\n@default \"displayName\"",
+          "default": "displayName"
+        },
+        "enterprise.ldap.connectTimeoutMs": {
+          "type": "number",
+          "description": "LDAP TCP connect timeout in milliseconds.\n@default 5000",
+          "default": 5000
+        },
+        "enterprise.ldap.timeoutMs": {
+          "type": "number",
+          "description": "LDAP operation timeout in milliseconds.\n@default 8000",
+          "default": 8000
+        },
+        "enterprise.ldap.rejectUnauthorized": {
+          "type": "boolean",
+          "description": "Whether to reject invalid TLS certificates for LDAPS.\n@default true",
+          "default": true
+        },
+        "enterprise.radius.enabled": {
+          "type": "boolean",
+          "description": "Whether RADIUS authentication backend is enabled.\n@default false",
+          "default": false
+        },
+        "enterprise.radius.host": {
+          "type": "string",
+          "description": "RADIUS server host.\n@default \"\"",
+          "default": ""
+        },
+        "enterprise.radius.port": {
+          "type": "number",
+          "description": "RADIUS server port.\n@default 1812",
+          "default": 1812
+        },
+        "enterprise.radius.secret": {
+          "type": "string",
+          "description": "RADIUS shared secret.\n@default \"\"",
+          "default": ""
+        },
+        "enterprise.radius.nasIpAddress": {
+          "type": "string",
+          "description": "NAS-IP-Address sent in RADIUS Access-Request.\n@default \"127.0.0.1\"",
+          "default": "127.0.0.1"
+        },
+        "enterprise.radius.timeoutMs": {
+          "type": "number",
+          "description": "RADIUS request timeout in milliseconds.\n@default 5000",
+          "default": 5000
+        },
         "passwordRequirements": {
           "type": "object",
           "description": "The password strength requirements when set new password.\n@default {\"min\":8,\"max\":32}",

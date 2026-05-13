@@ -101,17 +101,18 @@ export class AuthController {
     validators.assertValidEmail(params.email);
 
     const user = await this.models.user.getUserByEmail(params.email);
+    const canPasswordSignIn = await this.auth.canPasswordSignIn(params.email);
 
     if (!user) {
       return {
         registered: false,
-        hasPassword: false,
+        hasPassword: canPasswordSignIn,
       };
     }
 
     return {
       registered: user.registered,
-      hasPassword: !!user.password,
+      hasPassword: canPasswordSignIn,
     };
   }
 

@@ -10,10 +10,13 @@ import {
   CryptoHelper,
   getClientVersionFromRequest,
   SignUpForbidden,
+  WrongSignInCredentials,
+  WrongSignInMethod,
 } from '../../base';
 import { Models, type User, type UserSession } from '../../models';
 import { Mailer } from '../mail/mailer';
 import { createDevUsers } from './dev';
+import { EnterpriseAuthService } from './enterprise-auth';
 import type { CurrentUser } from './session';
 import { generateTotpSecret, toOtpAuthUrl, verifyTotp } from './totp';
 
@@ -49,7 +52,8 @@ export class AuthService implements OnApplicationBootstrap {
     private readonly config: Config,
     private readonly models: Models,
     private readonly crypto: CryptoHelper,
-    private readonly mailer: Mailer
+    private readonly mailer: Mailer,
+    private readonly enterpriseAuth: EnterpriseAuthService
   ) {
     this.cookieOptions = {
       sameSite: 'lax',
@@ -91,7 +95,50 @@ export class AuthService implements OnApplicationBootstrap {
   }
 
   async signIn(email: string, password: string): Promise<CurrentUser> {
-    return this.models.user.signIn(email, password).then(sessionUser);
+    try {
+      return this.models.user.signIn(email, password).then(sessionUser);
+    } catch (error) {
+      const isCredentialError =
+        error instanceof WrongSignInCredentials ||
+        error instanceof WrongSignInMethod;
+      if (!isCredentialError) {
+        throw error;
+      }
+
+      const externalAuth = await this.enterpriseAuth.authenticate(
+        email,
+        password
+      );
+      if (!externalAuth.authenticated) {
+        throw error;
+      }
+
+      let user = await this.models.user.getUserByEmail(email, {
+        withDisabled: true,
+      });
+      if (!user && !this.enterpriseAuth.canAutoRegister()) {
+        throw error;
+      }
+
+      try {
+        user = await this.models.user.fulfill(email, {
+          name: externalAuth.displayName,
+        });
+      } catch {
+        throw error;
+      }
+
+      return sessionUser(user);
+    }
+  }
+
+  async canPasswordSignIn(email: string) {
+    const user = await this.models.user.getUserByEmail(email);
+    return this.enterpriseAuth.canTryPasswordSignIn(
+      email,
+      !!user?.password,
+      !!user
+    );
   }
 
   async getTwoFactorStatus(userId: string) {

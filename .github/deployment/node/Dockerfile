@@ -75,7 +75,9 @@ RUN --mount=type=tmpfs,target=/root/.npm \
     '  "private": true,' \
     '  "dependencies": {' \
     '    "@as-integrations/express5": "^1.1.2",' \
-    '    "@inquirer/prompts": "^7.10.1"' \
+    '    "@inquirer/prompts": "^7.10.1",' \
+    '    "ldapts": "^7.4.0",' \
+    '    "radius": "^1.1.4"' \
     '  }' \
     '}' \
     > /tmp/runtime-deps/package.json; \

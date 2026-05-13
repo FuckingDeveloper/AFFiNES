@@ -79,6 +79,82 @@
       "type": "Boolean",
       "desc": "Whether require email verification before accessing restricted resources(not implemented)."
     },
+    "enterprise.enabled": {
+      "type": "Boolean",
+      "desc": "Whether enterprise authentication backends are enabled."
+    },
+    "enterprise.autoRegister": {
+      "type": "Boolean",
+      "desc": "Whether users authenticated by enterprise backends can be auto-created."
+    },
+    "enterprise.allowedEmailDomains": {
+      "type": "Array",
+      "desc": "Optional allow list for enterprise auth in the form of email domains."
+    },
+    "enterprise.ldap.enabled": {
+      "type": "Boolean",
+      "desc": "Whether LDAP authentication backend is enabled."
+    },
+    "enterprise.ldap.url": {
+      "type": "String",
+      "desc": "LDAP server URL (ldap:// or ldaps://)."
+    },
+    "enterprise.ldap.bindDN": {
+      "type": "String",
+      "desc": "LDAP service bind DN used to search users."
+    },
+    "enterprise.ldap.bindCredentials": {
+      "type": "String",
+      "desc": "LDAP service bind password."
+    },
+    "enterprise.ldap.searchBase": {
+      "type": "String",
+      "desc": "LDAP search base DN."
+    },
+    "enterprise.ldap.searchFilter": {
+      "type": "String",
+      "desc": "LDAP search filter with placeholders {{email}} and {{username}}."
+    },
+    "enterprise.ldap.nameAttribute": {
+      "type": "String",
+      "desc": "LDAP attribute used as display name when auto-registering users."
+    },
+    "enterprise.ldap.connectTimeoutMs": {
+      "type": "Number",
+      "desc": "LDAP TCP connect timeout in milliseconds."
+    },
+    "enterprise.ldap.timeoutMs": {
+      "type": "Number",
+      "desc": "LDAP operation timeout in milliseconds."
+    },
+    "enterprise.ldap.rejectUnauthorized": {
+      "type": "Boolean",
+      "desc": "Whether to reject invalid TLS certificates for LDAPS."
+    },
+    "enterprise.radius.enabled": {
+      "type": "Boolean",
+      "desc": "Whether RADIUS authentication backend is enabled."
+    },
+    "enterprise.radius.host": {
+      "type": "String",
+      "desc": "RADIUS server host."
+    },
+    "enterprise.radius.port": {
+      "type": "Number",
+      "desc": "RADIUS server port."
+    },
+    "enterprise.radius.secret": {
+      "type": "String",
+      "desc": "RADIUS shared secret."
+    },
+    "enterprise.radius.nasIpAddress": {
+      "type": "String",
+      "desc": "NAS-IP-Address sent in RADIUS Access-Request."
+    },
+    "enterprise.radius.timeoutMs": {
+      "type": "Number",
+      "desc": "RADIUS request timeout in milliseconds."
+    },
     "passwordRequirements": {
       "type": "Object",
       "desc": "The password strength requirements when set new password."

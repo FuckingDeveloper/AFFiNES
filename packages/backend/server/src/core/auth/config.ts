@@ -11,6 +11,31 @@ export interface AuthConfig {
   allowSignupForOauth: boolean;
   requireEmailDomainVerification: boolean;
   requireEmailVerification: boolean;
+  enterprise: {
+    enabled: boolean;
+    autoRegister: boolean;
+    allowedEmailDomains: string[];
+    ldap: {
+      enabled: boolean;
+      url: string;
+      bindDN: string;
+      bindCredentials: string;
+      searchBase: string;
+      searchFilter: string;
+      nameAttribute: string;
+      connectTimeoutMs: number;
+      timeoutMs: number;
+      rejectUnauthorized: boolean;
+    };
+    radius: {
+      enabled: boolean;
+      host: string;
+      port: number;
+      secret: string;
+      nasIpAddress: string;
+      timeoutMs: number;
+    };
+  };
   passwordRequirements: ConfigItem<{
     min: number;
     max: number;
@@ -39,6 +64,88 @@ defineModuleConfig('auth', {
   requireEmailVerification: {
     desc: 'Whether require email verification before accessing restricted resources(not implemented).',
     default: true,
+  },
+  'enterprise.enabled': {
+    desc: 'Whether enterprise authentication backends are enabled.',
+    default: false,
+  },
+  'enterprise.autoRegister': {
+    desc: 'Whether users authenticated by enterprise backends can be auto-created.',
+    default: false,
+  },
+  'enterprise.allowedEmailDomains': {
+    desc: 'Optional allow list for enterprise auth in the form of email domains.',
+    default: [],
+    shape: z.array(z.string().trim().min(1)),
+    schema: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+  },
+  'enterprise.ldap.enabled': {
+    desc: 'Whether LDAP authentication backend is enabled.',
+    default: false,
+  },
+  'enterprise.ldap.url': {
+    desc: 'LDAP server URL (ldap:// or ldaps://).',
+    default: '',
+  },
+  'enterprise.ldap.bindDN': {
+    desc: 'LDAP service bind DN used to search users.',
+    default: '',
+  },
+  'enterprise.ldap.bindCredentials': {
+    desc: 'LDAP service bind password.',
+    default: '',
+  },
+  'enterprise.ldap.searchBase': {
+    desc: 'LDAP search base DN.',
+    default: '',
+  },
+  'enterprise.ldap.searchFilter': {
+    desc: 'LDAP search filter with placeholders {{email}} and {{username}}.',
+    default:
+      '(|(mail={{email}})(userPrincipalName={{email}})(uid={{username}}))',
+  },
+  'enterprise.ldap.nameAttribute': {
+    desc: 'LDAP attribute used as display name when auto-registering users.',
+    default: 'displayName',
+  },
+  'enterprise.ldap.connectTimeoutMs': {
+    desc: 'LDAP TCP connect timeout in milliseconds.',
+    default: 5000,
+  },
+  'enterprise.ldap.timeoutMs': {
+    desc: 'LDAP operation timeout in milliseconds.',
+    default: 8000,
+  },
+  'enterprise.ldap.rejectUnauthorized': {
+    desc: 'Whether to reject invalid TLS certificates for LDAPS.',
+    default: true,
+  },
+  'enterprise.radius.enabled': {
+    desc: 'Whether RADIUS authentication backend is enabled.',
+    default: false,
+  },
+  'enterprise.radius.host': {
+    desc: 'RADIUS server host.',
+    default: '',
+  },
+  'enterprise.radius.port': {
+    desc: 'RADIUS server port.',
+    default: 1812,
+  },
+  'enterprise.radius.secret': {
+    desc: 'RADIUS shared secret.',
+    default: '',
+  },
+  'enterprise.radius.nasIpAddress': {
+    desc: 'NAS-IP-Address sent in RADIUS Access-Request.',
+    default: '127.0.0.1',
+  },
+  'enterprise.radius.timeoutMs': {
+    desc: 'RADIUS request timeout in milliseconds.',
+    default: 5000,
   },
   passwordRequirements: {
     desc: 'The password strength requirements when set new password.',

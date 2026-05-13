@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import ava, { TestFn } from 'ava';
 
 import { CurrentUser } from '../../core/auth';
+import { EnterpriseAuthService } from '../../core/auth/enterprise-auth';
 import { AuthService } from '../../core/auth/service';
 import { FeatureModule } from '../../core/features';
 import { QuotaModule } from '../../core/quota';
@@ -15,23 +16,52 @@ const test = ava as TestFn<{
   u1: CurrentUser;
   db: PrismaClient;
   m: TestingModule;
+  enterprise: {
+    authenticate: (
+      email: string,
+      password: string
+    ) => Promise<{
+      authenticated: boolean;
+      provider?: 'ldap' | 'radius';
+      displayName?: string;
+    }>;
+    canAutoRegister: () => boolean;
+    canTryPasswordSignIn: (
+      email: string,
+      hasLocalPassword: boolean,
+      userExists: boolean
+    ) => boolean;
+  };
 }>;
 
 test.before(async t => {
+  const enterprise = {
+    authenticate: async () => ({ authenticated: false }),
+    canAutoRegister: () => false,
+    canTryPasswordSignIn: () => false,
+  };
+
   const m = await createTestingModule({
     imports: [QuotaModule, FeatureModule, UserModule],
     providers: [AuthService],
+    tapModule(builder) {
+      builder.overrideProvider(EnterpriseAuthService).useValue(enterprise);
+    },
   });
 
   t.context.auth = m.get(AuthService);
   t.context.models = m.get(Models);
   t.context.db = m.get(PrismaClient);
   t.context.m = m;
+  t.context.enterprise = enterprise;
 });
 
 test.beforeEach(async t => {
   await t.context.m.initTestingDB();
   t.context.u1 = await t.context.auth.signUp('u1@affine.pro', '1');
+  t.context.enterprise.authenticate = async () => ({ authenticated: false });
+  t.context.enterprise.canAutoRegister = () => false;
+  t.context.enterprise.canTryPasswordSignIn = () => false;
 });
 
 test.after.always(async t => {
@@ -74,6 +104,63 @@ test('should throw if password not match', async t => {
   await t.throwsAsync(() => auth.signIn('u1@affine.pro', '2'), {
     message: 'Wrong user email or password: u1@affine.pro',
   });
+});
+
+test('should fallback to enterprise auth when local password is invalid', async t => {
+  const { auth, enterprise, u1 } = t.context;
+
+  enterprise.authenticate = async (email, password) => ({
+    authenticated: email === u1.email && password === 'enterprise-pass',
+    provider: 'ldap',
+  });
+
+  const signedInUser = await auth.signIn(u1.email, 'enterprise-pass');
+
+  t.is(signedInUser.email, u1.email);
+});
+
+test('should auto-register user via enterprise auth when enabled', async t => {
+  const { auth, enterprise } = t.context;
+  const email = 'ldap.new.user@affine.pro';
+
+  enterprise.authenticate = async (candidateEmail, password) => ({
+    authenticated: candidateEmail === email && password === 'enterprise-pass',
+    provider: 'ldap',
+    displayName: 'LDAP User',
+  });
+  enterprise.canAutoRegister = () => true;
+
+  const signedInUser = await auth.signIn(email, 'enterprise-pass');
+
+  t.is(signedInUser.email, email);
+});
+
+test('should not auto-register user via enterprise auth when disabled', async t => {
+  const { auth, enterprise } = t.context;
+  const email = 'ldap.not.allowed@affine.pro';
+
+  enterprise.authenticate = async () => ({
+    authenticated: true,
+    provider: 'ldap',
+  });
+  enterprise.canAutoRegister = () => false;
+
+  await t.throwsAsync(() => auth.signIn(email, 'enterprise-pass'), {
+    message: `Wrong user email or password: ${email}`,
+  });
+});
+
+test('should report password sign-in availability from enterprise backend', async t => {
+  const { auth, enterprise } = t.context;
+
+  enterprise.canTryPasswordSignIn = (email, hasLocalPassword, userExists) =>
+    email === 'enterprise@affine.pro' && !hasLocalPassword && !userExists;
+
+  const canUsePassword = await auth.canPasswordSignIn('enterprise@affine.pro');
+  const canUsePasswordLocal = await auth.canPasswordSignIn(t.context.u1.email);
+
+  t.true(canUsePassword);
+  t.false(canUsePasswordLocal);
 });
 
 test('should be able to change password', async t => {

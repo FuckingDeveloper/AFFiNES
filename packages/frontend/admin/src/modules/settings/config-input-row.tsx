@@ -8,6 +8,7 @@ import {
 } from '@affine/admin/components/ui/select';
 import { Switch } from '@affine/admin/components/ui/switch';
 import { cn } from '@affine/admin/utils';
+import { Eye, EyeOff } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Textarea } from '../../components/ui/textarea';
@@ -19,6 +20,7 @@ export type ConfigInputProps = {
   onChange: (field: string, value: any) => void;
   error?: string;
   onErrorChange?: (field: string, error?: string) => void;
+  sensitive?: boolean;
 } & (
   | {
       type: 'String' | 'Number' | 'Boolean' | 'JSON';
@@ -37,6 +39,7 @@ const Inputs: Record<
     options?: string[];
     error?: string;
     onValidationChange?: (error?: string) => void;
+    sensitive?: boolean;
   }>
 > = {
   Boolean: function SwitchInput({ defaultValue, onChange }) {
@@ -51,18 +54,38 @@ const Inputs: Record<
       />
     );
   },
-  String: function StringInput({ defaultValue, onChange }) {
+  String: function StringInput({ defaultValue, onChange, sensitive }) {
+    const [revealed, setRevealed] = useState(false);
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange(e.target.value);
     };
 
     return (
-      <Input
-        type="text"
-        minLength={1}
-        value={defaultValue ?? ''}
-        onChange={handleInputChange}
-      />
+      <div className="relative">
+        <Input
+          type={sensitive && !revealed ? 'password' : 'text'}
+          minLength={1}
+          value={defaultValue ?? ''}
+          onChange={handleInputChange}
+          autoComplete={sensitive ? 'new-password' : undefined}
+          className={sensitive ? 'pr-10' : undefined}
+        />
+        {sensitive ? (
+          <button
+            type="button"
+            className="absolute right-0 top-0 inline-flex h-9 w-9 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground"
+            onClick={() => {
+              setRevealed(prev => !prev);
+            }}
+            aria-label={
+              revealed ? 'Скрыть секретное значение' : 'Показать секретное значение'
+            }
+            title={revealed ? 'Скрыть' : 'Показать'}
+          >
+            {revealed ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        ) : null}
+      </div>
     );
   },
   Number: function NumberInput({ defaultValue, onChange }) {

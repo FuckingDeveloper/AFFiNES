@@ -192,6 +192,7 @@ const AdminPanel = ({
                           field: `${module}/${field.key}${field.sub ? `/${field.sub}` : ''}`,
                           desc: field.desc ?? descriptor?.desc ?? field.key,
                           type: field.type ?? descriptor?.type ?? 'String',
+                          sensitive: field.sensitive,
                           // @ts-expect-error for enum type
                           options: field.options,
                           defaultValue: get(
