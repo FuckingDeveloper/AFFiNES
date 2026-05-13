@@ -36,7 +36,7 @@ extension SKUnitSubcategoryProPlan {
     switch self {
     case .default:
       [
-        Feature("Everything in AFFINE FOSS & Basic."),
+        Feature("Everything in MRH ManSys FOSS & Basic."),
         Feature("100 GB of Cloud Storage"),
         Feature("100 MB of Maximum file size"),
         Feature("Up to 10 members per Workspace"),

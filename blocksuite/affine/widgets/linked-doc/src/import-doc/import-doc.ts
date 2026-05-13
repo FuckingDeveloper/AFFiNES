@@ -254,7 +254,7 @@ export class ImportDoc extends WithDisposable(LitElement) {
           <div>Import</div>
         </header>
         <div>
-          AFFiNE will gradually support more file formats for import.
+          MRH ManSys will gradually support more file formats for import.
           <a href="https://affine.pro/redirect/discord" target="_blank"
             >Provide feedback.</a
           >
@@ -305,7 +305,7 @@ export class ImportDoc extends WithDisposable(LitElement) {
           </icon-button>
         </div>
         <!-- <div class="footer">
-        <div>Migrate from other versions of AFFiNE?</div>
+        <div>Migrate from other versions of MRH ManSys?</div>
       </div> -->
       </div>
     `;

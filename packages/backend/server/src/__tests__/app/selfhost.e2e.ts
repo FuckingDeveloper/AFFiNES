@@ -22,11 +22,11 @@ const mobileUAString =
 
 function initTestStaticFiles(staticPath: string) {
   const files = {
-    'selfhost.html': `<!DOCTYPE html><html><body>AFFiNE</body><script src="main.a.js"/></html>`,
+    'selfhost.html': `<!DOCTYPE html><html><body>MRH ManSys</body><script src="main.a.js"/></html>`,
     'main.a.js': `const name = 'affine'`,
-    'admin/selfhost.html': `<!DOCTYPE html><html><body>AFFiNE Admin</body><script src="/admin/main.b.js"/></html>`,
+    'admin/selfhost.html': `<!DOCTYPE html><html><body>MRH ManSys Admin</body><script src="/admin/main.b.js"/></html>`,
     'admin/main.b.js': `const name = 'affine-admin'`,
-    'mobile/selfhost.html': `<!DOCTYPE html><html><body>AFFiNE mobile</body><script src="/mobile/main.c.js"/></html>`,
+    'mobile/selfhost.html': `<!DOCTYPE html><html><body>MRH ManSys mobile</body><script src="/mobile/main.c.js"/></html>`,
     'mobile/main.c.js': `const name = 'affine-mobile'`,
   };
 
@@ -178,7 +178,7 @@ test('should allow visiting setup page if not initialized', async t => {
     .get('/admin/setup')
     .expect(200);
 
-  t.true(res.text.includes('AFFiNE Admin'));
+  t.true(res.text.includes('MRH ManSys Admin'));
 });
 
 test('should redirect to admin if initialized', async t => {
@@ -210,7 +210,7 @@ test.skip('should return web assets if visited by mobile', async t => {
     .set('user-agent', mobileUAString)
     .expect(200);
 
-  t.true(res.text.includes('AFFiNE mobile'));
+  t.true(res.text.includes('MRH ManSys mobile'));
 });
 
 test('should can send maximum size of body', async t => {

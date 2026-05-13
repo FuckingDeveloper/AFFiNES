@@ -77,7 +77,7 @@ test.describe('AISettings/Embedding', () => {
               serverConfig: {
                 version: '1.0.0',
                 baseUrl: 'http://localhost:8080',
-                name: 'AFFiNE',
+                name: 'MRH ManSys',
                 features: [],
                 type: 'cloud',
                 initialized: true,

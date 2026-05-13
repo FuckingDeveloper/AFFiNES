@@ -103,7 +103,7 @@ export class AuthService implements OnApplicationBootstrap {
 
   async createTwoFactorSetup(user: Pick<User, 'email'>) {
     const secret = generateTotpSecret(this.crypto.randomBytes(20));
-    const issuer = this.config.server.name?.trim() || 'AFFiNE';
+    const issuer = this.config.server.name?.trim() || 'MRH ManSys';
 
     return {
       secret,

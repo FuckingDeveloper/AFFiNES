@@ -1,4 +1,4 @@
-# Building AFFiNE Web
+# Building MRH ManSys Web
 
 > **Warning**:
 >
@@ -17,7 +17,7 @@
 
 ## Prerequisites
 
-AFFiNE client has both **Node.js** & **Rust** toolchains.
+MRH ManSys client has both **Node.js** & **Rust** toolchains.
 
 ### Install Node.js
 

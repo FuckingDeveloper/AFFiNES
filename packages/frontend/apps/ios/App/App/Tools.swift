@@ -1,6 +1,6 @@
 //
 //  Tools.swift
-//  AFFiNE
+//  MRH ManSys
 //
 //  Created by qaq on 9/18/25.
 //

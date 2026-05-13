@@ -1,3 +1,3 @@
 # @affine/error
 
-AFFiNE error handler utilities
+MRH ManSys error handler utilities

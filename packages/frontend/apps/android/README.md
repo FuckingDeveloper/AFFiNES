@@ -1,6 +1,6 @@
 # Android
 
-AFFiNE Android app.
+MRH ManSys Android app.
 
 ## Setup
 

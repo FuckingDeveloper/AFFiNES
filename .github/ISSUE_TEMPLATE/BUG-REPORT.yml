@@ -21,7 +21,7 @@ body:
     id: distribution
     attributes:
       label: Distribution version
-      description: What distribution of AFFiNE are you using?
+      description: What distribution of MRH ManSys are you using?
       options:
         - macOS x64 (Intel)
         - macOS ARM 64 (Apple Silicon)
@@ -36,8 +36,8 @@ body:
     id: version
     attributes:
       label: App Version
-      description: What version of AFFiNE are you using?
-      placeholder: (You can find AFFiNE version in [About AFFiNE] setting panel)
+      description: What version of MRH ManSys are you using?
+      placeholder: (You can find MRH ManSys version in [About MRH ManSys] setting panel)
   - type: dropdown
     id: browsers
     attributes:
@@ -61,7 +61,7 @@ body:
     id: selfhost-version
     attributes:
       label: Self-hosting Version
-      description: What version of AFFiNE are you selfhosting?
+      description: What version of MRH ManSys are you selfhosting?
   - type: textarea
     id: logs
     attributes:

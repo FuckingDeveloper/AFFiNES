@@ -85,7 +85,7 @@ jobs:
           nmHoistingLimits: workspaces
           enableScripts: ${{ inputs.enable_scripts }}
 
-      - name: Build AFFiNE native
+      - name: Build MRH ManSys native
         uses: ./.github/actions/build-rust
         with:
           target: ${{ inputs.target }}

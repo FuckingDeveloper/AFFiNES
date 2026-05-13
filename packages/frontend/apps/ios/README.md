@@ -1,6 +1,6 @@
 # iOS
 
-AFFiNE iOS app.
+MRH ManSys iOS app.
 
 ## Build
 

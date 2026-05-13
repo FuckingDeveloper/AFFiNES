@@ -13,7 +13,7 @@ import { RunCommand } from './run';
 const cli = new Cli<CliContext>({
   binaryName: 'affine',
   binaryVersion: '0.0.0',
-  binaryLabel: 'AFFiNE Monorepo Tools',
+  binaryLabel: 'MRH ManSys Monorepo Tools',
   enableColors: true,
   enableCapture: true,
 });

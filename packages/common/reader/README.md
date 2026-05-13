@@ -1,4 +1,4 @@
-# Affine Blocksuite format YDoc reader
+# MRH ManSys Blocksuite format YDoc reader
 
 ## Usage
 

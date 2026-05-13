@@ -527,7 +527,7 @@ export class LicenseService {
     if (new Date(payload.expiresAt) < new Date()) {
       throw new InvalidLicenseToActivate({
         reason:
-          'License file has expired. Please contact with Affine support to fetch a latest one.',
+          'License file has expired. Please contact with MRH ManSys support to fetch a latest one.',
       });
     }
 
@@ -543,7 +543,7 @@ export class LicenseService {
   private decryptWorkspaceTeamLicensePayload(buf: Buffer) {
     if (!this.crypto.AFFiNEProPublicKey) {
       throw new InternalServerError(
-        'License public key is not loaded. Please contact with Affine support.'
+        'License public key is not loaded. Please contact with MRH ManSys support.'
       );
     }
 
@@ -581,7 +581,7 @@ export class LicenseService {
   private decryptLicense(buf: Buffer) {
     if (!this.crypto.AFFiNEProLicenseAESKey) {
       throw new InternalServerError(
-        'License AES key is not loaded. Please contact with Affine support.'
+        'License AES key is not loaded. Please contact with MRH ManSys support.'
       );
     }
 

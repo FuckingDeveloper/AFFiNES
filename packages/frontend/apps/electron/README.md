@@ -1,8 +1,8 @@
-# AFFiNE Electron App
+# MRH ManSys Electron App
 
 ## Development
 
-To run AFFiNE Desktop Client Application locally, run the following commands:
+To run MRH ManSys Desktop Client Application locally, run the following commands:
 
 ```sh
 # in repo root

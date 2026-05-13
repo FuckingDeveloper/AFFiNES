@@ -778,13 +778,13 @@ mod tests {
     );
 
     let delta = vec![TextDeltaOp::Insert {
-      insert: TextInsert::Text("AFFiNE".into()),
+      insert: TextInsert::Text("MRH ManSys".into()),
       format: Some(attrs),
     }];
 
     let options = DeltaToMdOptions::new(None);
     let rendered = delta_to_markdown_with_options(&delta, &options, false);
-    assert_eq!(rendered, "[AFFiNE](https://example.com)");
+    assert_eq!(rendered, "[MRH ManSys](https://example.com)");
   }
 
   #[test]

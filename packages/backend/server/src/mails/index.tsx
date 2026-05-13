@@ -66,14 +66,14 @@ function make<T extends ComponentType<any>>(
 
 export const Renderers = {
   //#region Test
-  TestMail: make(TestMail, 'Test Email from AFFiNE'),
+  TestMail: make(TestMail, 'Test Email from MRH ManSys'),
   //#endregion
 
   //#region User
-  SignIn: make(SignIn, 'Sign in to AFFiNE'),
-  SignUp: make(SignUp, 'Your AFFiNE account is waiting for you!'),
-  SetPassword: make(SetPassword, 'Set your AFFiNE password'),
-  ChangePassword: make(ChangePassword, 'Modify your AFFiNE password'),
+  SignIn: make(SignIn, 'Sign in to MRH ManSys'),
+  SignUp: make(SignUp, 'Your MRH ManSys account is waiting for you!'),
+  SetPassword: make(SetPassword, 'Set your MRH ManSys password'),
+  ChangePassword: make(ChangePassword, 'Modify your MRH ManSys password'),
   VerifyEmail: make(VerifyEmail, 'Verify your email address'),
   ChangeEmail: make(ChangeEmail, 'Change your email address'),
   VerifyChangeEmail: make(VerifyChangeEmail, 'Verify your new email address'),
@@ -177,7 +177,7 @@ export const Renderers = {
   //#region License
   TeamLicense: make(
     TeamLicense,
-    'Your AFFiNE Self-Hosted Team Workspace license is ready'
+    'Your MRH ManSys Self-Hosted Team Workspace license is ready'
   ),
   //#endregion
 } as const;

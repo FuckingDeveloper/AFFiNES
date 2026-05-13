@@ -16,7 +16,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
           // this is ok for web app, but not for desktop app
           // since we never build desktop app in selfhosted mode, so it's fine
           config: {
-            serverName: 'Affine Selfhost',
+            serverName: 'MRH ManSys Selfhost',
             features: [],
             oauthProviders: [],
             type: ServerDeploymentType.Selfhosted,
@@ -37,7 +37,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
               ? 'http://localhost:8080'
               : location.origin,
             config: {
-              serverName: 'Affine Cloud',
+              serverName: 'MRH ManSys Cloud',
               features: [
                 ServerFeature.Indexer,
                 ServerFeature.Copilot,
@@ -70,7 +70,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
                   : 'https://app.affine.pro'
                 : location.origin,
               config: {
-                serverName: 'Affine Cloud',
+                serverName: 'MRH ManSys Cloud',
                 features: [
                   ServerFeature.Indexer,
                   ServerFeature.Copilot,
@@ -103,7 +103,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
                     : 'https://insider.affine.pro'
                   : location.origin,
                 config: {
-                  serverName: 'Affine Cloud',
+                  serverName: 'MRH ManSys Cloud',
                   features: [
                     ServerFeature.Indexer,
                     ServerFeature.Copilot,
@@ -132,7 +132,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
                   id: 'affine-cloud',
                   baseUrl: 'https://insider.affine.pro',
                   config: {
-                    serverName: 'Affine Cloud',
+                    serverName: 'MRH ManSys Cloud',
                     features: [
                       ServerFeature.Indexer,
                       ServerFeature.Copilot,
@@ -163,7 +163,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
                       ? 'https://affine.fail'
                       : location.origin,
                     config: {
-                      serverName: 'Affine Cloud',
+                      serverName: 'MRH ManSys Cloud',
                       features: [
                         ServerFeature.Indexer,
                         ServerFeature.Copilot,

@@ -92,7 +92,7 @@ class TrayState implements Disposable {
     .resize({ width: 18, height: 18 });
 
   // tray's tooltip
-  tooltip: string = 'AFFiNE';
+  tooltip: string = 'MRH ManSys';
 
   constructor() {
     this.icon.setTemplateImage(true);
@@ -254,15 +254,15 @@ class TrayState implements Disposable {
       key: 'secondary',
       getConfig: () => [
         {
-          label: 'Open AFFiNE',
+          label: 'Open MRH ManSys',
           click: () => {
-            logger.info('User action: Open AFFiNE');
+            logger.info('User action: Open MRH ManSys');
             getMainWindow()
               .then(w => {
                 w.show();
               })
               .catch(err => {
-                logger.error('Failed to open AFFiNE:', err);
+                logger.error('Failed to open MRH ManSys:', err);
               });
           },
         },
@@ -287,9 +287,9 @@ class TrayState implements Disposable {
         },
         'separator',
         {
-          label: 'Quit AFFiNE Completely...',
+          label: 'Quit MRH ManSys Completely...',
           click: () => {
-            logger.info('User action: Quit AFFiNE Completely');
+            logger.info('User action: Quit MRH ManSys Completely');
             app.quit();
           },
         },

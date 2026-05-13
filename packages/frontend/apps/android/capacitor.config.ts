@@ -13,7 +13,7 @@ interface AppConfig {
 
 const config: CapacitorConfig & AppConfig = {
   appId: 'app.affine.pro',
-  appName: 'AFFiNE',
+  appName: 'MRH ManSys',
   webDir: 'dist',
   affineVersion: packageJson.version,
   android: {

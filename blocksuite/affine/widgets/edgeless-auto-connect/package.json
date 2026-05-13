@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-edgeless-auto-connect",
-  "description": "Affine edgeless auto connect widget.",
+  "description": "MRH ManSys edgeless auto connect widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

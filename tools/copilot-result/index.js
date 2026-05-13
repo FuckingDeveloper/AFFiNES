@@ -7,9 +7,9 @@ const { CHANNEL_ID, SLACK_BOT_TOKEN, COPILOT_RESULT, BRANCH_SHA, BRANCH_NAME } =
 
 const { ok } = await new WebClient(SLACK_BOT_TOKEN).chat.postMessage({
   channel: CHANNEL_ID,
-  text: `AFFiNE Copilot Test ${COPILOT_RESULT}`,
+  text: `MRH ManSys Copilot Test ${COPILOT_RESULT}`,
   blocks: render(
-    `# AFFiNE Copilot Test ${COPILOT_RESULT}
+    `# MRH ManSys Copilot Test ${COPILOT_RESULT}
 
 - [${BRANCH_NAME?.replace('refs/heads/', '') || BRANCH_SHA}](https://github.com/toeverything/AFFiNE/commit/${BRANCH_SHA})
 `

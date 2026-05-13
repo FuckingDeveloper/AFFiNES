@@ -2267,7 +2267,7 @@ type ServerConfigType {
 }
 
 enum ServerDeploymentType {
-  Affine
+  MRH ManSys
   Selfhosted
 }
 

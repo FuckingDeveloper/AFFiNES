@@ -16,7 +16,7 @@ export type SignInProps = {
 export default function SignIn(props: SignInProps) {
   return (
     <Template>
-      <Title>Sign in to AFFiNE Cloud</Title>
+      <Title>Sign in to MRH ManSys Cloud</Title>
       <Content>
         <P>You are signing in to AFFiNE. Here is your code:</P>
         <OnelineCodeBlock>{props.otp}</OnelineCodeBlock>

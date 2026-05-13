@@ -100,7 +100,7 @@ export function toOtpAuthUrl(
   secret: string,
   options: { accountName: string; issuer: string }
 ) {
-  const issuer = options.issuer.trim() || 'AFFiNE';
+  const issuer = options.issuer.trim() || 'MRH ManSys';
   const accountName = options.accountName.trim();
   const label = `${issuer}:${accountName}`;
   const params = new URLSearchParams({

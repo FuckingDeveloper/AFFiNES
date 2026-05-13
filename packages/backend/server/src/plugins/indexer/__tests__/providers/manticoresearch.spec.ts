@@ -166,7 +166,7 @@ test('should provider is manticoresearch', t => {
 test('should search doc title match chinese word segmentation', async t => {
   const workspaceId = 'workspace-test-doc-title-chinese';
   const docId = 'doc-chinese';
-  const title = 'AFFiNE 是一个基于云端的笔记应用';
+  const title = 'MRH ManSys 是一个基于云端的笔记应用';
 
   await searchProvider.write(
     SearchTable.doc,

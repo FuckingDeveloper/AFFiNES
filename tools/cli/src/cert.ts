@@ -9,8 +9,8 @@ const NGINX_CONF_DIR = ProjectRoot.join('.docker/dev/nginx/conf.d');
 const CA_PEM_PATH = CA_DIR.join('affine-self-signed.pem');
 const CA_KEY_PATH = CA_DIR.join('affine-self-signed.key');
 
-const CA_ORG = 'AFFiNE Dev CA Self Signed Org';
-const CA_NAME = 'AFFiNE Dev CA Self Signed CN';
+const CA_ORG = 'MRH ManSys Dev CA Self Signed Org';
+const CA_NAME = 'MRH ManSys Dev CA Self Signed CN';
 
 export class CertCommand extends Command {
   static override paths = [['cert']];
@@ -95,7 +95,7 @@ export class CertCommand extends Command {
   }
 
   private trustCa(pem: Path) {
-    this.logger.info(`Trusting AFFiNE Dev Self Signed CA`);
+    this.logger.info(`Trusting MRH ManSys Dev Self Signed CA`);
     this.exec(
       `sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ${pem}`
     );

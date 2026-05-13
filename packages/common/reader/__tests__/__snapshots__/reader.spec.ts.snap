@@ -54,7 +54,7 @@ exports[`should get all docs from root doc work 2`] = `
 
 exports[`should parse page doc work 1`] = `
 {
-  "md": "AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro.
+  "md": "MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro.
 
 
 
@@ -62,9 +62,9 @@ exports[`should parse page doc work 1`] = `
 
 ## Local-first & Real-time collaborative
 
-We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.
+We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.
 
-AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.
+MRH ManSys is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.
 
 
 
@@ -72,11 +72,11 @@ AFFiNE is a local-first application upon CRDTs with real-time collaboration supp
 
 There is a large overlap of their atomic "building blocks" between these apps. They are neither open source nor have a plugin system like VS Code for contributors to customize. We want to have something that contains all the features we love and goes one step further.
 
-We are building AFFiNE to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.
+We are building MRH ManSys to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.
 
-If you want to learn more about the product design of AFFiNE, here goes the concepts:
+If you want to learn more about the product design of MRH ManSys, here goes the concepts:
 
-To Shape, not to adapt. AFFiNE is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.
+To Shape, not to adapt. MRH ManSys is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.
 
 ## A true canvas for blocks in any form
 
@@ -95,21 +95,21 @@ For more details, please refer to our [RoadMap](https://docs.affine.pro/docs/cor
 
 ## Self Host
 
-Self host AFFiNE
+Self host MRH ManSys
 
 ||Title|Tag|
 |---|---|---|
-|Affine Development|Affine Development|<span data-affine-option data-value="AxSe-53xjX" data-option-color="var(--affine-tag-pink)">AFFiNE</span>|
-|For developers or installations guides, please go to AFFiNE Doc|For developers or installations guides, please go to AFFiNE Doc|<span data-affine-option data-value="0jh9gNw4Yl" data-option-color="var(--affine-tag-orange)">Developers</span>|
+|MRH ManSys Development|MRH ManSys Development|<span data-affine-option data-value="AxSe-53xjX" data-option-color="var(--affine-tag-pink)">MRH ManSys</span>|
+|For developers or installations guides, please go to MRH ManSys Doc|For developers or installations guides, please go to MRH ManSys Doc|<span data-affine-option data-value="0jh9gNw4Yl" data-option-color="var(--affine-tag-orange)">Developers</span>|
 |Quip & Notion with their great concept of "everything is a block"|Quip & Notion with their great concept of "everything is a block"|<span data-affine-option data-value="HgHsKOUINZ" data-option-color="var(--affine-tag-blue)">Reference</span>|
 |Trello with their Kanban|Trello with their Kanban|<span data-affine-option data-value="HgHsKOUINZ" data-option-color="var(--affine-tag-blue)">Reference</span>|
 |Airtable & Miro with their no-code programable datasheets|Airtable & Miro with their no-code programable datasheets|<span data-affine-option data-value="HgHsKOUINZ" data-option-color="var(--affine-tag-blue)">Reference</span>|
 |Miro & Whimiscal with their edgeless visual whiteboard|Miro & Whimiscal with their edgeless visual whiteboard|<span data-affine-option data-value="HgHsKOUINZ" data-option-color="var(--affine-tag-blue)">Reference</span>|
 |Remnote & Capacities with their object-based tag system|Remnote & Capacities with their object-based tag system||
 
-## Affine Development
+## MRH ManSys Development
 
-For developer or installation guides, please go to [AFFiNE Development](https://docs.affine.pro/docs/development/quick-start)
+For developer or installation guides, please go to [MRH ManSys Development](https://docs.affine.pro/docs/development/quick-start)
 
 
 
@@ -120,7 +120,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
         "children": [
           {
             "children": [],
-            "content": "AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro.
+            "content": "MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro.
 
 ",
             "flavour": "affine:paragraph",
@@ -156,7 +156,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
           },
           {
             "children": [],
-            "content": "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.
+            "content": "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.
 
 ",
             "flavour": "affine:paragraph",
@@ -165,7 +165,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
           },
           {
             "children": [],
-            "content": "AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.
+            "content": "MRH ManSys is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.
 
 ",
             "flavour": "affine:paragraph",
@@ -217,7 +217,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
           },
           {
             "children": [],
-            "content": "We are building AFFiNE to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.
+            "content": "We are building MRH ManSys to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.
 
 ",
             "flavour": "affine:paragraph",
@@ -226,7 +226,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
           },
           {
             "children": [],
-            "content": "If you want to learn more about the product design of AFFiNE, here goes the concepts:
+            "content": "If you want to learn more about the product design of MRH ManSys, here goes the concepts:
 
 ",
             "flavour": "affine:paragraph",
@@ -235,7 +235,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
           },
           {
             "children": [],
-            "content": "To Shape, not to adapt. AFFiNE is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.
+            "content": "To Shape, not to adapt. MRH ManSys is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.
 
 ",
             "flavour": "affine:paragraph",
@@ -354,7 +354,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
           },
           {
             "children": [],
-            "content": "Self host AFFiNE
+            "content": "Self host MRH ManSys
 
 ",
             "flavour": "affine:paragraph",
@@ -373,8 +373,8 @@ For developer or installation guides, please go to [AFFiNE Development](https://
             "children": [],
             "content": "||Title|Tag|
 |---|---|---|
-|Affine Development|Affine Development|<span data-affine-option data-value="AxSe-53xjX" data-option-color="var(--affine-tag-pink)">AFFiNE</span>|
-|For developers or installations guides, please go to AFFiNE Doc|For developers or installations guides, please go to AFFiNE Doc|<span data-affine-option data-value="0jh9gNw4Yl" data-option-color="var(--affine-tag-orange)">Developers</span>|
+|MRH ManSys Development|MRH ManSys Development|<span data-affine-option data-value="AxSe-53xjX" data-option-color="var(--affine-tag-pink)">MRH ManSys</span>|
+|For developers or installations guides, please go to MRH ManSys Doc|For developers or installations guides, please go to MRH ManSys Doc|<span data-affine-option data-value="0jh9gNw4Yl" data-option-color="var(--affine-tag-orange)">Developers</span>|
 |Quip & Notion with their great concept of "everything is a block"|Quip & Notion with their great concept of "everything is a block"|<span data-affine-option data-value="HgHsKOUINZ" data-option-color="var(--affine-tag-blue)">Reference</span>|
 |Trello with their Kanban|Trello with their Kanban|<span data-affine-option data-value="HgHsKOUINZ" data-option-color="var(--affine-tag-blue)">Reference</span>|
 |Airtable & Miro with their no-code programable datasheets|Airtable & Miro with their no-code programable datasheets|<span data-affine-option data-value="HgHsKOUINZ" data-option-color="var(--affine-tag-blue)">Reference</span>|
@@ -386,20 +386,20 @@ For developer or installation guides, please go to [AFFiNE Development](https://
             "id": "U_GoHFD9At",
             "rows": [
               {
-                "Tag": "<span data-affine-option data-value="AxSe-53xjX" data-option-color="var(--affine-tag-pink)">AFFiNE</span>",
-                "Title": "Affine Development
+                "Tag": "<span data-affine-option data-value="AxSe-53xjX" data-option-color="var(--affine-tag-pink)">MRH ManSys</span>",
+                "Title": "MRH ManSys Development
 
 ",
-                "undefined": "Affine Development
+                "undefined": "MRH ManSys Development
 
 ",
               },
               {
                 "Tag": "<span data-affine-option data-value="0jh9gNw4Yl" data-option-color="var(--affine-tag-orange)">Developers</span>",
-                "Title": "For developers or installations guides, please go to AFFiNE Doc
+                "Title": "For developers or installations guides, please go to MRH ManSys Doc
 
 ",
-                "undefined": "For developers or installations guides, please go to AFFiNE Doc
+                "undefined": "For developers or installations guides, please go to MRH ManSys Doc
 
 ",
               },
@@ -462,7 +462,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
         "children": [
           {
             "children": [],
-            "content": "## Affine Development
+            "content": "## MRH ManSys Development
 
 ",
             "flavour": "affine:paragraph",
@@ -471,7 +471,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
           },
           {
             "children": [],
-            "content": "For developer or installation guides, please go to [AFFiNE Development](https://docs.affine.pro/docs/development/quick-start)
+            "content": "For developer or installation guides, please go to [MRH ManSys Development](https://docs.affine.pro/docs/development/quick-start)
 
 ",
             "flavour": "affine:paragraph",
@@ -505,7 +505,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
 
 exports[`should parse page doc work with ai editable 1`] = `
 "<!-- block_id=FoPQcAyV_m flavour=affine:paragraph -->
-AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro.
+MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro.
 
 <!-- block_id=oz48nn_zp8 flavour=affine:paragraph -->
 
@@ -517,10 +517,10 @@ AFFiNE is an open source all in one workspace, an operating system for all the b
 ## Local-first & Real-time collaborative
 
 <!-- block_id=xCuWdM0VLz flavour=affine:paragraph -->
-We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.
+We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.
 
 <!-- block_id=zElMi0tViK flavour=affine:paragraph -->
-AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.
+MRH ManSys is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.
 
 <!-- block_id=Z4rK0OF9Wk flavour=affine:paragraph -->
 
@@ -532,13 +532,13 @@ AFFiNE is a local-first application upon CRDTs with real-time collaboration supp
 There is a large overlap of their atomic "building blocks" between these apps. They are neither open source nor have a plugin system like VS Code for contributors to customize. We want to have something that contains all the features we love and goes one step further.
 
 <!-- block_id=0H87ypiuv8 flavour=affine:paragraph -->
-We are building AFFiNE to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.
+We are building MRH ManSys to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.
 
 <!-- block_id=Sp4G1KD0Wn flavour=affine:paragraph -->
-If you want to learn more about the product design of AFFiNE, here goes the concepts:
+If you want to learn more about the product design of MRH ManSys, here goes the concepts:
 
 <!-- block_id=RsUhDuEqXa flavour=affine:paragraph -->
-To Shape, not to adapt. AFFiNE is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.
+To Shape, not to adapt. MRH ManSys is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.
 
 <!-- block_id=Z2HibKzAr- flavour=affine:paragraph -->
 ## A true canvas for blocks in any form
@@ -569,14 +569,14 @@ For more details, please refer to our [RoadMap](https://docs.affine.pro/docs/cor
 ## Self Host
 
 <!-- block_id=QVvitesfbj flavour=affine:paragraph -->
-Self host AFFiNE
+Self host MRH ManSys
 
 <!-- block_id=U_GoHFD9At flavour=affine:database placeholder -->
 <!-- block_id=NyHXrMX3R1 flavour=affine:paragraph -->
-## Affine Development
+## MRH ManSys Development
 
 <!-- block_id=9-K49otbCv flavour=affine:paragraph -->
-For developer or installation guides, please go to [AFFiNE Development](https://docs.affine.pro/docs/development/quick-start)
+For developer or installation guides, please go to [MRH ManSys Development](https://docs.affine.pro/docs/development/quick-start)
 
 <!-- block_id=faFteK9eG- flavour=affine:paragraph -->
 
@@ -867,7 +867,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "RX4CG2zsBk",
       },
       "blockId": "FoPQcAyV_m",
-      "content": "AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. ",
+      "content": "MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. ",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "RX4CG2zsBk",
@@ -876,7 +876,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. ",
+        "prop:text": "MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. ",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -963,7 +963,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "RX4CG2zsBk",
       },
       "blockId": "xCuWdM0VLz",
-      "content": "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.",
+      "content": "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "RX4CG2zsBk",
@@ -972,7 +972,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.",
+        "prop:text": "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -987,7 +987,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "RX4CG2zsBk",
       },
       "blockId": "zElMi0tViK",
-      "content": "AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.",
+      "content": "MRH ManSys is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "RX4CG2zsBk",
@@ -996,7 +996,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.",
+        "prop:text": "MRH ManSys is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -1083,7 +1083,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "yGlBdshAqN",
       },
       "blockId": "0H87ypiuv8",
-      "content": "We are building AFFiNE to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.",
+      "content": "We are building MRH ManSys to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "yGlBdshAqN",
@@ -1092,7 +1092,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "We are building AFFiNE to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.",
+        "prop:text": "We are building MRH ManSys to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -1107,7 +1107,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "yGlBdshAqN",
       },
       "blockId": "Sp4G1KD0Wn",
-      "content": "If you want to learn more about the product design of AFFiNE, here goes the concepts:",
+      "content": "If you want to learn more about the product design of MRH ManSys, here goes the concepts:",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "yGlBdshAqN",
@@ -1116,7 +1116,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "If you want to learn more about the product design of AFFiNE, here goes the concepts:",
+        "prop:text": "If you want to learn more about the product design of MRH ManSys, here goes the concepts:",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -1131,7 +1131,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "yGlBdshAqN",
       },
       "blockId": "RsUhDuEqXa",
-      "content": "To Shape, not to adapt. AFFiNE is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.",
+      "content": "To Shape, not to adapt. MRH ManSys is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "yGlBdshAqN",
@@ -1140,7 +1140,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "To Shape, not to adapt. AFFiNE is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.",
+        "prop:text": "To Shape, not to adapt. MRH ManSys is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -1429,7 +1429,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "cauvaHOQmh",
       },
       "blockId": "QVvitesfbj",
-      "content": "Self host AFFiNE",
+      "content": "Self host MRH ManSys",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "cauvaHOQmh",
@@ -1438,7 +1438,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "Self host AFFiNE",
+        "prop:text": "Self host MRH ManSys",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -1459,7 +1459,7 @@ exports[`should read doc blocks work 1`] = `
         "Tag",
         "Reference",
         "Developers",
-        "AFFiNE",
+        "MRH ManSys",
       ],
       "docId": "test-doc",
       "flavour": "affine:database",
@@ -1542,7 +1542,7 @@ exports[`should read doc blocks work 1`] = `
                 {
                   "color": "var(--affine-tag-pink)",
                   "id": "AxSe-53xjX",
-                  "value": "AFFiNE",
+                  "value": "MRH ManSys",
                 },
               ],
             },
@@ -1624,7 +1624,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "2jwCeO8Yot",
       },
       "blockId": "tpyOZbPc1P",
-      "content": "Affine Development",
+      "content": "MRH ManSys Development",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "U_GoHFD9At",
@@ -1633,7 +1633,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "Affine Development",
+        "prop:text": "MRH ManSys Development",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -1648,7 +1648,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "2jwCeO8Yot",
       },
       "blockId": "VMx9lHw3TR",
-      "content": "For developers or installations guides, please go to AFFiNE Doc",
+      "content": "For developers or installations guides, please go to MRH ManSys Doc",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "U_GoHFD9At",
@@ -1657,7 +1657,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "For developers or installations guides, please go to AFFiNE Doc",
+        "prop:text": "For developers or installations guides, please go to MRH ManSys Doc",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -1792,7 +1792,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "c9MF_JiRgx",
       },
       "blockId": "NyHXrMX3R1",
-      "content": "Affine Development",
+      "content": "MRH ManSys Development",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "c9MF_JiRgx",
@@ -1801,7 +1801,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "Affine Development",
+        "prop:text": "MRH ManSys Development",
         "prop:type": "h2",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -1816,7 +1816,7 @@ exports[`should read doc blocks work 1`] = `
         "noteBlockId": "c9MF_JiRgx",
       },
       "blockId": "9-K49otbCv",
-      "content": "For developer or installation guides, please go to AFFiNE Development",
+      "content": "For developer or installation guides, please go to MRH ManSys Development",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "c9MF_JiRgx",
@@ -1825,7 +1825,7 @@ exports[`should read doc blocks work 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "For developer or installation guides, please go to AFFiNE Development",
+        "prop:text": "For developer or installation guides, please go to MRH ManSys Development",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -1864,14 +1864,14 @@ exports[`should read doc blocks work 1`] = `
       },
       "blockId": "6x7ALjUDjj",
       "content": [
-        "What is AFFiNE",
+        "What is MRH ManSys",
         "Related Articles",
         " ",
         "Self-host",
         "",
-        "AFFiNE ",
+        "MRH ManSys ",
         "Development",
-        "You can check these URLs to learn about AFFiNE",
+        "You can check these URLs to learn about MRH ManSys",
         "Database Reference",
       ],
       "docId": "test-doc",
@@ -2082,7 +2082,7 @@ exports[`should read doc blocks work 1`] = `
               "index": "aa",
               "rotate": 0,
               "seed": 994394416,
-              "text": "AFFiNE ",
+              "text": "MRH ManSys ",
               "textAlign": "left",
               "type": "text",
               "xywh": "[2459.953125798208,88.108859492537,779,147]",
@@ -2262,7 +2262,7 @@ exports[`should read doc blocks work 1`] = `
               "index": "aJ",
               "rotate": 0,
               "seed": 93054478,
-              "text": "What is AFFiNE",
+              "text": "What is MRH ManSys",
               "textAlign": "left",
               "type": "text",
               "xywh": "[438.73809335123497,-1467.165331669401,913.75,128]",
@@ -2354,7 +2354,7 @@ exports[`should read doc blocks work 1`] = `
               "strokeColor": "--affine-palette-transparent",
               "strokeStyle": "solid",
               "strokeWidth": 4,
-              "text": "You can check these URLs to learn about AFFiNE",
+              "text": "You can check these URLs to learn about MRH ManSys",
               "textAlign": "left",
               "type": "shape",
               "xywh": "[-1055.7017064945487,-981.0008617000956,702.1470991695091,295.7649942194072]",
@@ -2390,7 +2390,7 @@ exports[`should read doc blocks work 1`] = `
         "prop:lockedBySelf": false,
         "prop:rotate": 0,
         "prop:style": "vertical",
-        "prop:title": "AFFiNE - All In One KnowledgeOS",
+        "prop:title": "MRH ManSys - All In One KnowledgeOS",
         "prop:url": "https://affine.pro/",
         "prop:xywh": "[-605.1053721621553,-1497.696057920688,606.4771127476911,649.7969065153833]",
         "sys:children": [],
@@ -2409,7 +2409,7 @@ exports[`should read doc blocks work 1`] = `
       "flavour": "affine:bookmark",
       "yblock": {
         "prop:caption": null,
-        "prop:description": "AFFiNE is the all-in-one workspace where you can write, draw and plan just about anything - Blend the power of Notion and Miro to enable dynamic note-taking, wikis, tasks, visualized mindmaps and presentations. All you need for productivity and creativity is here!
+        "prop:description": "MRH ManSys is the all-in-one workspace where you can write, draw and plan just about anything - Blend the power of Notion and Miro to enable dynamic note-taking, wikis, tasks, visualized mindmaps and presentations. All you need for productivity and creativity is here!
 ",
         "prop:icon": "https://www.youtube.com/s/desktop/8b6c1f4c/img/favicon_32x32.png",
         "prop:image": "https://yt3.googleusercontent.com/H9-Rol_TUq4UmR8cdy-LhxFmWdmz5LIm_KTYoVP2D81I-w9T12ttJHfME6kWUnEresNVo4c8dA=s900-c-k-c0x00ffffff-no-rj",
@@ -2417,7 +2417,7 @@ exports[`should read doc blocks work 1`] = `
         "prop:lockedBySelf": false,
         "prop:rotate": 0,
         "prop:style": "vertical",
-        "prop:title": "AFFiNE",
+        "prop:title": "MRH ManSys",
         "prop:url": "https://www.youtube.com/@affinepro",
         "prop:xywh": "[-1043.6169874048903,-641.7901035486665,622.6248931928226,667.0980998494529]",
         "sys:children": [],
@@ -2517,7 +2517,7 @@ exports[`should read doc blocks work 1`] = `
       },
     },
   ],
-  "summary": "AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. You own your data, with no compromisesLocal-first & Real-time collaborativeWe love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.Blocks that assemble your next docs, tasks kanban or whiteboardThere is a large overlap of their atomic "building blocks" between these apps. They are neither open source nor have a plugin system like VS Code for contributors to customize. We want to have something that contains all the features we love and goes one step further. ",
+  "summary": "MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. You own your data, with no compromisesLocal-first & Real-time collaborativeWe love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.Blocks that assemble your next docs, tasks kanban or whiteboardThere is a large overlap of their atomic "building blocks" between these apps. They are neither open source nor have a plugin system like VS Code for contributors to customize. We want to have something that contains all the features we love and goes one step further. ",
   "title": "Write, Draw, Plan all at Once.",
 }
 `;
@@ -2558,7 +2558,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "RX4CG2zsBk",
       },
       "blockId": "FoPQcAyV_m",
-      "content": "AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. ",
+      "content": "MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. ",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "RX4CG2zsBk",
@@ -2567,7 +2567,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. ",
+        "prop:text": "MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. ",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -2654,7 +2654,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "RX4CG2zsBk",
       },
       "blockId": "xCuWdM0VLz",
-      "content": "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.",
+      "content": "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "RX4CG2zsBk",
@@ -2663,7 +2663,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.",
+        "prop:text": "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -2678,7 +2678,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "RX4CG2zsBk",
       },
       "blockId": "zElMi0tViK",
-      "content": "AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.",
+      "content": "MRH ManSys is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "RX4CG2zsBk",
@@ -2687,7 +2687,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.",
+        "prop:text": "MRH ManSys is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -2774,7 +2774,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "yGlBdshAqN",
       },
       "blockId": "0H87ypiuv8",
-      "content": "We are building AFFiNE to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.",
+      "content": "We are building MRH ManSys to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "yGlBdshAqN",
@@ -2783,7 +2783,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "We are building AFFiNE to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.",
+        "prop:text": "We are building MRH ManSys to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too.",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -2798,7 +2798,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "yGlBdshAqN",
       },
       "blockId": "Sp4G1KD0Wn",
-      "content": "If you want to learn more about the product design of AFFiNE, here goes the concepts:",
+      "content": "If you want to learn more about the product design of MRH ManSys, here goes the concepts:",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "yGlBdshAqN",
@@ -2807,7 +2807,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "If you want to learn more about the product design of AFFiNE, here goes the concepts:",
+        "prop:text": "If you want to learn more about the product design of MRH ManSys, here goes the concepts:",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -2822,7 +2822,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "yGlBdshAqN",
       },
       "blockId": "RsUhDuEqXa",
-      "content": "To Shape, not to adapt. AFFiNE is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.",
+      "content": "To Shape, not to adapt. MRH ManSys is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "yGlBdshAqN",
@@ -2831,7 +2831,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "To Shape, not to adapt. AFFiNE is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.",
+        "prop:text": "To Shape, not to adapt. MRH ManSys is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools.",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -3120,7 +3120,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "cauvaHOQmh",
       },
       "blockId": "QVvitesfbj",
-      "content": "Self host AFFiNE",
+      "content": "Self host MRH ManSys",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "cauvaHOQmh",
@@ -3129,7 +3129,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "Self host AFFiNE",
+        "prop:text": "Self host MRH ManSys",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -3150,7 +3150,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "Tag",
         "Reference",
         "Developers",
-        "AFFiNE",
+        "MRH ManSys",
       ],
       "docId": "test-doc",
       "flavour": "affine:database",
@@ -3233,7 +3233,7 @@ exports[`should read doc blocks work without root doc 1`] = `
                 {
                   "color": "var(--affine-tag-pink)",
                   "id": "AxSe-53xjX",
-                  "value": "AFFiNE",
+                  "value": "MRH ManSys",
                 },
               ],
             },
@@ -3315,7 +3315,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "2jwCeO8Yot",
       },
       "blockId": "tpyOZbPc1P",
-      "content": "Affine Development",
+      "content": "MRH ManSys Development",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "U_GoHFD9At",
@@ -3324,7 +3324,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "Affine Development",
+        "prop:text": "MRH ManSys Development",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -3339,7 +3339,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "2jwCeO8Yot",
       },
       "blockId": "VMx9lHw3TR",
-      "content": "For developers or installations guides, please go to AFFiNE Doc",
+      "content": "For developers or installations guides, please go to MRH ManSys Doc",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "U_GoHFD9At",
@@ -3348,7 +3348,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "For developers or installations guides, please go to AFFiNE Doc",
+        "prop:text": "For developers or installations guides, please go to MRH ManSys Doc",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -3483,7 +3483,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "c9MF_JiRgx",
       },
       "blockId": "NyHXrMX3R1",
-      "content": "Affine Development",
+      "content": "MRH ManSys Development",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "c9MF_JiRgx",
@@ -3492,7 +3492,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "Affine Development",
+        "prop:text": "MRH ManSys Development",
         "prop:type": "h2",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -3507,7 +3507,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "noteBlockId": "c9MF_JiRgx",
       },
       "blockId": "9-K49otbCv",
-      "content": "For developer or installation guides, please go to AFFiNE Development",
+      "content": "For developer or installation guides, please go to MRH ManSys Development",
       "docId": "test-doc",
       "flavour": "affine:paragraph",
       "parentBlockId": "c9MF_JiRgx",
@@ -3516,7 +3516,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "refDocId": [],
       "yblock": {
         "prop:collapsed": false,
-        "prop:text": "For developer or installation guides, please go to AFFiNE Development",
+        "prop:text": "For developer or installation guides, please go to MRH ManSys Development",
         "prop:type": "text",
         "sys:children": [],
         "sys:flavour": "affine:paragraph",
@@ -3555,14 +3555,14 @@ exports[`should read doc blocks work without root doc 1`] = `
       },
       "blockId": "6x7ALjUDjj",
       "content": [
-        "What is AFFiNE",
+        "What is MRH ManSys",
         "Related Articles",
         " ",
         "Self-host",
         "",
-        "AFFiNE ",
+        "MRH ManSys ",
         "Development",
-        "You can check these URLs to learn about AFFiNE",
+        "You can check these URLs to learn about MRH ManSys",
         "Database Reference",
       ],
       "docId": "test-doc",
@@ -3773,7 +3773,7 @@ exports[`should read doc blocks work without root doc 1`] = `
               "index": "aa",
               "rotate": 0,
               "seed": 994394416,
-              "text": "AFFiNE ",
+              "text": "MRH ManSys ",
               "textAlign": "left",
               "type": "text",
               "xywh": "[2459.953125798208,88.108859492537,779,147]",
@@ -3953,7 +3953,7 @@ exports[`should read doc blocks work without root doc 1`] = `
               "index": "aJ",
               "rotate": 0,
               "seed": 93054478,
-              "text": "What is AFFiNE",
+              "text": "What is MRH ManSys",
               "textAlign": "left",
               "type": "text",
               "xywh": "[438.73809335123497,-1467.165331669401,913.75,128]",
@@ -4045,7 +4045,7 @@ exports[`should read doc blocks work without root doc 1`] = `
               "strokeColor": "--affine-palette-transparent",
               "strokeStyle": "solid",
               "strokeWidth": 4,
-              "text": "You can check these URLs to learn about AFFiNE",
+              "text": "You can check these URLs to learn about MRH ManSys",
               "textAlign": "left",
               "type": "shape",
               "xywh": "[-1055.7017064945487,-981.0008617000956,702.1470991695091,295.7649942194072]",
@@ -4081,7 +4081,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "prop:lockedBySelf": false,
         "prop:rotate": 0,
         "prop:style": "vertical",
-        "prop:title": "AFFiNE - All In One KnowledgeOS",
+        "prop:title": "MRH ManSys - All In One KnowledgeOS",
         "prop:url": "https://affine.pro/",
         "prop:xywh": "[-605.1053721621553,-1497.696057920688,606.4771127476911,649.7969065153833]",
         "sys:children": [],
@@ -4100,7 +4100,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       "flavour": "affine:bookmark",
       "yblock": {
         "prop:caption": null,
-        "prop:description": "AFFiNE is the all-in-one workspace where you can write, draw and plan just about anything - Blend the power of Notion and Miro to enable dynamic note-taking, wikis, tasks, visualized mindmaps and presentations. All you need for productivity and creativity is here!
+        "prop:description": "MRH ManSys is the all-in-one workspace where you can write, draw and plan just about anything - Blend the power of Notion and Miro to enable dynamic note-taking, wikis, tasks, visualized mindmaps and presentations. All you need for productivity and creativity is here!
 ",
         "prop:icon": "https://www.youtube.com/s/desktop/8b6c1f4c/img/favicon_32x32.png",
         "prop:image": "https://yt3.googleusercontent.com/H9-Rol_TUq4UmR8cdy-LhxFmWdmz5LIm_KTYoVP2D81I-w9T12ttJHfME6kWUnEresNVo4c8dA=s900-c-k-c0x00ffffff-no-rj",
@@ -4108,7 +4108,7 @@ exports[`should read doc blocks work without root doc 1`] = `
         "prop:lockedBySelf": false,
         "prop:rotate": 0,
         "prop:style": "vertical",
-        "prop:title": "AFFiNE",
+        "prop:title": "MRH ManSys",
         "prop:url": "https://www.youtube.com/@affinepro",
         "prop:xywh": "[-1043.6169874048903,-641.7901035486665,622.6248931928226,667.0980998494529]",
         "sys:children": [],
@@ -4208,7 +4208,7 @@ exports[`should read doc blocks work without root doc 1`] = `
       },
     },
   ],
-  "summary": "AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. You own your data, with no compromisesLocal-first & Real-time collaborativeWe love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.Blocks that assemble your next docs, tasks kanban or whiteboardThere is a large overlap of their atomic "building blocks" between these apps. They are neither open source nor have a plugin system like VS Code for contributors to customize. We want to have something that contains all the features we love and goes one step further. ",
+  "summary": "MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. You own your data, with no compromisesLocal-first & Real-time collaborativeWe love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.Blocks that assemble your next docs, tasks kanban or whiteboardThere is a large overlap of their atomic "building blocks" between these apps. They are neither open source nor have a plugin system like VS Code for contributors to customize. We want to have something that contains all the features we love and goes one step further. ",
   "title": "Write, Draw, Plan all at Once.",
 }
 `;

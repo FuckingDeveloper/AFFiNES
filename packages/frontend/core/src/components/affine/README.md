@@ -1,4 +1,4 @@
-# Affine Official Workspace Component
+# MRH ManSys Official Workspace Component
 
 This component need specific configuration to work properly.
 

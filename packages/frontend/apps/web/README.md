@@ -1,3 +1,3 @@
 # web
 
-AFFiNE Desktop Edition Web app.
+MRH ManSys Desktop Edition Web app.

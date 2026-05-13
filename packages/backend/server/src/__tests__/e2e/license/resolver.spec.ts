@@ -126,7 +126,7 @@ e2e('should not install expired license', async t => {
     }),
     {
       message:
-        'Invalid license to activate. License file has expired. Please contact with Affine support to fetch a latest one.',
+        'Invalid license to activate. License file has expired. Please contact with MRH ManSys support to fetch a latest one.',
     }
   );
 });

@@ -68,7 +68,7 @@ export function Nav({ isCollapsed = false }: NavProps) {
         <NavItem
           to={ROUTES.admin.about}
           icon={<SelfhostIcon fontSize={20} />}
-          label="О AFFiNE"
+          label="О MRH ManSys"
           isCollapsed={isCollapsed}
         />
       </nav>

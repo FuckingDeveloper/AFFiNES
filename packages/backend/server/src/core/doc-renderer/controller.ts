@@ -203,8 +203,8 @@ export class DocRendererController {
     }
 
     const title = opts?.title
-      ? htmlSanitize(`${opts.title} | AFFiNE`)
-      : 'AFFiNE';
+      ? htmlSanitize(`${opts.title} | MRH ManSys`)
+      : 'MRH ManSys';
     const summary = opts ? htmlSanitize(opts.summary) : assets.description;
     const image = opts?.avatar ?? 'https://affine.pro/og.jpeg';
 

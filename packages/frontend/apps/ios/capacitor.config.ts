@@ -14,11 +14,11 @@ interface AppConfig {
 
 const config: CapacitorConfig & AppConfig = {
   appId: 'app.affine.pro',
-  appName: 'AFFiNE',
+  appName: 'MRH ManSys',
   webDir: 'dist',
   affineVersion: packageJson.version,
   ios: {
-    scheme: 'AFFiNE',
+    scheme: 'MRH ManSys',
     path: '.',
     webContentsDebuggingEnabled: true,
   },

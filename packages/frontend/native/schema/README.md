@@ -1,1 +1,1 @@
-A temporary crate to share the schema between AFFiNE native and `build.rs` in the AFFiNE native.
+A temporary crate to share the schema between MRH ManSys native and `build.rs` in the MRH ManSys native.

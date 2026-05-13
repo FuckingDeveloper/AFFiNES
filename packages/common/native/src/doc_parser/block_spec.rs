@@ -12,7 +12,7 @@ use super::{
   value::{value_to_f64, value_to_string},
 };
 
-/// Block flavours used in AFFiNE documents.
+/// Block flavours used in MRH ManSys documents.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BlockFlavour {
   Paragraph,

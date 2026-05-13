@@ -41,7 +41,7 @@ export enum NodeEnv {
 }
 
 export enum DeploymentType {
-  Affine = 'affine',
+  MRH ManSys = 'affine',
   Selfhosted = 'selfhosted',
 }
 

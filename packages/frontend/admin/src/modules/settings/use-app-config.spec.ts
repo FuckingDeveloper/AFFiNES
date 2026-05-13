@@ -80,7 +80,7 @@ describe('useAppConfig', () => {
     mocked.setQueryState({
       appConfig: {
         server: {
-          name: 'AFFiNE',
+          name: 'MRH ManSys',
           hosts: ['localhost'],
         },
         auth: {
@@ -114,12 +114,12 @@ describe('useAppConfig', () => {
     const { result } = renderHook(() => useAppConfig());
 
     act(() => {
-      result.current.update('server/name', 'AFFiNE Cloud');
+      result.current.update('server/name', 'MRH ManSys Cloud');
     });
     expect(result.current.isGroupDirty('server')).toBe(true);
 
     act(() => {
-      result.current.update('server/name', 'AFFiNE');
+      result.current.update('server/name', 'MRH ManSys');
     });
     expect(result.current.isGroupDirty('server')).toBe(false);
   });
@@ -128,7 +128,7 @@ describe('useAppConfig', () => {
     const { result } = renderHook(() => useAppConfig());
 
     act(() => {
-      result.current.update('server/name', 'AFFiNE Cloud');
+      result.current.update('server/name', 'MRH ManSys Cloud');
       result.current.update('auth/allowSignup', false);
     });
 
@@ -141,7 +141,7 @@ describe('useAppConfig', () => {
 
     expect(result.current.isGroupDirty('server')).toBe(false);
     expect(result.current.isGroupDirty('auth')).toBe(true);
-    expect(result.current.patchedAppConfig.server.name).toBe('AFFiNE');
+    expect(result.current.patchedAppConfig.server.name).toBe('MRH ManSys');
     expect(result.current.getGroupVersion('server')).toBe(1);
   });
 
@@ -149,14 +149,14 @@ describe('useAppConfig', () => {
     const { result } = renderHook(() => useAppConfig());
 
     act(() => {
-      result.current.update('server/name', 'AFFiNE Cloud');
+      result.current.update('server/name', 'MRH ManSys Cloud');
       result.current.update('auth/allowSignup', false);
     });
 
     mocked.saveUpdatesMock.mockResolvedValue({
       updateAppConfig: {
         server: {
-          name: 'AFFiNE Cloud',
+          name: 'MRH ManSys Cloud',
         },
       },
     });
@@ -170,13 +170,13 @@ describe('useAppConfig', () => {
         {
           module: 'server',
           key: 'name',
-          value: 'AFFiNE Cloud',
+          value: 'MRH ManSys Cloud',
         },
       ],
     });
     expect(result.current.isGroupDirty('server')).toBe(false);
     expect(result.current.isGroupDirty('auth')).toBe(true);
-    expect(result.current.patchedAppConfig.server.name).toBe('AFFiNE Cloud');
+    expect(result.current.patchedAppConfig.server.name).toBe('MRH ManSys Cloud');
     expect(result.current.getGroupVersion('server')).toBe(1);
     expect(mocked.notifySuccessMock).toHaveBeenCalledTimes(1);
   });

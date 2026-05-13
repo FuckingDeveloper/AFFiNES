@@ -14,7 +14,7 @@ test.describe('AIAction/ImproveWriting', () => {
   }) => {
     const { improveWriting } = await utils.editor.askAIWithText(
       page,
-      'AFFiNE is so smart'
+      'MRH ManSys is so smart'
     );
     const { answer, responses } = await improveWriting();
     await expect(answer).toHaveText(/AFFiNE/, { timeout: 10000 });
@@ -28,7 +28,7 @@ test.describe('AIAction/ImproveWriting', () => {
     const { improveWriting } = await utils.editor.askAIWithEdgeless(
       page,
       async () => {
-        await utils.editor.createEdgelessText(page, 'AFFiNE is so smart');
+        await utils.editor.createEdgelessText(page, 'MRH ManSys is so smart');
       }
     );
     const { answer, responses } = await improveWriting();
@@ -43,7 +43,7 @@ test.describe('AIAction/ImproveWriting', () => {
     const { improveWriting } = await utils.editor.askAIWithEdgeless(
       page,
       async () => {
-        await utils.editor.createEdgelessNote(page, 'AFFiNE is so smart');
+        await utils.editor.createEdgelessNote(page, 'MRH ManSys is so smart');
       }
     );
     const { answer, responses } = await improveWriting();
@@ -57,7 +57,7 @@ test.describe('AIAction/ImproveWriting', () => {
   }) => {
     const { improveWriting } = await utils.editor.askAIWithText(
       page,
-      'AFFiNE is so smart'
+      'MRH ManSys is so smart'
     );
     const { answer } = await improveWriting();
     await expect(answer).toHaveText(/AFFiNE/, { timeout: 10000 });

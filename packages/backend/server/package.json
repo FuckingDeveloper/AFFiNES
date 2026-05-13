@@ -2,7 +2,7 @@
   "name": "@affine/server",
   "private": true,
   "version": "0.26.3",
-  "description": "Affine Node.js server",
+  "description": "MRH ManSys Node.js server",
   "type": "module",
   "scripts": {
     "build": "affine bundle -p @affine/server",

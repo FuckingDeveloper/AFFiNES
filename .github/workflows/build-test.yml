@@ -392,7 +392,7 @@ jobs:
           fail_ci_if_error: false
 
   build-native-linux:
-    name: Build AFFiNE native (x86_64-unknown-linux-gnu)
+    name: Build MRH ManSys native (x86_64-unknown-linux-gnu)
     runs-on: ubuntu-latest
     env:
       CARGO_PROFILE_RELEASE_DEBUG: '1'
@@ -410,7 +410,7 @@ jobs:
         run: |
           PLATFORM_ARCH_ABI="$(node -e "console.log(require('@napi-rs/cli').parseTriple('x86_64-unknown-linux-gnu').platformArchABI)")"
           echo "filename=affine.$PLATFORM_ARCH_ABI.node" >> "$GITHUB_OUTPUT"
-      - name: Build AFFiNE native
+      - name: Build MRH ManSys native
         uses: ./.github/actions/build-rust
         with:
           target: x86_64-unknown-linux-gnu
@@ -424,7 +424,7 @@ jobs:
           if-no-files-found: error
 
   build-native-macos:
-    name: Build AFFiNE native (${{ matrix.spec.target }})
+    name: Build MRH ManSys native (${{ matrix.spec.target }})
     runs-on: ${{ matrix.spec.os }}
     env:
       CARGO_PROFILE_RELEASE_DEBUG: '1'
@@ -449,7 +449,7 @@ jobs:
         run: |
           PLATFORM_ARCH_ABI="$(node -e "console.log(require('@napi-rs/cli').parseTriple('${{ matrix.spec.target }}').platformArchABI)")"
           echo "filename=affine.$PLATFORM_ARCH_ABI.node" >> "$GITHUB_OUTPUT"
-      - name: Build AFFiNE native
+      - name: Build MRH ManSys native
         uses: ./.github/actions/build-rust
         with:
           target: ${{ matrix.spec.target }}
@@ -465,7 +465,7 @@ jobs:
   # Split Windows build because it's too slow
   # and other ci jobs required linux native
   build-native-windows:
-    name: Build AFFiNE native (${{ matrix.spec.target }})
+    name: Build MRH ManSys native (${{ matrix.spec.target }})
     runs-on: ${{ matrix.spec.os }}
     env:
       CARGO_PROFILE_RELEASE_DEBUG: '1'
@@ -498,7 +498,7 @@ jobs:
         run: |
           PLATFORM_ARCH_ABI="$(node -e "console.log(require('@napi-rs/cli').parseTriple('${{ matrix.spec.target }}').platformArchABI)")"
           echo "filename=affine.$PLATFORM_ARCH_ABI.node" >> "$GITHUB_OUTPUT"
-      - name: Build AFFiNE native
+      - name: Build MRH ManSys native
         uses: ./.github/actions/build-rust
         with:
           target: ${{ matrix.spec.target }}

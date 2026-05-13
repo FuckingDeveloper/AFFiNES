@@ -2985,7 +2985,7 @@ export interface ServerConfigType {
 }
 
 export enum ServerDeploymentType {
-  Affine = 'Affine',
+  MRH ManSys = 'MRH ManSys',
   Selfhosted = 'Selfhosted',
 }
 

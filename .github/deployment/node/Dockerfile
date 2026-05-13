@@ -49,7 +49,7 @@ RUN --mount=type=bind,from=affine_stable,source=/,target=/mnt/affine-stable,read
 
 # The local build may contain a host-native server-native.node (e.g. macOS),
 # which can't run in Linux containers. Reuse the Linux native addon from the
-# official AFFiNE image for the current target architecture.
+# official MRH ManSys image for the current target architecture.
 ARG TARGETARCH
 RUN set -eux; \
   if [ "${TARGETARCH}" = "amd64" ] && [ -f /opt/affine-stable-dist/server-native.x64.node ]; then \

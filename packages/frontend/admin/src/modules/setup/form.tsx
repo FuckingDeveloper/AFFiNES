@@ -28,10 +28,10 @@ const Welcome = () => {
       style={{ minHeight: '300px' }}
     >
       <h1 className="text-5xl font-extrabold max-lg:text-3xl max-lg:font-bold">
-        Добро пожаловать в AFFiNE
+        Добро пожаловать в MRH ManSys
       </h1>
       <p className="mt-5 font-semibold text-xl max-lg:px-4 max-lg:text-lg">
-        Настройте Self-Hosted AFFiNE в несколько простых шагов.
+        Настройте Self-Hosted MRH ManSys в несколько простых шагов.
       </p>
     </div>
   );
@@ -47,7 +47,7 @@ const SettingsDone = () => {
         Настройка завершена
       </h1>
       <p className="mt-5 font-semibold text-xl max-lg:px-4 max-lg:text-lg">
-        AFFiNE готов к использованию.
+        MRH ManSys готов к использованию.
       </p>
     </div>
   );
@@ -211,7 +211,7 @@ export const Form = () => {
           </Button>
         )}
         <Button onClick={onNext} disabled={disableContinue}>
-          {current === count ? 'Открыть AFFiNE' : 'Продолжить'}
+          {current === count ? 'Открыть MRH ManSys' : 'Продолжить'}
         </Button>
       </div>
 

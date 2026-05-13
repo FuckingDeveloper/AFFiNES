@@ -51,7 +51,7 @@ fun Message(message: ChatMessage) {
             Text(
                 text = when (message.role) {
                     ChatMessage.Role.User -> "You"
-                    ChatMessage.Role.AI -> "Affine AI"
+                    ChatMessage.Role.AI -> "MRH ManSys AI"
                 },
                 color = AFFiNETheme.colors.textPrimary,
                 fontSize = 17.sp,

@@ -362,8 +362,8 @@ class TestGeminiProvider extends GeminiProvider<{ apiKey: string }> {
     () => ({
       id: 'structured_1',
       model: 'gemini-2.5-flash',
-      output_text: '{"summary":"AFFiNE native"}',
-      output_json: { summary: 'AFFiNE native' },
+      output_text: '{"summary":"MRH ManSys native"}',
+      output_json: { summary: 'MRH ManSys native' },
       usage: {
         prompt_tokens: 4,
         completion_tokens: 3,
@@ -534,8 +534,8 @@ class TestOpenAIProvider extends OpenAIProvider {
     request => ({
       id: 'structured_openai_1',
       model: request.model,
-      output_text: '{"summary":"AFFiNE structured"}',
-      output_json: { summary: 'AFFiNE structured' },
+      output_text: '{"summary":"MRH ManSys structured"}',
+      output_json: { summary: 'MRH ManSys structured' },
       usage: {
         prompt_tokens: 4,
         completion_tokens: 3,
@@ -1240,7 +1240,7 @@ test('buildNativeStructuredRequest should prefer explicit schema option', async 
 
   await getProviderRuntimeHost(provider).run.structured(
     { modelId: 'gpt-4.1' },
-    jsonOnlyPromptMessages('Summarize AFFiNE in one sentence.'),
+    jsonOnlyPromptMessages('Summarize MRH ManSys in one sentence.'),
     structuredOptions(schema),
     structuredContract(schema)
   );
@@ -1254,7 +1254,7 @@ test('buildNativeStructuredRequest should preserve caller strictness override', 
 
   await getProviderRuntimeHost(provider).run.structured(
     { modelId: 'gpt-4.1' },
-    jsonOnlyPromptMessages('Summarize AFFiNE in one sentence.'),
+    jsonOnlyPromptMessages('Summarize MRH ManSys in one sentence.'),
     structuredOptions(z.object({ summary: z.string() }), { strict: false }),
     structuredContract(z.object({ summary: z.string() }))
   );
@@ -1271,7 +1271,7 @@ test('buildNativeStructuredRequest should ignore legacy params.schema fallback w
           schema: z.object({ summary: z.string() }),
         },
       }),
-      userPrompt('Summarize AFFiNE in one sentence.')
+      userPrompt('Summarize MRH ManSys in one sentence.')
     ),
     responseContract: {
       responseSchemaJson: {
@@ -1295,7 +1295,7 @@ test('buildNativeStructuredRequest should reject legacy options.schema fallback'
   const error = await t.throwsAsync(() =>
     getProviderRuntimeHost(provider).run.structured(
       { modelId: 'gpt-4.1' },
-      jsonOnlyPromptMessages('Summarize AFFiNE in one sentence.'),
+      jsonOnlyPromptMessages('Summarize MRH ManSys in one sentence.'),
       {
         schema: z.object({ summary: z.string() }),
       } as never
@@ -1439,7 +1439,7 @@ test('GeminiProvider should use native path for structured requests', async t =>
   const schema = z.object({ summary: z.string() });
   const result = await getProviderRuntimeHost(provider).run.structured(
     { modelId: 'gemini-2.5-flash' },
-    jsonOnlyPromptMessages('Summarize AFFiNE in one short sentence.'),
+    jsonOnlyPromptMessages('Summarize MRH ManSys in one short sentence.'),
     structuredOptions(schema),
     structuredContract(schema)
   );
@@ -1481,7 +1481,7 @@ test('GeminiProvider should retry when native structured dispatch returns invali
 
   const result = await getProviderRuntimeHost(provider).run.structured(
     { modelId: 'gemini-2.5-flash' },
-    jsonOnlyPromptMessages('Summarize AFFiNE in one short sentence.'),
+    jsonOnlyPromptMessages('Summarize MRH ManSys in one short sentence.'),
     structuredOptions(z.object({ summary: z.string() }), { maxRetries: 2 }),
     structuredContract(z.object({ summary: z.string() }))
   );
@@ -1502,7 +1502,7 @@ test('GeminiProvider should treat maxRetries as retry count for backend failures
   const error = await t.throwsAsync(
     getProviderRuntimeHost(provider).run.structured(
       { modelId: 'gemini-2.5-flash' },
-      jsonOnlyPromptMessages('Summarize AFFiNE in one short sentence.'),
+      jsonOnlyPromptMessages('Summarize MRH ManSys in one short sentence.'),
       structuredOptions(z.object({ summary: z.string() }), { maxRetries: 2 }),
       structuredContract(z.object({ summary: z.string() }))
     )
@@ -1876,7 +1876,7 @@ test('OpenAIProvider should use native structured dispatch', async t => {
 
   const result = await getProviderRuntimeHost(provider).run.structured(
     { modelId: 'gpt-4.1' },
-    jsonOnlyPromptMessages('Summarize AFFiNE in one sentence.'),
+    jsonOnlyPromptMessages('Summarize MRH ManSys in one sentence.'),
     structuredOptions(schema),
     structuredContract(schema)
   );
@@ -1891,7 +1891,7 @@ test('OpenAIProvider should use native structured dispatch', async t => {
 test('parseNativeStructuredOutput should require native output_json', t => {
   const error = t.throws(() =>
     parseNativeStructuredOutput({
-      output_text: '{"summary":"AFFiNE"}',
+      output_text: '{"summary":"MRH ManSys"}',
     })
   );
 
@@ -1912,14 +1912,14 @@ test('OpenAIProvider should prefer native output_json for structured dispatch', 
     id: 'structured_openai_output_json',
     model: request.model,
     output_text: 'not-json-anymore',
-    output_json: { summary: 'AFFiNE structured' },
+    output_json: { summary: 'MRH ManSys structured' },
     usage: { prompt_tokens: 4, completion_tokens: 3, total_tokens: 7 },
     finish_reason: 'stop',
   });
 
   const result = await getProviderRuntimeHost(provider).run.structured(
     { modelId: 'gpt-4.1' },
-    jsonOnlyPromptMessages('Summarize AFFiNE in one sentence.'),
+    jsonOnlyPromptMessages('Summarize MRH ManSys in one sentence.'),
     structuredOptions(z.object({ summary: z.string() })),
     structuredContract(z.object({ summary: z.string() }))
   );

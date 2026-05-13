@@ -363,7 +363,7 @@ fn slides_outline_transform_accepts_page_name_from_item() {
         {
           "section": "Unified writing",
           "keywords": ["docs", "canvas"],
-          "text": "AFFiNE combines documents and whiteboards."
+          "text": "MRH ManSys combines documents and whiteboards."
         }
       ]
     }
@@ -402,7 +402,7 @@ fn slides_outline_transform_accepts_page_name_from_item() {
         "- Workspace Benefits",
         "  - Unified writing",
         "    - docs, canvas",
-        "    - AFFiNE combines documents and whiteboards."
+        "    - MRH ManSys combines documents and whiteboards."
       ]
       .join("\n")
     )

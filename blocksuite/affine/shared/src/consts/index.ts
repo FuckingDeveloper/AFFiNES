@@ -15,7 +15,7 @@ export const EDGELESS_BLOCK_CHILD_PADDING = 24;
 export const EDGELESS_BLOCK_CHILD_BORDER_WIDTH = 2;
 
 // The height of the header, which is used to calculate the scroll offset
-// In AFFiNE, to avoid the option element to be covered by the header, we need to reserve the space for the header
+// In MRH ManSys, to avoid the option element to be covered by the header, we need to reserve the space for the header
 export const PAGE_HEADER_HEIGHT = 53;
 
 export const EMBED_CARD_MIN_WIDTH = 450;

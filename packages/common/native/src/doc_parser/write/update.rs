@@ -1,6 +1,6 @@
 //! Update YDoc module
 //!
-//! Provides functionality to update existing AFFiNE documents by applying
+//! Provides functionality to update existing MRH ManSys documents by applying
 //! surgical y-octo operations based on content differences.
 
 use std::collections::HashMap;

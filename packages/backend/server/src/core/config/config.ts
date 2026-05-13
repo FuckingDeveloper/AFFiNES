@@ -24,12 +24,12 @@ declare global {
 
 defineModuleConfig('server', {
   name: {
-    desc: 'A recognizable name for the server. Will be shown when connected with AFFiNE Desktop.',
+    desc: 'A recognizable name for the server. Will be shown when connected with MRH ManSys Desktop.',
     default: undefined,
     shape: z.string().optional(),
   },
   externalUrl: {
-    desc: `Base url of AFFiNE server, used for generating external urls.
+    desc: `Base url of MRH ManSys server, used for generating external urls.
 Default to be \`[server.protocol]://[server.host][:server.port]\` if not specified.
     `,
     default: '',

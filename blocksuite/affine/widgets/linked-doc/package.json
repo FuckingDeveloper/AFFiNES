@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-linked-doc",
-  "description": "Affine linked doc widget.",
+  "description": "MRH ManSys linked doc widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"
