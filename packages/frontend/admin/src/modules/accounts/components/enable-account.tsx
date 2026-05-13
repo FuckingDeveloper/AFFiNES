@@ -17,15 +17,15 @@ export const EnableAccountDialog = ({
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Enable Account"
+      title="Включить аккаунт"
       description={
         <>
-          Are you sure you want to enable the account? After enabling the
-          account, the <span className="font-bold">{email}</span> email can be
-          used to log in.
+          Вы уверены, что хотите включить аккаунт? После включения Email{' '}
+          <span className="font-bold">{email}</span> можно будет использовать
+          для входа.
         </>
       }
-      confirmText="Enable"
+      confirmText="Включить"
       confirmButtonVariant="default"
       onConfirm={onConfirm}
       onClose={onClose}

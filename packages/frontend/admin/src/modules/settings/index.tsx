@@ -230,7 +230,7 @@ const AdminPanel = ({
                           }}
                           disabled={saving}
                         >
-                          Cancel
+                          Отмена
                         </Button>
                       ) : null}
                       <Button

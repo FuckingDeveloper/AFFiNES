@@ -5,7 +5,7 @@ export const DiscardChanges = ({
   onClose,
   onConfirm,
   onOpenChange,
-  description = 'Changes will not be saved.',
+  description = 'Изменения не будут сохранены.',
 }: {
   open: boolean;
   onClose: () => void;
@@ -17,9 +17,9 @@ export const DiscardChanges = ({
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Discard Changes"
+      title="Отменить изменения"
       description={description}
-      confirmText="Discard"
+      confirmText="Отменить"
       confirmButtonVariant="destructive"
       onConfirm={onConfirm}
       onClose={onClose}

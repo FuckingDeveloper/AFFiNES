@@ -113,7 +113,7 @@ export function DataTableToolbar<TData>({
     const selectedRows = table.getFilteredSelectedRowModel().rows;
 
     if (selectedRows.length === 0) {
-      alert('Please select at least one user to export');
+      alert('Выберите хотя бы одного пользователя для экспорта');
       return;
     }
 
@@ -134,7 +134,7 @@ export function DataTableToolbar<TData>({
           onClick={handleImportUsers}
         >
           <ImportIcon fontSize={20} />
-          <span className="ml-2 hidden md:inline-block">Import</span>
+          <span className="ml-2 hidden md:inline-block">Импорт</span>
         </Button>
 
         <Button
@@ -147,7 +147,7 @@ export function DataTableToolbar<TData>({
           }
         >
           <ExportIcon fontSize={20} />
-          <span className="ml-2 hidden md:inline-block">Export</span>
+          <span className="ml-2 hidden md:inline-block">Экспорт</span>
         </Button>
 
         {table && (
@@ -173,7 +173,7 @@ export function DataTableToolbar<TData>({
         />
         <div className="flex">
           <Input
-            placeholder="Search Email / UUID"
+            placeholder="Поиск Email / UUID"
             value={value}
             onChange={onValueChange}
             className="h-8 w-[150px] lg:w-[250px]"
@@ -183,7 +183,7 @@ export function DataTableToolbar<TData>({
           className="h-8 px-2 lg:px-3 space-x-[6px] text-sm font-medium"
           onClick={handleOpenConfirm}
         >
-          <PlusIcon fontSize={20} /> <span>Add User</span>
+          <PlusIcon fontSize={20} /> <span>Добавить пользователя</span>
         </Button>
       </div>
 

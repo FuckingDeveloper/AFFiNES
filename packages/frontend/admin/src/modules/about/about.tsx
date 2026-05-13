@@ -23,22 +23,22 @@ const links = [
   {
     href: BUILD_CONFIG.githubUrl,
     icon: <GithubIcon size={20} />,
-    label: 'Star AFFiNE on GitHub',
+    label: 'Поставить звезду AFFiNE на GitHub',
   },
   {
     href: BUILD_CONFIG.githubUrl,
     icon: <MailWarningIcon size={20} />,
-    label: 'Report an Issue',
+    label: 'Сообщить о проблеме',
   },
   {
     href: 'https://docs.affine.pro/docs/self-host-affine',
     icon: <AlbumIcon size={20} />,
-    label: 'Self-host Document',
+    label: 'Документация по self-host',
   },
   {
     href: 'https://affine.pro/pricing/?type=selfhost#table',
     icon: <UploadCloudIcon size={20} />,
-    label: 'Upgrade to Team',
+    label: 'Обновить до Team',
   },
 ];
 
@@ -46,7 +46,7 @@ export function AboutAFFiNE() {
   return (
     <div className="flex flex-col h-full gap-3 py-5 px-6 w-full">
       <div className="flex items-center">
-        <span className="text-xl font-semibold">About AFFiNE</span>
+        <span className="text-xl font-semibold">О AFFiNE</span>
       </div>
       <div className="overflow-y-auto space-y-[10px]">
         <div className="flex flex-col rounded-md border">
@@ -75,8 +75,8 @@ export function AboutAFFiNE() {
         </div>
       </div>
       <div className="space-y-3 text-sm font-normal text-muted-foreground">
-        <div>{`App Version: ${appName} ${BUILD_CONFIG.appVersion}`}</div>
-        <div>{`Editor Version: ${BUILD_CONFIG.editorVersion}`}</div>
+        <div>{`Версия приложения: ${appName} ${BUILD_CONFIG.appVersion}`}</div>
+        <div>{`Версия редактора: ${BUILD_CONFIG.editorVersion}`}</div>
       </div>
     </div>
   );

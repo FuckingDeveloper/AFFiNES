@@ -16,17 +16,17 @@ export function SendTestEmail({ appConfig }: { appConfig: AppConfig }) {
     trigger(appConfig.mailer.SMTP)
       .then(() => {
         notify.success({
-          title: 'Test email sent',
-          message: 'The test email has been successfully sent.',
+          title: 'Тестовое письмо отправлено',
+          message: 'Тестовое письмо успешно отправлено.',
         });
       })
       .catch((err: UserFriendlyError) => {
         notify.error({
-          title: 'Failed to send test email',
+          title: 'Не удалось отправить тестовое письмо',
           message: err.message,
         });
       });
   }, [appConfig, trigger]);
 
-  return <Button onClick={onClick}>Send Test Email</Button>;
+  return <Button onClick={onClick}>Отправить тестовое письмо</Button>;
 }

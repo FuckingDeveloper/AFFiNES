@@ -374,7 +374,7 @@ function PrimaryMetricCard({
       <CardHeader className="pb-2">
         <CardDescription className="flex items-center gap-2 text-sm">
           <UsersIcon className="h-4 w-4" aria-hidden="true" />
-          Current Sync Active Users
+          Текущие активные пользователи синхронизации
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-1.5">
@@ -444,7 +444,7 @@ function WindowSelect({
         onValueChange={next => onChange(Number(next))}
       >
         <SelectTrigger id={id}>
-          <SelectValue placeholder={`Select ${label.toLowerCase()}…`} />
+          <SelectValue placeholder={`Выберите: ${label.toLowerCase()}…`} />
         </SelectTrigger>
         <SelectContent>
           {options.map(option => (
@@ -467,17 +467,17 @@ function LicensePreviewDialog({
 }) {
   const rows = license
     ? [
-        ['Status', license.valid ? 'Valid' : 'Invalid'],
-        ['License ID', license.id],
-        ['Workspace ID', license.workspaceId],
-        ['Plan', license.plan],
-        ['Recurring', license.recurring],
-        ['Seats', intFormatter.format(license.quantity)],
-        ['Issued At', formatDateTime(license.issuedAt)],
-        ['File Expires At', formatDateTime(license.expiresAt)],
-        ['License Ends At', formatDateTime(license.endAt)],
-        ['Entity', license.entity],
-        ['Issuer', license.issuer],
+        ['Статус', license.valid ? 'Валидна' : 'Невалидна'],
+        ['ID лицензии', license.id],
+        ['ID рабочего пространства', license.workspaceId],
+        ['План', license.plan],
+        ['Продление', license.recurring],
+        ['Мест', intFormatter.format(license.quantity)],
+        ['Выдана', formatDateTime(license.issuedAt)],
+        ['Файл истекает', formatDateTime(license.expiresAt)],
+        ['Лицензия действует до', formatDateTime(license.endAt)],
+        ['Сущность', license.entity],
+        ['Издатель', license.issuer],
       ]
     : [];
 
@@ -485,9 +485,9 @@ function LicensePreviewDialog({
     <Dialog open={!!license} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>License Preview</DialogTitle>
+          <DialogTitle>Предпросмотр лицензии</DialogTitle>
           <DialogDescription>
-            Signature and payload format are valid.
+            Подпись и формат данных корректны.
           </DialogDescription>
         </DialogHeader>
         <div className="rounded-lg border border-border/60 overflow-hidden">
@@ -504,7 +504,7 @@ function LicensePreviewDialog({
           ))}
         </div>
         <DialogFooter className="mt-2">
-          <Button onClick={() => onOpenChange(false)}>Confirm</Button>
+          <Button onClick={() => onOpenChange(false)}>Подтвердить</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -530,13 +530,13 @@ function DashboardActions({
   });
 
   const notifyNoFileSelected = useCallback(() => {
-    toast.error('No license file selected.');
+    toast.error('Файл лицензии не выбран.');
   }, []);
 
   const openLicensePicker = useCallback(() => {
     const input = inputRef.current;
     if (!input) {
-      toast.error('Failed to open license file picker.');
+      toast.error('Не удалось открыть выбор файла лицензии.');
       return;
     }
 
@@ -573,7 +573,7 @@ function DashboardActions({
         })
         .catch(error => {
           console.error(error);
-          toast.error('Failed to preview license.');
+          toast.error('Не удалось показать предпросмотр лицензии.');
         });
     },
     [notifyNoFileSelected, previewLicense]
@@ -586,7 +586,7 @@ function DashboardActions({
         : [
             {
               key: 'preview-license',
-              label: 'Preview license',
+              label: 'Предпросмотр лицензии',
               onSelect: openLicensePicker,
             },
           ],
@@ -597,7 +597,7 @@ function DashboardActions({
     <>
       <div className="flex flex-wrap items-center justify-end gap-3">
         <span className="text-xs text-muted-foreground tabular-nums">
-          Updated at {formatDateTime(updatedAt)}
+          Обновлено: {formatDateTime(updatedAt)}
         </span>
         <div className="flex items-center gap-2">
           <Button
@@ -610,12 +610,12 @@ function DashboardActions({
               className={`h-3.5 w-3.5 mr-1.5 ${isValidating ? 'animate-spin' : ''}`}
               aria-hidden="true"
             />
-            Refresh
+            Обновить
           </Button>
           {menuItems.length ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" aria-label="Dashboard menu">
+                <Button variant="outline" size="sm" aria-label="Меню панели">
                   <ChevronDownIcon className="h-3.5 w-3.5" aria-hidden />
                 </Button>
               </DropdownMenuTrigger>
@@ -654,7 +654,7 @@ function DashboardPageSkeleton() {
   return (
     <div className="h-dvh flex-1 flex-col flex overflow-hidden">
       <Header
-        title="Dashboard"
+        title="Панель"
         endFix={
           <div className="flex items-center gap-3">
             <Skeleton className="h-3 w-44" />
@@ -749,36 +749,38 @@ function TopSharedLinksSection({
   return (
     <Card className="border-border/60 bg-card shadow-1">
       <CardHeader>
-        <CardTitle className="text-base">Top Shared Links</CardTitle>
+        <CardTitle className="text-base">Топ общих ссылок</CardTitle>
         <CardDescription>
-          Top {topSharedLinks.length} links in the last{' '}
-          {topSharedLinksWindow.effectiveSize} days
+          Топ {topSharedLinks.length} ссылок за последние{' '}
+          {topSharedLinksWindow.effectiveSize} дней
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {topSharedLinks.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/60 p-8 text-center bg-muted/15">
             <div className="text-sm font-medium">
-              No shared links in this window
+              В этом периоде нет общих ссылок
             </div>
             <div className="text-xs text-muted-foreground mt-2">
-              Publish pages and collect traffic, then this table will rank links
-              by views.
+              Опубликуйте страницы и соберите просмотры, после чего таблица
+              отсортирует ссылки по популярности.
             </div>
             <Button asChild variant="outline" size="sm" className="mt-4">
-              <Link to={ROUTES.admin.workspaces}>Go to Workspaces</Link>
+              <Link to={ROUTES.admin.workspaces}>
+                Перейти к рабочим пространствам
+              </Link>
             </Button>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Document</TableHead>
-                <TableHead>Workspace</TableHead>
-                <TableHead className="text-right">Views</TableHead>
-                <TableHead className="text-right">Unique</TableHead>
-                <TableHead className="text-right">Guest</TableHead>
-                <TableHead>Last Accessed</TableHead>
+                <TableHead>Документ</TableHead>
+                <TableHead>Рабочее пространство</TableHead>
+                <TableHead className="text-right">Просмотры</TableHead>
+                <TableHead className="text-right">Уникальные</TableHead>
+                <TableHead className="text-right">Гости</TableHead>
+                <TableHead>Последний доступ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -895,7 +897,7 @@ function DashboardPageContent() {
   return (
     <div className="h-dvh flex-1 flex-col flex overflow-hidden">
       <Header
-        title="Dashboard"
+        title="Панель"
         endFix={
           <DashboardActions
             updatedAt={dashboard.generatedAt}
@@ -910,35 +912,35 @@ function DashboardPageContent() {
       <div className="flex-1 overflow-auto p-6 space-y-6">
         <Card className="border-border/60 bg-card shadow-1">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Window Controls</CardTitle>
+            <CardTitle className="text-base">Параметры окна данных</CardTitle>
             <CardDescription>
-              Tune dashboard windows. Data is sampled in UTC and refreshes
-              automatically.
+              Настройка временных окон панели. Данные считаются в UTC и
+              обновляются автоматически.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 lg:grid-cols-3">
             <WindowSelect
               id="storage-history-window"
-              label="Storage History"
+              label="История хранилища"
               value={storageHistoryDays}
               options={STORAGE_DAY_OPTIONS}
-              unit="days"
+              unit="дн."
               onChange={setStorageHistoryDays}
             />
             <WindowSelect
               id="sync-history-window"
-              label="Sync History"
+              label="История синхронизации"
               value={syncHistoryHours}
               options={SYNC_HOUR_OPTIONS}
-              unit="hours"
+              unit="ч."
               onChange={setSyncHistoryHours}
             />
             <WindowSelect
               id="shared-link-window"
-              label="Shared Link Window"
+              label="Окно общих ссылок"
               value={sharedLinkWindowDays}
               options={SHARED_DAY_OPTIONS}
-              unit="days"
+              unit="дн."
               onChange={setSharedLinkWindowDays}
             />
           </CardContent>
@@ -948,14 +950,14 @@ function DashboardPageContent() {
           <div className="h-full min-w-0 lg:col-span-5">
             <PrimaryMetricCard
               value={intFormatter.format(dashboard.syncActiveUsers)}
-              description={`${dashboard.syncWindow.effectiveSize}h active window`}
+              description={`${dashboard.syncWindow.effectiveSize} ч. активного окна`}
             />
           </div>
           <div className="h-full min-w-0 lg:col-span-3">
             <SecondaryMetricCard
-              title="Copilot Conversations"
+              title="Диалоги Copilot"
               value={intFormatter.format(dashboard.copilotConversations)}
-              description={`${sharedLinkWindowDays}d aggregation`}
+              description={`Агрегация за ${sharedLinkWindowDays} дн.`}
               icon={
                 <MessageSquareTextIcon className="h-4 w-4" aria-hidden="true" />
               }
@@ -966,7 +968,7 @@ function DashboardPageContent() {
               <CardHeader className="pb-2">
                 <CardDescription className="flex items-center gap-2 text-sm">
                   <DatabaseIcon className="h-4 w-4" aria-hidden="true" />
-                  Managed Storage
+                  Управляемое хранилище
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -974,8 +976,9 @@ function DashboardPageContent() {
                   {formatBytes(totalStorageBytes)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Workspace {formatBytes(dashboard.workspaceStorageBytes)} •
-                  Blob {formatBytes(dashboard.blobStorageBytes)}
+                  Рабочее пространство{' '}
+                  {formatBytes(dashboard.workspaceStorageBytes)} • Blob{' '}
+                  {formatBytes(dashboard.blobStorageBytes)}
                 </p>
               </CardContent>
             </Card>
@@ -986,17 +989,17 @@ function DashboardPageContent() {
           <Card className="border-border/60 bg-card shadow-1 lg:col-span-1">
             <CardHeader>
               <CardTitle className="text-base">
-                Sync Active Users Trend
+                Тренд активных пользователей синхронизации
               </CardTitle>
               <CardDescription>
-                {dashboard.syncWindow.effectiveSize}h at minute bucket
+                {dashboard.syncWindow.effectiveSize} ч., минутные интервалы
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <TrendChart
-                ariaLabel="Sync active users trend"
+                ariaLabel="Тренд активных пользователей синхронизации"
                 points={syncPoints}
-                primaryLabel="Sync Active Users"
+                primaryLabel="Активные пользователи синхронизации"
                 primaryFormatter={value => intFormatter.format(value)}
               />
             </CardContent>
@@ -1005,26 +1008,27 @@ function DashboardPageContent() {
           <Card className="border-border/60 bg-card shadow-1 lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-base">
-                Storage Trend (Workspace + Blob)
+                Тренд хранилища (рабочее пространство + Blob)
               </CardTitle>
               <CardDescription>
-                {dashboard.storageWindow.effectiveSize}d at day bucket
+                {dashboard.storageWindow.effectiveSize} дн., дневные интервалы
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <TrendChart
-                ariaLabel="Workspace and blob storage trend"
+                ariaLabel="Тренд хранилища рабочего пространства и Blob"
                 points={storagePoints}
-                primaryLabel="Workspace Storage"
+                primaryLabel="Хранилище рабочего пространства"
                 primaryFormatter={value => formatBytes(value)}
-                secondaryLabel="Blob Storage"
+                secondaryLabel="Хранилище Blob"
                 secondaryFormatter={value => formatBytes(value)}
               />
 
               <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-primary" />
-                  Workspace: {formatBytes(dashboard.workspaceStorageBytes)}
+                  Рабочее пространство:{' '}
+                  {formatBytes(dashboard.workspaceStorageBytes)}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-foreground/50" />

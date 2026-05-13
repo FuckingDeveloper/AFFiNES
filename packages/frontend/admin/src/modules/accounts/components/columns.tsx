@@ -137,7 +137,7 @@ export const useColumns = ({
           <DataTableColumnHeader
             className="text-xs"
             column={column}
-            title="Name"
+            title="Имя"
           />
         ),
         cell: ({ row }) => (
@@ -177,7 +177,7 @@ export const useColumns = ({
           <DataTableColumnHeader
             className="text-xs max-md:hidden"
             column={column}
-            title="User Detail"
+            title="Данные пользователя"
           />
         ),
         cell: ({ row: { original: user } }) => (
@@ -193,8 +193,8 @@ export const useColumns = ({
                   IconFalse={
                     <UnlockIcon fontSize={16} className="text-destructive" />
                   }
-                  textTrue="Password Set"
-                  textFalse="No Password"
+                  textTrue="Пароль задан"
+                  textFalse="Нет пароля"
                 />
                 <StatusItem
                   condition={user.emailVerified}
@@ -210,8 +210,8 @@ export const useColumns = ({
                       className="text-destructive"
                     />
                   }
-                  textTrue="Email Verified"
-                  textFalse="Email Not Verified"
+                  textTrue="Email подтверждён"
+                  textFalse="Email не подтверждён"
                 />
               </div>
               <div className="flex flex-wrap gap-2 items-center">
@@ -225,7 +225,7 @@ export const useColumns = ({
                     </span>
                   ))
                 ) : (
-                  <span className="text-muted-foreground">No features</span>
+                  <span className="text-muted-foreground">Нет функций</span>
                 )}
               </div>
             </div>
@@ -241,7 +241,7 @@ export const useColumns = ({
           <DataTableColumnHeader
             className="text-xs"
             column={column}
-            title="Actions"
+            title="Действия"
           />
         ),
         cell: ({ row: { original: user } }) => (

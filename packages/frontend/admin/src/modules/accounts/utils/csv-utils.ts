@@ -34,7 +34,7 @@ export const validatePassword = (
   ) {
     return {
       valid: false,
-      error: 'Invalid password format',
+      error: 'Неверный формат пароля',
     };
   }
 
@@ -46,7 +46,7 @@ export const validatePassword = (
   // if (!hasLetter || !hasNumber) {
   //   return {
   //     valid: false,
-  //     error: 'Invalid password format',
+  //     error: 'Неверный формат пароля',
   //   };
   // }
 
@@ -68,12 +68,12 @@ export const validateEmails = (users: ParsedUser[]): ParsedUser[] => {
     const lowerCaseEmail = user.email.toLowerCase();
 
     if (!emailRegex.test(user.email)) {
-      return { ...user, valid: false, error: 'Invalid email format' };
+      return { ...user, valid: false, error: 'Неверный формат email' };
     }
 
     const emailCount = emailMap.get(lowerCaseEmail) || 0;
     if (emailCount > 1) {
-      return { ...user, valid: false, error: 'Duplicate email address' };
+      return { ...user, valid: false, error: 'Дублирующийся email' };
     }
 
     return { ...user, valid: true };
@@ -97,7 +97,7 @@ export const getValidUsersToImport = (users: ParsedUser[]) => {
  * Downloads a CSV template for user import
  */
 export const downloadCsvTemplate = () => {
-  const csvContent = 'Username,Email,Password\n,example@example.com,';
+  const csvContent = 'Имя пользователя,Email,Пароль\n,example@example.com,';
   downloadCsv(csvContent, 'user_import_template.csv');
 };
 
@@ -106,7 +106,7 @@ export const downloadCsvTemplate = () => {
  */
 export const exportImportResults = (results: ParsedUser[]) => {
   const csvContent = [
-    'Username,Email,Password,Status',
+    'Имя пользователя,Email,Пароль,Статус',
     ...results.map(
       user =>
         `${user.name || ''},${user.email},${user.password || ''},${user.importStatus}${user.importError ? ` (${user.importError})` : ''}`
@@ -119,7 +119,7 @@ export const exportImportResults = (results: ParsedUser[]) => {
     `import_results_${new Date().toISOString().slice(0, 10)}.csv`
   );
 
-  toast.success(`Exported ${results.length} import results`);
+  toast.success(`Экспортировано результатов импорта: ${results.length}`);
 };
 
 /**
@@ -165,7 +165,7 @@ export const processCSVFile = async (
       .map(row => row.split(','));
 
     if (rows.length < 2) {
-      toast.error('CSV file format is incorrect or empty');
+      toast.error('Некорректный формат CSV-файла или файл пуст');
       onError();
       return;
     }
@@ -181,7 +181,7 @@ export const processCSVFile = async (
     const usersWithEmail = users.filter(user => user.email);
 
     if (usersWithEmail.length === 0) {
-      toast.error('CSV file contains no valid user data');
+      toast.error('CSV-файл не содержит корректных пользовательских данных');
       onError();
       return;
     }
@@ -190,15 +190,15 @@ export const processCSVFile = async (
     const hasValidUsers = validatedUsers.some(user => user.valid !== false);
 
     if (!hasValidUsers) {
-      toast.error('CSV file contains no valid user data');
+      toast.error('CSV-файл не содержит корректных пользовательских данных');
       onError();
       return;
     }
 
     onSuccess(validatedUsers);
   } catch (error) {
-    console.error('Failed to parse CSV file', error);
-    toast.error('Failed to parse CSV file');
+    console.error('Не удалось разобрать CSV-файл', error);
+    toast.error('Не удалось разобрать CSV-файл');
     onError();
   }
 };

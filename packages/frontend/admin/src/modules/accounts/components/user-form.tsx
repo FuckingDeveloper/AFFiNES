@@ -123,11 +123,11 @@ function UserForm({
       <div className="flex-grow space-y-3 overflow-y-auto p-4">
         <div className="flex flex-col rounded-xl border border-border bg-card shadow-sm">
           <InputItem
-            label="User name"
+            label="Имя пользователя"
             field="name"
             value={changes.name}
             onChange={setField}
-            placeholder="Enter user name"
+            placeholder="Введите имя пользователя"
           />
           <Separator />
           <InputItem
@@ -135,18 +135,18 @@ function UserForm({
             field="email"
             value={changes.email}
             onChange={setField}
-            placeholder="Enter email address"
+            placeholder="Введите email"
           />
           {showOption && (
             <>
               <Separator />
               <InputItem
-                label="Password"
+                label="Пароль"
                 field="password"
                 value={changes.password}
                 onChange={setField}
                 optional
-                placeholder="Enter password"
+                placeholder="Введите пароль"
               />
             </>
           )}
@@ -195,7 +195,7 @@ function InputItem({
         {label}
         {optional && (
           <span className="ml-1 font-normal text-muted-foreground">
-            (optional)
+            (необязательно)
           </span>
         )}
       </Label>
@@ -256,7 +256,7 @@ export function CreateUserForm({
 
   return (
     <UserForm
-      title="Create User"
+      title="Создать пользователя"
       onClose={onComplete}
       onConfirm={handleCreateUser}
       onValidate={validateCreateUser}
@@ -302,7 +302,7 @@ export function UpdateUserForm({
 
   return (
     <UserForm
-      title="Update User"
+      title="Изменить пользователя"
       defaultValue={user}
       onClose={onComplete}
       onConfirm={onUpdateUser}
@@ -315,7 +315,7 @@ export function UpdateUserForm({
             variant="outline"
             onClick={onResetPassword}
           >
-            <span>Reset Password</span>
+            <span>Сбросить пароль</span>
             <ChevronRightIcon size={16} className="text-muted-foreground" />
           </Button>
           <Button
@@ -323,7 +323,7 @@ export function UpdateUserForm({
             variant="outline"
             onClick={onDeleteAccount}
           >
-            <span>Delete Account</span>
+            <span>Удалить аккаунт</span>
             <ChevronRightIcon size={16} />
           </Button>
         </div>

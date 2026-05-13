@@ -21,8 +21,8 @@ export const ImportPreviewContent: FC<ImportPreviewContentProps> = ({
     <div className="grid gap-3">
       {!isImported && (
         <p className="text-sm text-muted-foreground">
-          {parsedUsers.length} users detected from the CSV file. Please confirm
-          the user list below and import.
+          {parsedUsers.length} пользователей найдено в CSV-файле. Подтвердите
+          список ниже и запустите импорт.
         </p>
       )}
       <UserTable users={parsedUsers} />
@@ -50,8 +50,8 @@ export const ImportInitialContent: FC<ImportInitialContentProps> = ({
   return (
     <div className="grid gap-3">
       <p className="text-sm text-muted-foreground">
-        You need to import the accounts by importing a CSV file in the correct
-        format. Please download the CSV template.
+        Для импорта аккаунтов загрузите CSV-файл в корректном формате. Скачайте
+        шаблон CSV.
       </p>
       <CsvFormatGuidance passwordLimits={passwordLimits} />
       <FileUploadArea ref={fileUploadRef} onFileSelected={onFileSelected} />
@@ -67,7 +67,7 @@ interface ImportErrorContentProps {
  * Component for displaying import errors
  */
 export const ImportErrorContent: FC<ImportErrorContentProps> = ({
-  message = 'You need to import the accounts by importing a CSV file in the correct format. Please download the CSV template.',
+  message = 'Для импорта аккаунтов загрузите CSV-файл в корректном формате. Скачайте шаблон CSV.',
 }) => {
   return message;
 };

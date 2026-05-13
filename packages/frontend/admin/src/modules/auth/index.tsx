@@ -34,7 +34,7 @@ export function Auth() {
         .then(async response => {
           if (!response.ok) {
             const data = await response.json();
-            throw new Error(data.message || 'Failed to login');
+            throw new Error(data.message || 'Не удалось войти');
           }
           return response.json();
         })
@@ -59,15 +59,15 @@ export function Auth() {
             },
           }) => {
             if (features.includes(FeatureType.Admin)) {
-              toast.success('Logged in successfully');
+              toast.success('Вход выполнен успешно');
               await revalidate();
             } else {
-              toast.error('You are not an admin');
+              toast.error('У вас нет прав администратора');
             }
           }
         )
         .catch(err => {
-          toast.error(`Failed to login: ${err.message}`);
+          toast.error(`Не удалось войти: ${err.message}`);
         });
     },
     [revalidate]
@@ -82,9 +82,9 @@ export function Auth() {
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
-            <h1 className="text-3xl font-bold">Login</h1>
+            <h1 className="text-3xl font-bold">Вход</h1>
             <p className="text-balance text-muted-foreground">
-              Enter your email below to login to your account
+              Введите email и пароль для входа в аккаунт
             </p>
           </div>
           <form onSubmit={login} action="#">
@@ -102,7 +102,7 @@ export function Auth() {
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Пароль</Label>
                 </div>
                 <Input
                   id="password"
@@ -113,7 +113,7 @@ export function Auth() {
                 />
               </div>
               <Button onClick={login} type="submit" className="w-full">
-                Login
+                Войти
               </Button>
             </div>
           </form>

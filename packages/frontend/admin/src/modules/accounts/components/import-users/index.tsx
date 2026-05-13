@@ -67,12 +67,12 @@ export function ImportUsersDialog({
         <DialogHeader>
           <DialogTitle>
             {isFormatError
-              ? 'Incorrect import format'
+              ? 'Неверный формат импорта'
               : isPreviewMode
                 ? isImported
-                  ? 'Import results'
-                  : 'Confirm import'
-                : 'Import'}
+                  ? 'Результаты импорта'
+                  : 'Подтверждение импорта'
+                : 'Импорт'}
           </DialogTitle>
         </DialogHeader>
         <div className="text-[15px] mt-3">

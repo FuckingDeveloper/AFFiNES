@@ -208,7 +208,8 @@ export const LeftPanel = ({
         <SheetHeader className="hidden">
           <SheetTitle>AFFiNE</SheetTitle>
           <SheetDescription>
-            Admin panel for managing accounts, AI, config, and settings
+            Админ-панель для управления аккаунтами, AI, конфигурацией и
+            настройками
           </SheetDescription>
         </SheetHeader>
         <SheetContent

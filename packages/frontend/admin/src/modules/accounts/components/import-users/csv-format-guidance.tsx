@@ -20,12 +20,12 @@ export const CsvFormatGuidance: FC<CsvFormatGuidanceProps> = ({
         <WarningIcon fontSize={16} className="text-foreground" />
       </div>
       <div>
-        <p>CSV file includes username, email, and password.</p>
+        <p>CSV-файл содержит имя пользователя, email и пароль.</p>
         <ul>
           {[
-            `Username (optional): any text.`,
-            `Email (required): e.g., user@example.com.`,
-            `Password (optional): ${passwordLimits.minLength}–${passwordLimits.maxLength} characters.`,
+            `Имя пользователя (необязательно): любой текст.`,
+            `Email (обязательно): например, user@example.com.`,
+            `Пароль (необязательно): ${passwordLimits.minLength}–${passwordLimits.maxLength} символов.`,
           ].map((text, index) => (
             <li
               key={`guidance-${index}`}
