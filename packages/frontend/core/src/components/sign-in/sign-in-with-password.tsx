@@ -46,8 +46,12 @@ export const SignInWithPasswordStep = ({
   }
 
   const [password, setPassword] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [requireTwoFactor, setRequireTwoFactor] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const [passwordErrorHint, setPasswordErrorHint] = useState('');
+  const [twoFactorError, setTwoFactorError] = useState(false);
+  const [twoFactorErrorHint, setTwoFactorErrorHint] = useState('');
   const captchaService = useService(CaptchaService);
   const serverService = useService(ServerService);
   const isSelfhosted = useLiveData(
@@ -80,6 +84,10 @@ export const SignInWithPasswordStep = ({
     setPasswordErrorHint(t['com.affine.auth.password.error']());
   }, [t]);
 
+  useEffect(() => {
+    setTwoFactorErrorHint(t['com.affine.auth.two-factor.error.invalid']());
+  }, [t]);
+
   const onSignIn = useAsyncCallback(async () => {
     if (isLoading || (!verifyToken && needCaptcha)) return;
     setIsLoading(true);
@@ -89,6 +97,7 @@ export const SignInWithPasswordStep = ({
       await authService.signInPassword({
         email,
         password,
+        twoFactorCode: requireTwoFactor ? twoFactorCode : undefined,
         verifyToken,
         challenge,
       });
@@ -102,8 +111,25 @@ export const SignInWithPasswordStep = ({
       ) {
         setPasswordError(true);
         setPasswordErrorHint(t['com.affine.auth.password.error']());
+      } else if (
+        error.is('BAD_REQUEST') &&
+        error.message === 'TWO_FACTOR_REQUIRED'
+      ) {
+        setRequireTwoFactor(true);
+        setTwoFactorError(true);
+        setTwoFactorErrorHint(t['com.affine.auth.two-factor.error.required']());
+      } else if (
+        error.is('BAD_REQUEST') &&
+        error.message === 'TWO_FACTOR_INVALID'
+      ) {
+        setRequireTwoFactor(true);
+        setTwoFactorError(true);
+        setTwoFactorErrorHint(
+          t['com.affine.auth.two-factor.error.try-again']()
+        );
       } else {
         setPasswordError(false);
+        setTwoFactorError(false);
         notify.error({
           title: t['com.affine.auth.toast.title.failed'](),
           message: error.is('REQUEST_ABORTED')
@@ -122,6 +148,8 @@ export const SignInWithPasswordStep = ({
     authService,
     email,
     password,
+    twoFactorCode,
+    requireTwoFactor,
     challenge,
     t,
   ]);
@@ -160,6 +188,28 @@ export const SignInWithPasswordStep = ({
           errorHint={passwordErrorHint}
           onEnter={onSignIn}
         />
+        {requireTwoFactor ? (
+          <AuthInput
+            data-testid="two-factor-code-input"
+            label={t['com.affine.auth.two-factor.label']()}
+            value={twoFactorCode}
+            type="text"
+            autoComplete="one-time-code"
+            onChange={(value: string) => {
+              const normalized = value.replace(/\D+/g, '').slice(0, 6);
+              setTwoFactorCode(normalized);
+              if (twoFactorError) {
+                setTwoFactorError(false);
+                setTwoFactorErrorHint(
+                  t['com.affine.auth.two-factor.error.invalid']()
+                );
+              }
+            }}
+            error={twoFactorError}
+            errorHint={twoFactorErrorHint}
+            onEnter={onSignIn}
+          />
+        ) : null}
         {!isSelfhosted && (
           <div className={styles.passwordButtonRow}>
             <a

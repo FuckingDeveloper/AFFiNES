@@ -17,6 +17,7 @@ export interface AuthProvider {
   signInPassword(credential: {
     email: string;
     password: string;
+    twoFactorCode?: string;
     verifyToken?: string;
     challenge?: string;
   }): Promise<void>;

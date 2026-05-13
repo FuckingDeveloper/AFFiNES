@@ -48,6 +48,7 @@ model User {
   // receive notifications
   notifications               Notification[]              @relation("user_notifications")
   settings                    UserSettings?
+  twoFactorAuth               UserTwoFactorAuth?
   comments                    Comment[]
   replies                     Reply[]
   commentAttachments          CommentAttachment[]         @relation("createdCommentAttachments")
@@ -1157,6 +1158,18 @@ model UserSettings {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
+}
+
+model UserTwoFactorAuth {
+  userId          String   @id @map("user_id") @db.VarChar
+  secretEncrypted String   @map("secret_encrypted") @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("user_two_factor_auth")
 }
 
 model Comment {

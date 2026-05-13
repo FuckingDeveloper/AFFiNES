@@ -3,7 +3,7 @@ import { Input } from '@affine/admin/components/ui/input';
 import { Label } from '@affine/admin/components/ui/label';
 import { FeatureType, getUserFeaturesQuery } from '@affine/graphql';
 import type { FormEvent } from 'react';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -16,6 +16,8 @@ export function Auth() {
   const revalidate = useRevalidateCurrentUser();
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const twoFactorCodeRef = useRef<HTMLInputElement>(null);
+  const [requireTwoFactor, setRequireTwoFactor] = useState(false);
   const login = useCallback(
     (e: FormEvent) => {
       e.preventDefault();
@@ -26,6 +28,9 @@ export function Auth() {
         body: JSON.stringify({
           email: emailRef.current?.value,
           password: passwordRef.current?.value,
+          twoFactorCode: requireTwoFactor
+            ? twoFactorCodeRef.current?.value
+            : undefined,
         }),
         headers: {
           'Content-Type': 'application/json',
@@ -34,6 +39,20 @@ export function Auth() {
         .then(async response => {
           if (!response.ok) {
             const data = await response.json();
+            if (
+              data?.name === 'BAD_REQUEST' &&
+              data?.message === 'TWO_FACTOR_REQUIRED'
+            ) {
+              setRequireTwoFactor(true);
+              throw new Error('Введите код 2FA');
+            }
+            if (
+              data?.name === 'BAD_REQUEST' &&
+              data?.message === 'TWO_FACTOR_INVALID'
+            ) {
+              setRequireTwoFactor(true);
+              throw new Error('Неверный код 2FA');
+            }
             throw new Error(data.message || 'Не удалось войти');
           }
           return response.json();
@@ -70,7 +89,7 @@ export function Auth() {
           toast.error(`Не удалось войти: ${err.message}`);
         });
     },
-    [revalidate]
+    [requireTwoFactor, revalidate]
   );
 
   if (currentUser && isAdmin(currentUser)) {
@@ -112,6 +131,21 @@ export function Auth() {
                   required
                 />
               </div>
+              {requireTwoFactor ? (
+                <div className="grid gap-2">
+                  <Label htmlFor="twoFactorCode">2FA код</Label>
+                  <Input
+                    id="twoFactorCode"
+                    type="text"
+                    ref={twoFactorCodeRef}
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    required
+                  />
+                </div>
+              ) : null}
               <Button onClick={login} type="submit" className="w-full">
                 Войти
               </Button>

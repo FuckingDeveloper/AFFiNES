@@ -16,6 +16,7 @@ import type { Request, Response } from 'express';
 
 import {
   ActionForbidden,
+  BadRequest,
   Config,
   CryptoHelper,
   EmailTokenNotFound,
@@ -42,6 +43,7 @@ interface PreflightResponse {
 interface SignInCredential {
   email: string;
   password?: string;
+  twoFactorCode?: string;
   callbackUrl?: string;
   client_nonce?: string;
 }
@@ -53,6 +55,15 @@ interface MagicLinkCredential {
 }
 
 interface OpenAppSignInCredential {
+  code: string;
+}
+
+interface TwoFactorEnableCredential {
+  code: string;
+  secret: string;
+}
+
+interface TwoFactorCodeCredential {
   code: string;
 }
 
@@ -124,7 +135,8 @@ export class AuthController {
         req,
         res,
         credential.email,
-        credential.password
+        credential.password,
+        credential.twoFactorCode
       );
     } else {
       await this.sendMagicLink(
@@ -140,12 +152,72 @@ export class AuthController {
     req: Request,
     res: Response,
     email: string,
-    password: string
+    password: string,
+    twoFactorCode?: string
   ) {
     const user = await this.auth.signIn(email, password);
+    await this.auth.verifySignInTwoFactor(user.id, twoFactorCode);
 
     await this.auth.setCookies(req, res, user.id);
     res.status(HttpStatus.OK).send(user);
+  }
+
+  @UseNamedGuard('version')
+  @Get('/2fa/status')
+  async twoFactorStatus(@CurrentUser() user?: CurrentUser) {
+    if (!user) {
+      throw new ActionForbidden();
+    }
+
+    return await this.auth.getTwoFactorStatus(user.id);
+  }
+
+  @UseNamedGuard('version')
+  @Post('/2fa/setup')
+  async setupTwoFactor(@CurrentUser() user?: CurrentUser) {
+    if (!user) {
+      throw new ActionForbidden();
+    }
+
+    return await this.auth.createTwoFactorSetup(user);
+  }
+
+  @UseNamedGuard('version')
+  @Post('/2fa/enable')
+  async enableTwoFactor(
+    @CurrentUser() user?: CurrentUser,
+    @Body() credential?: TwoFactorEnableCredential
+  ) {
+    if (!user) {
+      throw new ActionForbidden();
+    }
+    if (!credential?.secret || !credential?.code) {
+      throw new BadRequest('TWO_FACTOR_INVALID');
+    }
+
+    await this.auth.enableTwoFactor(
+      user.id,
+      credential.secret,
+      credential.code
+    );
+    return { enabled: true };
+  }
+
+  @UseNamedGuard('version')
+  @Post('/2fa/disable')
+  async disableTwoFactor(
+    @CurrentUser() user?: CurrentUser,
+    @Body() credential?: TwoFactorCodeCredential
+  ) {
+    if (!user) {
+      throw new ActionForbidden();
+    }
+    if (!credential?.code) {
+      throw new BadRequest('TWO_FACTOR_INVALID');
+    }
+
+    await this.auth.disableTwoFactor(user.id, credential.code);
+    return { enabled: false };
   }
 
   async sendMagicLink(

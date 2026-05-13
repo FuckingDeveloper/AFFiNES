@@ -32,6 +32,7 @@ import { MagicLinkOtpModel } from './magic-link-otp';
 import { NotificationModel } from './notification';
 import { MODELS_SYMBOL } from './provider';
 import { SessionModel } from './session';
+import { TwoFactorAuthModel } from './two-factor-auth';
 import { UserModel } from './user';
 import { UserDocModel } from './user-doc';
 import { UserFeatureModel } from './user-feature';
@@ -46,6 +47,7 @@ import { WorkspaceUserModel } from './workspace-user';
 const MODELS = {
   user: UserModel,
   session: SessionModel,
+  twoFactorAuth: TwoFactorAuthModel,
   verificationToken: VerificationTokenModel,
   magicLinkOtp: MagicLinkOtpModel,
   feature: FeatureModel,
@@ -151,6 +153,7 @@ export * from './history';
 export * from './magic-link-otp';
 export * from './notification';
 export * from './session';
+export * from './two-factor-auth';
 export * from './user';
 export * from './user-doc';
 export * from './user-feature';

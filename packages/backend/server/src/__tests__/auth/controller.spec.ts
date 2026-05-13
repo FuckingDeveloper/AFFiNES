@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import { IncomingMessage } from 'node:http';
 
 import { HttpStatus } from '@nestjs/common';
@@ -9,6 +9,8 @@ import supertest from 'supertest';
 
 import { parseCookies as safeParseCookies } from '../../base/utils/request';
 import { AuthService } from '../../core/auth/service';
+import { CryptoHelper } from '../../base/helpers/crypto';
+import { Models } from '../../models';
 import {
   createTestingApp,
   currentUser,
@@ -19,14 +21,61 @@ import {
 const test = ava as TestFn<{
   auth: AuthService;
   db: PrismaClient;
+  crypto: CryptoHelper;
+  models: Models;
   app: TestingApp;
 }>;
+
+function decodeBase32(input: string) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const normalized = input
+    .replace(/=+$/g, '')
+    .replace(/\s+/g, '')
+    .toUpperCase();
+  let value = 0;
+  let bits = 0;
+  const output: number[] = [];
+
+  for (const char of normalized) {
+    const idx = alphabet.indexOf(char);
+    if (idx === -1) {
+      throw new Error('invalid base32');
+    }
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      output.push((value >>> (bits - 8)) & 0xff);
+      bits -= 8;
+    }
+  }
+
+  return Buffer.from(output);
+}
+
+function generateTotpCode(secret: string) {
+  const counter = Math.floor(Date.now() / 1000 / 30);
+  const counterBytes = Buffer.alloc(8);
+  counterBytes.writeBigUInt64BE(BigInt(counter));
+  const digest = createHmac('sha1', decodeBase32(secret))
+    .update(counterBytes)
+    .digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const binary =
+    ((digest[offset] & 0x7f) << 24) |
+    ((digest[offset + 1] & 0xff) << 16) |
+    ((digest[offset + 2] & 0xff) << 8) |
+    (digest[offset + 3] & 0xff);
+
+  return (binary % 1_000_000).toString().padStart(6, '0');
+}
 
 test.before(async t => {
   const app = await createTestingApp();
 
   t.context.auth = app.get(AuthService);
   t.context.db = app.get(PrismaClient);
+  t.context.crypto = app.get(CryptoHelper);
+  t.context.models = app.get(Models);
   t.context.app = app;
 });
 
@@ -51,6 +100,56 @@ test('should be able to sign in with credential', async t => {
 
   const session = await currentUser(app);
   t.is(session?.id, u1.id);
+});
+
+test('should require 2fa code when user has 2fa enabled', async t => {
+  const { app, crypto, models } = t.context;
+  const user = await app.createUser('u1-2fa-required@affine.pro');
+  const secret = 'JBSWY3DPEHPK3PXP';
+  await models.twoFactorAuth.upsert(user.id, crypto.encrypt(secret));
+
+  const res = await app
+    .POST('/api/auth/sign-in')
+    .send({ email: user.email, password: user.password })
+    .expect(400);
+
+  t.is(res.body.name, 'BAD_REQUEST');
+  t.is(res.body.message, 'TWO_FACTOR_REQUIRED');
+});
+
+test('should reject invalid 2fa code', async t => {
+  const { app, crypto, models } = t.context;
+  const user = await app.createUser('u1-2fa-invalid@affine.pro');
+  const secret = 'JBSWY3DPEHPK3PXP';
+  await models.twoFactorAuth.upsert(user.id, crypto.encrypt(secret));
+
+  const res = await app
+    .POST('/api/auth/sign-in')
+    .send({
+      email: user.email,
+      password: user.password,
+      twoFactorCode: '000000',
+    })
+    .expect(400);
+
+  t.is(res.body.name, 'BAD_REQUEST');
+  t.is(res.body.message, 'TWO_FACTOR_INVALID');
+});
+
+test('should sign in with valid 2fa code', async t => {
+  const { app, crypto, models } = t.context;
+  const user = await app.createUser('u1-2fa-valid@affine.pro');
+  const secret = 'JBSWY3DPEHPK3PXP';
+  await models.twoFactorAuth.upsert(user.id, crypto.encrypt(secret));
+
+  await app
+    .POST('/api/auth/sign-in')
+    .send({
+      email: user.email,
+      password: user.password,
+      twoFactorCode: generateTotpCode(secret),
+    })
+    .expect(200);
 });
 
 test('should record sign in client version when header is provided', async t => {
