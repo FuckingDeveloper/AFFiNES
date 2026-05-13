@@ -118,6 +118,7 @@ async function pruneServerNative(distDir, keepArch) {
   }
 
   const keepName = `server-native.${keepArch}.node`;
+  const alwaysKeep = new Set(['server-native.node', keepName]);
   const entries = await safeReadDir(distDir);
 
   await Promise.all(
@@ -125,7 +126,7 @@ async function pruneServerNative(distDir, keepArch) {
       if (
         name.startsWith('server-native.') &&
         name.endsWith('.node') &&
-        name !== keepName
+        !alwaysKeep.has(name)
       ) {
         await fs.rm(path.join(distDir, name), { force: true }).catch(() => {});
       }

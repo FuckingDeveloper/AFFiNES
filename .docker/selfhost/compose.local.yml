@@ -1,0 +1,5 @@
+services:
+  affine:
+    image: affine-local:dev
+  affine_migration:
+    image: affine-local:dev

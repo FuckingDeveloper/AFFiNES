@@ -23,9 +23,8 @@ export const WorkspaceSettingStorage = ({
     WorkspacePermissionService
   ).permission;
   const isTeam = useLiveData(workspacePermissionService.isTeam$);
-  const isOwner = useLiveData(workspacePermissionService.isOwner$);
 
-  const canExport = !isTeam || isOwner;
+  const canExport = true;
   return (
     <>
       <SettingHeader
@@ -35,7 +34,7 @@ export const WorkspaceSettingStorage = ({
       {workspace.flavour === 'local' ? (
         <>
           <EnableCloudPanel onCloseSetting={onCloseSetting} />{' '}
-          {BUILD_CONFIG.isElectron && (
+          {canExport && (
             <SettingWrapper>
               <DesktopExportPanel workspace={workspace} />
             </SettingWrapper>
@@ -49,7 +48,7 @@ export const WorkspaceSettingStorage = ({
             </SettingWrapper>
           ) : null}
 
-          {BUILD_CONFIG.isElectron && canExport && (
+          {canExport && (
             <SettingWrapper>
               <DesktopExportPanel workspace={workspace} />
             </SettingWrapper>

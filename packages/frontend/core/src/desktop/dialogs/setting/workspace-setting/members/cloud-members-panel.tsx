@@ -245,19 +245,12 @@ export const CloudWorkspaceMembersPanel = ({
 
   const desc = useMemo(() => {
     if (!workspaceQuota) return null;
-
-    if (isTeam) {
-      return <span>{t['com.affine.payment.member.team.description']()}</span>;
-    }
-    return <span>{t['com.affine.payment.member.description2']()}</span>;
-  }, [isTeam, t, workspaceQuota]);
+    return <span>{t['com.affine.payment.member.team.description']()}</span>;
+  }, [t, workspaceQuota]);
 
   const title = useMemo(() => {
-    if (isTeam) {
-      return `${t['Members']()} (${workspaceQuota?.memberCount})`;
-    }
-    return `${t['Members']()} (${workspaceQuota?.memberCount}/${workspaceQuota?.memberLimit})`;
-  }, [isTeam, t, workspaceQuota?.memberCount, workspaceQuota?.memberLimit]);
+    return `${t['Members']()} (${workspaceQuota?.memberCount})`;
+  }, [t, workspaceQuota?.memberCount]);
 
   if (workspaceQuota === null) {
     if (isLoading) {

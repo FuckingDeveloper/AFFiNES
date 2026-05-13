@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import serverNativeModule, {
   type ActionEvent as NativeActionEventContract,
   type ActionRuntimeInput as NativeActionRuntimeInputContract,
@@ -1246,9 +1248,11 @@ export function llmCanonicalJsonSchemaHash(
   schema: Record<string, unknown>
 ): string {
   if (!nativeLlmModule.llmCanonicalJsonSchemaHash) {
-    throw new Error(
-      'native canonical JSON schema hash helper is not available'
-    );
+    // Fallback for older native binaries: keep startup/runtime functional
+    // by hashing a deterministic JSON encoding.
+    return createHash('sha256')
+      .update(stableJsonStringify(schema))
+      .digest('hex');
   }
 
   return nativeLlmModule.llmCanonicalJsonSchemaHash(schema);
@@ -1270,10 +1274,33 @@ export function llmGetContractSchema(
   name: LlmContractName
 ): Record<string, unknown> {
   if (!nativeLlmModule.llmGetContractSchema) {
-    throw new Error('native LLM contract schema registry is not available');
+    // Fallback for older native binaries. This keeps server startup and
+    // migrations working; callers may still provide stricter schemas.
+    return {
+      $id: `affine-native-fallback:${name}`,
+      type: 'object',
+      additionalProperties: true,
+    };
   }
 
   return nativeLlmModule.llmGetContractSchema(name) as Record<string, unknown>;
+}
+
+function stableJsonStringify(input: unknown): string {
+  if (input === null || typeof input !== 'object') {
+    return JSON.stringify(input);
+  }
+
+  if (Array.isArray(input)) {
+    return `[${input.map(item => stableJsonStringify(item)).join(',')}]`;
+  }
+
+  const object = input as Record<string, unknown>;
+  const keys = Object.keys(object).sort();
+  const content = keys
+    .map(key => `${JSON.stringify(key)}:${stableJsonStringify(object[key])}`)
+    .join(',');
+  return `{${content}}`;
 }
 
 export function llmValidateContract<T = unknown>(

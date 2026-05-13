@@ -1,9 +1,8 @@
 import { IntegrationTypeIcon } from '@affine/core/modules/integration';
 import type { I18nString } from '@affine/i18n';
-import { AiIcon, Logo1Icon, TodayIcon } from '@blocksuite/icons/rc';
+import { Logo1Icon, TodayIcon } from '@blocksuite/icons/rc';
 import type { ReactNode } from 'react';
 
-import { WorkspaceByokSetting } from '../byok';
 import { CalendarSettingPanel } from './calendar/setting-panel';
 import MCPIcon from './mcp-server/MCP.inline.svg';
 import { McpServerSettingPanel } from './mcp-server/setting-panel';
@@ -49,14 +48,9 @@ const INTEGRATION_LIST = [
     icon: <Logo1Icon />,
     link: 'https://chromewebstore.google.com/detail/affine-web-clipper/mpbbkmbdpleomiogkbkkpfoljjpahmoi',
   },
-  {
-    id: 'byok' as const,
-    name: 'com.affine.settings.workspace.byok.title',
-    desc: 'com.affine.settings.workspace.byok.subtitle',
-    icon: <AiIcon />,
-    setting: <WorkspaceByokSetting />,
-    byok: true,
-  },
+  // BYOK is intentionally hidden in this build to avoid broken server-side
+  // settings endpoints in self-host/community mode.
+  false,
 ] satisfies (IntegrationCard | false)[];
 
 type IntegrationId = Exclude<

@@ -8,7 +8,7 @@ import { useI18n } from '@affine/i18n';
 import { universalId } from '@affine/nbstore';
 import track from '@affine/track';
 import { ExportIcon } from '@blocksuite/icons/rc';
-import { useService } from '@toeverything/infra';
+import { useServiceOptional } from '@toeverything/infra';
 import { useState } from 'react';
 
 interface ExportPanelProps {
@@ -18,7 +18,9 @@ interface ExportPanelProps {
 export const DesktopExportPanel = ({ workspace }: ExportPanelProps) => {
   const t = useI18n();
   const [saving, setSaving] = useState(false);
-  const desktopApi = useService(DesktopApiService);
+  const desktopApi = useServiceOptional(DesktopApiService);
+  const canExport = !!desktopApi?.handler?.dialog.saveDBFileAs;
+  const desktopOnlyHint = t['com.affine.auth.open.affine.doc.footer-text']();
   const isLocalWorkspace = workspace.flavour === 'local';
 
   const [fullSyncing, setFullSyncing] = useState(false);
@@ -34,6 +36,9 @@ export const DesktopExportPanel = ({ workspace }: ExportPanelProps) => {
 
   const onExport = useAsyncCallback(async () => {
     if (saving) {
+      return;
+    }
+    if (!canExport) {
       return;
     }
     setSaving(true);
@@ -60,19 +65,19 @@ export const DesktopExportPanel = ({ workspace }: ExportPanelProps) => {
     } finally {
       setSaving(false);
     }
-  }, [desktopApi, saving, t, workspace]);
+  }, [canExport, desktopApi, saving, t, workspace]);
 
   if (fullSynced) {
     return (
       <SettingRow
         name={t['Full Backup']()}
-        desc={t['Full Backup Description']()}
+        desc={canExport ? t['Full Backup Description']() : desktopOnlyHint}
       >
         <Button
           variant="primary"
           data-testid="export-affine-backup"
           onClick={onExport}
-          disabled={saving}
+          disabled={saving || !canExport}
         >
           {t['Full Backup']()}
         </Button>
@@ -85,7 +90,11 @@ export const DesktopExportPanel = ({ workspace }: ExportPanelProps) => {
       <SettingRow
         name={t['Full Backup']()}
         desc={
-          fullSynced ? t['Full Backup Description']() : t['Full Backup Hint']()
+          canExport
+            ? fullSynced
+              ? t['Full Backup Description']()
+              : t['Full Backup Hint']()
+            : desktopOnlyHint
         }
       >
         <Button
@@ -101,12 +110,12 @@ export const DesktopExportPanel = ({ workspace }: ExportPanelProps) => {
       </SettingRow>
       <SettingRow
         name={t['Quick Export']()}
-        desc={t['Quick Export Description']()}
+        desc={canExport ? t['Quick Export Description']() : desktopOnlyHint}
       >
         <Button
           data-testid="export-affine-backup"
           onClick={onExport}
-          disabled={saving}
+          disabled={saving || !canExport}
         >
           {t['Quick Export']()}
         </Button>

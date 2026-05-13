@@ -5,6 +5,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 
 const SELF_HOST_CONFIG_DIR = `${homedir()}/.affine/config`;
+const PRISMA_BIN = './node_modules/.bin/prisma';
 
 function generatePrivateKey() {
   const key = generateKeyPairSync('ec', {
@@ -40,7 +41,7 @@ function prepare() {
 
 function runPrismaMigrations() {
   console.log('running prisma migrations.');
-  execSync('yarn prisma migrate deploy', {
+  execSync(`${PRISMA_BIN} migrate deploy`, {
     encoding: 'utf-8',
     env: process.env,
     stdio: 'inherit',
@@ -53,7 +54,7 @@ function repairPgvectorEmbeddingTables() {
     path.join(import.meta.dirname, 'repair-pgvector-embedding-tables.sql'),
     'utf-8'
   );
-  execSync('yarn prisma db execute --stdin --schema schema.prisma', {
+  execSync(`${PRISMA_BIN} db execute --stdin --schema schema.prisma`, {
     encoding: 'utf-8',
     env: process.env,
     input: sql,
@@ -63,9 +64,12 @@ function repairPgvectorEmbeddingTables() {
 
 function runDataMigrations() {
   console.log('running data migrations.');
-  execSync('yarn cli run', {
+  execSync('node ./dist/main.js run', {
     encoding: 'utf-8',
-    env: process.env,
+    env: {
+      ...process.env,
+      SERVER_FLAVOR: 'script',
+    },
     stdio: 'inherit',
   });
 }
@@ -77,7 +81,7 @@ function fixFailedMigrations() {
   ];
   for (const migration of maybeFailedMigrations) {
     try {
-      execSync(`yarn prisma migrate resolve --rolled-back ${migration}`, {
+      execSync(`${PRISMA_BIN} migrate resolve --rolled-back ${migration}`, {
         encoding: 'utf-8',
         env: process.env,
         stdio: 'pipe',
