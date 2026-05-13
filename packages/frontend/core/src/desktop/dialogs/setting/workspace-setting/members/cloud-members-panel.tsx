@@ -250,7 +250,7 @@ export const CloudWorkspaceMembersPanel = ({
       return <span>{t['com.affine.payment.member.team.description']()}</span>;
     }
     return <span>{t['com.affine.payment.member.description2']()}</span>;
-  }, [isTeam, t]);
+  }, [isTeam, t, workspaceQuota]);
 
   const title = useMemo(() => {
     if (isTeam) {
