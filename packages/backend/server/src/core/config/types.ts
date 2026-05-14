@@ -17,6 +17,16 @@ registerEnumType(ServerFeature, {
   name: 'ServerFeature',
 });
 
+export enum ServerAuthMode {
+  Password = 'Password',
+  LDAP = 'LDAP',
+  RADIUS = 'RADIUS',
+}
+
+registerEnumType(ServerAuthMode, {
+  name: 'ServerAuthMode',
+});
+
 registerEnumType(DeploymentType, {
   name: 'ServerDeploymentType',
 });
@@ -40,4 +50,7 @@ export class ServerConfigType {
 
   @Field(() => [ServerFeature], { description: 'enabled server features' })
   features!: ServerFeature[];
+
+  @Field(() => ServerAuthMode, { description: 'active sign-in method' })
+  authMode!: ServerAuthMode;
 }

@@ -16,7 +16,7 @@ import {
 import type { AuthSessionStatus } from '@affine/core/modules/cloud/entities/session';
 import { Unreachable } from '@affine/env/constant';
 import { UserFriendlyError } from '@affine/error';
-import { ServerDeploymentType } from '@affine/graphql';
+import { ServerAuthMode, ServerDeploymentType } from '@affine/graphql';
 import { useI18n } from '@affine/i18n';
 import { useLiveData, useService } from '@toeverything/infra';
 import type { Dispatch, SetStateAction } from 'react';
@@ -61,6 +61,9 @@ export const SignInWithPasswordStep = ({
   );
   const serverName = useLiveData(
     serverService.server.config$.selector(c => c.serverName)
+  );
+  const authMode = useLiveData(
+    serverService.server.config$.selector(c => c.authMode)
   );
 
   const verifyToken = useLiveData(captchaService.verifyToken$);
@@ -158,6 +161,13 @@ export const SignInWithPasswordStep = ({
     changeState(prev => ({ ...prev, step: 'signInWithEmail' }));
   }, [changeState]);
 
+  const authModeLabel =
+    authMode === ServerAuthMode.LDAP
+      ? 'LDAP'
+      : authMode === ServerAuthMode.RADIUS
+        ? 'RADIUS'
+        : 'Password';
+
   return (
     <AuthContainer>
       <AuthHeader
@@ -166,6 +176,10 @@ export const SignInWithPasswordStep = ({
       />
 
       <AuthContent>
+        <div className={styles.authModeHint}>
+          Sign in with {authModeLabel}
+        </div>
+
         <AuthInput
           label={t['com.affine.settings.email']()}
           disabled={true}

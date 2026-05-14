@@ -62,14 +62,18 @@ export const KNOWN_CONFIG_GROUPS = [
     fields: [
       'allowSignup',
       'allowSignupForOauth',
-      'enterprise.enabled',
+      {
+        key: 'mode',
+        type: 'Enum',
+        options: ['password', 'ldap', 'radius'],
+        desc: 'Active authentication method. Only one method can be active at a time.',
+      },
       'enterprise.autoRegister',
       {
         key: 'enterprise.allowedEmailDomains',
         type: 'JSON',
         desc: 'Allowed enterprise email domains in JSON array format (e.g. ["example.com"])',
       },
-      'enterprise.ldap.enabled',
       'enterprise.ldap.url',
       'enterprise.ldap.bindDN',
       {
@@ -83,7 +87,6 @@ export const KNOWN_CONFIG_GROUPS = [
       'enterprise.ldap.connectTimeoutMs',
       'enterprise.ldap.timeoutMs',
       'enterprise.ldap.rejectUnauthorized',
-      'enterprise.radius.enabled',
       'enterprise.radius.host',
       'enterprise.radius.port',
       {

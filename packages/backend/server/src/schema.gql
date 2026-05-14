@@ -2231,7 +2231,16 @@ enum SearchTable {
   doc
 }
 
+enum ServerAuthMode {
+  LDAP
+  Password
+  RADIUS
+}
+
 type ServerConfigType {
+  """active sign-in method"""
+  authMode: ServerAuthMode!
+
   """fetch latest available upgradable release of server"""
   availableUpgrade: ReleaseVersionType
 
@@ -2267,8 +2276,9 @@ type ServerConfigType {
 }
 
 enum ServerDeploymentType {
-  MRH ManSys
+  MRH
   Selfhosted
+  affine
 }
 
 enum ServerFeature {

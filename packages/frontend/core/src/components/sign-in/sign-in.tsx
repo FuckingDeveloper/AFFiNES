@@ -10,7 +10,7 @@ import { OAuth } from '@affine/core/components/affine/auth/oauth';
 import { useAsyncCallback } from '@affine/core/components/hooks/affine-async-hooks';
 import { AuthService, ServerService } from '@affine/core/modules/cloud';
 import type { AuthSessionStatus } from '@affine/core/modules/cloud/entities/session';
-import { ServerDeploymentType } from '@affine/graphql';
+import { ServerAuthMode, ServerDeploymentType } from '@affine/graphql';
 import { Trans, useI18n } from '@affine/i18n';
 import {
   ArrowRightBigIcon,
@@ -43,11 +43,13 @@ export const SignInStep = ({
   state,
   changeState,
   onSkip,
+  allowSkip = true,
   onAuthenticated,
 }: {
   state: SignInState;
   changeState: Dispatch<SetStateAction<SignInState>>;
   onSkip: () => void;
+  allowSkip?: boolean;
   onAuthenticated?: (status: AuthSessionStatus) => void;
 }) => {
   const t = useI18n();
@@ -60,6 +62,9 @@ export const SignInStep = ({
     serverService.server.config$.selector(
       c => c.type === ServerDeploymentType.Selfhosted
     )
+  );
+  const authMode = useLiveData(
+    serverService.server.config$.selector(c => c.authMode)
   );
   const authService = useService(AuthService);
   const [isMutating, setIsMutating] = useState(false);
@@ -127,6 +132,13 @@ export const SignInStep = ({
     }));
   }, [changeState]);
 
+  const authModeLabel =
+    authMode === ServerAuthMode.LDAP
+      ? 'LDAP'
+      : authMode === ServerAuthMode.RADIUS
+        ? 'RADIUS'
+        : 'Password';
+
   if (versionError && isSelfhosted) {
     return (
       <AuthContainer>
@@ -149,6 +161,10 @@ export const SignInStep = ({
       />
 
       <AuthContent>
+        <div className={style.authModeHint}>
+          Sign in with {authModeLabel}
+        </div>
+
         <OAuth redirectUrl={state.redirectUrl} />
 
         <AuthInput
@@ -177,7 +193,7 @@ export const SignInStep = ({
           {t['com.affine.auth.sign.email.continue']()}
         </Button>
 
-        {!isSelfhosted && (
+        {allowSkip && !isSelfhosted && (
           <>
             <div className={style.authMessage}>
               {/*prettier-ignore*/}

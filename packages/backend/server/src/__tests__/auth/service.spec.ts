@@ -1,7 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import ava, { TestFn } from 'ava';
 
+import { Config, ConfigModule } from '../../base';
 import { CurrentUser } from '../../core/auth';
+import { AuthMode } from '../../core/auth/config';
 import { EnterpriseAuthService } from '../../core/auth/enterprise-auth';
 import { AuthService } from '../../core/auth/service';
 import { FeatureModule } from '../../core/features';
@@ -13,6 +15,7 @@ import { createTestingModule, type TestingModule } from '../utils';
 const test = ava as TestFn<{
   auth: AuthService;
   models: Models;
+  config: Config;
   u1: CurrentUser;
   db: PrismaClient;
   m: TestingModule;
@@ -42,7 +45,7 @@ test.before(async t => {
   };
 
   const m = await createTestingModule({
-    imports: [QuotaModule, FeatureModule, UserModule],
+    imports: [ConfigModule.override(), QuotaModule, FeatureModule, UserModule],
     providers: [AuthService],
     tapModule(builder) {
       builder.overrideProvider(EnterpriseAuthService).useValue(enterprise);
@@ -51,6 +54,7 @@ test.before(async t => {
 
   t.context.auth = m.get(AuthService);
   t.context.models = m.get(Models);
+  t.context.config = m.get(Config);
   t.context.db = m.get(PrismaClient);
   t.context.m = m;
   t.context.enterprise = enterprise;
@@ -62,6 +66,7 @@ test.beforeEach(async t => {
   t.context.enterprise.authenticate = async () => ({ authenticated: false });
   t.context.enterprise.canAutoRegister = () => false;
   t.context.enterprise.canTryPasswordSignIn = () => false;
+  t.context.config.auth.mode = AuthMode.Password;
 });
 
 test.after.always(async t => {
@@ -106,7 +111,7 @@ test('should throw if password not match', async t => {
   });
 });
 
-test('should fallback to enterprise auth when local password is invalid', async t => {
+test('should not fallback to enterprise auth in password mode', async t => {
   const { auth, enterprise, u1 } = t.context;
 
   enterprise.authenticate = async (email, password) => ({
@@ -114,14 +119,16 @@ test('should fallback to enterprise auth when local password is invalid', async 
     provider: 'ldap',
   });
 
-  const signedInUser = await auth.signIn(u1.email, 'enterprise-pass');
-
-  t.is(signedInUser.email, u1.email);
+  await t.throwsAsync(() => auth.signIn(u1.email, 'enterprise-pass'), {
+    message: `Wrong user email or password: ${u1.email}`,
+  });
 });
 
 test('should auto-register user via enterprise auth when enabled', async t => {
-  const { auth, enterprise } = t.context;
+  const { auth, enterprise, config } = t.context;
   const email = 'ldap.new.user@affine.pro';
+
+  config.auth.mode = AuthMode.LDAP;
 
   enterprise.authenticate = async (candidateEmail, password) => ({
     authenticated: candidateEmail === email && password === 'enterprise-pass',
@@ -136,8 +143,10 @@ test('should auto-register user via enterprise auth when enabled', async t => {
 });
 
 test('should not auto-register user via enterprise auth when disabled', async t => {
-  const { auth, enterprise } = t.context;
+  const { auth, enterprise, config } = t.context;
   const email = 'ldap.not.allowed@affine.pro';
+
+  config.auth.mode = AuthMode.LDAP;
 
   enterprise.authenticate = async () => ({
     authenticated: true,
@@ -151,7 +160,9 @@ test('should not auto-register user via enterprise auth when disabled', async t 
 });
 
 test('should report password sign-in availability from enterprise backend', async t => {
-  const { auth, enterprise } = t.context;
+  const { auth, enterprise, config } = t.context;
+
+  config.auth.mode = AuthMode.LDAP;
 
   enterprise.canTryPasswordSignIn = (email, hasLocalPassword, userExists) =>
     email === 'enterprise@affine.pro' && !hasLocalPassword && !userExists;

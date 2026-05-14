@@ -1,5 +1,6 @@
 import {
   OAuthProviderType,
+  ServerAuthMode,
   ServerDeploymentType,
   ServerFeature,
 } from '@affine/graphql';
@@ -19,6 +20,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
             serverName: 'MRH ManSys Selfhost',
             features: [],
             oauthProviders: [],
+            authMode: ServerAuthMode.Password,
             type: ServerDeploymentType.Selfhosted,
             credentialsRequirement: {
               password: {
@@ -50,6 +52,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
                 OAuthProviderType.Google,
                 OAuthProviderType.Apple,
               ],
+              authMode: ServerAuthMode.Password,
               type: ServerDeploymentType.Affine,
               credentialsRequirement: {
                 password: {
@@ -83,6 +86,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
                   OAuthProviderType.Google,
                   OAuthProviderType.Apple,
                 ],
+                authMode: ServerAuthMode.Password,
                 type: ServerDeploymentType.Affine,
                 credentialsRequirement: {
                   password: {
@@ -116,6 +120,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
                     OAuthProviderType.Google,
                     OAuthProviderType.Apple,
                   ],
+                  authMode: ServerAuthMode.Password,
                   type: ServerDeploymentType.Affine,
                   credentialsRequirement: {
                     password: {
@@ -145,6 +150,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
                       OAuthProviderType.Google,
                       OAuthProviderType.Apple,
                     ],
+                    authMode: ServerAuthMode.Password,
                     type: ServerDeploymentType.Affine,
                     credentialsRequirement: {
                       password: {
@@ -176,6 +182,7 @@ export const BUILD_IN_SERVERS: (ServerMetadata & { config: ServerConfig })[] =
                         OAuthProviderType.Google,
                         OAuthProviderType.Apple,
                       ],
+                      authMode: ServerAuthMode.Password,
                       type: ServerDeploymentType.Affine,
                       credentialsRequirement: {
                         password: {

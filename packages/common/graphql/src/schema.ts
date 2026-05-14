@@ -2957,8 +2957,16 @@ export enum SearchTable {
   doc = 'doc',
 }
 
+export enum ServerAuthMode {
+  LDAP = 'LDAP',
+  Password = 'Password',
+  RADIUS = 'RADIUS',
+}
+
 export interface ServerConfigType {
   __typename?: 'ServerConfigType';
+  /** active sign-in method */
+  authMode: ServerAuthMode;
   /** fetch latest available upgradable release of server */
   availableUpgrade: Maybe<ReleaseVersionType>;
   /** Features for user that can be configured */
@@ -2986,8 +2994,8 @@ export interface ServerConfigType {
 
 export enum ServerDeploymentType {
   MRH = 'MRH',
-  ManSys = 'ManSys',
   Selfhosted = 'Selfhosted',
+  affine = 'affine',
 }
 
 export enum ServerFeature {
@@ -7471,6 +7479,7 @@ export type ServerConfigQuery = {
     baseUrl: string;
     name: string;
     features: Array<ServerFeature>;
+    authMode: ServerAuthMode;
     type: ServerDeploymentType;
     initialized: boolean;
     calendarProviders: Array<CalendarProviderType>;

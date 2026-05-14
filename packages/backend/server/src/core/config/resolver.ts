@@ -16,10 +16,11 @@ import { Config, hasNewerVersion, URLHelper } from '../../base';
 import { Namespace } from '../../env';
 import { Feature, type WorkspaceFeatureName } from '../../models';
 import { CurrentUser, Public } from '../auth';
+import { AuthMode } from '../auth/config';
 import { Admin } from '../common';
 import { AvailableUserFeatureConfig } from '../features';
 import { ServerService } from './service';
-import { ServerConfigType } from './types';
+import { ServerAuthMode, ServerConfigType } from './types';
 
 @ObjectType()
 export class PasswordLimitsType {
@@ -85,7 +86,19 @@ export class ServerConfigResolver {
       baseUrl: this.url.requestBaseUrl,
       type: env.DEPLOYMENT_TYPE,
       features: this.server.features,
+      authMode: this.getAuthMode(),
     };
+  }
+
+  private getAuthMode() {
+    if (this.config.auth.mode === AuthMode.LDAP) {
+      return ServerAuthMode.LDAP;
+    }
+    if (this.config.auth.mode === AuthMode.RADIUS) {
+      return ServerAuthMode.RADIUS;
+    }
+
+    return ServerAuthMode.Password;
   }
 
   @ResolveField(() => CredentialsRequirementType, {

@@ -8,6 +8,14 @@ export const authMessage = style({
   lineHeight: '20px',
 });
 
+export const authModeHint = style({
+  color: cssVarV2('text/secondary'),
+  fontSize: cssVar('fontSm'),
+  fontWeight: 500,
+  lineHeight: '22px',
+  textAlign: 'center',
+});
+
 globalStyle(`${authMessage} a`, {
   color: cssVar('linkColor'),
 });

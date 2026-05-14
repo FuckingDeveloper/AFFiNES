@@ -1,6 +1,7 @@
 import type {
   CredentialsRequirementType,
   OAuthProviderType,
+  ServerAuthMode,
   ServerDeploymentType,
   ServerFeature,
 } from '@affine/graphql';
@@ -15,6 +16,7 @@ export interface ServerConfig {
   serverName: string;
   features: ServerFeature[];
   oauthProviders: OAuthProviderType[];
+  authMode: ServerAuthMode;
   type: ServerDeploymentType;
   initialized?: boolean;
   version?: string;

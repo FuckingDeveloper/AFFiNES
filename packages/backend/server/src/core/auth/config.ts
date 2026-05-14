@@ -2,6 +2,12 @@ import { z } from 'zod';
 
 import { defineModuleConfig } from '../../base';
 
+export enum AuthMode {
+  Password = 'password',
+  LDAP = 'ldap',
+  RADIUS = 'radius',
+}
+
 export interface AuthConfig {
   session: {
     ttl: number;
@@ -11,6 +17,7 @@ export interface AuthConfig {
   allowSignupForOauth: boolean;
   requireEmailDomainVerification: boolean;
   requireEmailVerification: boolean;
+  mode: AuthMode;
   enterprise: {
     enabled: boolean;
     autoRegister: boolean;
@@ -64,6 +71,12 @@ defineModuleConfig('auth', {
   requireEmailVerification: {
     desc: 'Whether require email verification before accessing restricted resources(not implemented).',
     default: true,
+  },
+  mode: {
+    desc: 'Active authentication method. Only one method can be active at a time.',
+    default: AuthMode.Password,
+    shape: z.nativeEnum(AuthMode),
+    env: ['AFFINE_AUTH_MODE', 'string'],
   },
   'enterprise.enabled': {
     desc: 'Whether enterprise authentication backends are enabled.',

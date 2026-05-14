@@ -3,3 +3,11 @@ services:
     image: affine-local:dev
   affine_migration:
     image: affine-local:dev
+
+  postgres:
+    ports:
+      - '5432:5432'
+
+  redis:
+    ports:
+      - '6379:6379'

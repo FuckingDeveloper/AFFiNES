@@ -79,6 +79,10 @@
       "type": "Boolean",
       "desc": "Whether require email verification before accessing restricted resources(not implemented)."
     },
+    "mode": {
+      "type": "Enum",
+      "desc": "Active authentication method. Only one method can be active at a time."
+    },
     "enterprise.enabled": {
       "type": "Boolean",
       "desc": "Whether enterprise authentication backends are enabled."

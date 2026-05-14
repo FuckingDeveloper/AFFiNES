@@ -28,11 +28,13 @@ export const SignInPanel = ({
   server: initialServerBaseUrl,
   initStep,
   onAuthenticated,
+  allowSkip = true,
 }: {
   onAuthenticated?: (status: AuthSessionStatus) => void;
   onSkip: () => void;
   server?: string;
   initStep?: SignInStep | undefined;
+  allowSkip?: boolean;
 }) => {
   const [state, setState] = useState<SignInState>({
     step: initStep
@@ -55,6 +57,7 @@ export const SignInPanel = ({
           state={state}
           changeState={setState}
           onSkip={onSkip}
+          allowSkip={allowSkip}
           onAuthenticated={onAuthenticated}
         />
       ) : step === 'signInWithEmail' ? (

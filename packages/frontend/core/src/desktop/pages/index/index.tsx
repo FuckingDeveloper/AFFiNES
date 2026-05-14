@@ -53,6 +53,7 @@ export const Component = ({
   const loggedIn = useLiveData(
     authService.session.status$.map(s => s === 'authenticated')
   );
+  const sessionRevalidating = useLiveData(authService.session.isRevalidating$);
   const enableLocalWorkspace =
     useLiveData(
       defaultServerService.server.config$.selector(
@@ -91,11 +92,11 @@ export const Component = ({
       return;
     }
 
-    if (listIsLoading) {
+    if (listIsLoading || sessionRevalidating) {
       return;
     }
 
-    if (!enableLocalWorkspace && !loggedIn) {
+    if (!loggedIn) {
       localStorage.removeItem('last_workspace_id');
       jumpToSignIn();
       return;
@@ -135,6 +136,7 @@ export const Component = ({
     searchParams,
     jumpToSignIn,
     listIsLoading,
+    sessionRevalidating,
     loggedIn,
     navigating,
     defaultIndexRoute,
@@ -147,7 +149,7 @@ export const Component = ({
   }, [desktopApi]);
 
   useEffect(() => {
-    if (listIsLoading || list.length > 0 || !enableLocalWorkspace) {
+    if (listIsLoading || list.length > 0 || !enableLocalWorkspace || !loggedIn) {
       return;
     }
 

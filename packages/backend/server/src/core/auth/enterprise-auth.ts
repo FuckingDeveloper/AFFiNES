@@ -5,6 +5,7 @@ import { isIP } from 'node:net';
 import { Injectable, Logger } from '@nestjs/common';
 
 import { Config } from '../../base';
+import { AuthMode } from './config';
 
 type EnterpriseAuthProvider = 'ldap' | 'radius';
 
@@ -44,7 +45,10 @@ export class EnterpriseAuthService {
   constructor(private readonly config: Config) {}
 
   isEnabled() {
-    return this.config.auth.enterprise.enabled;
+    return (
+      this.config.auth.mode === AuthMode.LDAP ||
+      this.config.auth.mode === AuthMode.RADIUS
+    );
   }
 
   canAutoRegister() {
@@ -83,14 +87,12 @@ export class EnterpriseAuthService {
       return { authenticated: false };
     }
 
-    const ldapResult = await this.authenticateWithLdap(email, password);
-    if (ldapResult.authenticated) {
-      return ldapResult;
+    if (this.config.auth.mode === AuthMode.LDAP) {
+      return this.authenticateWithLdap(email, password);
     }
 
-    const radiusResult = await this.authenticateWithRadius(email, password);
-    if (radiusResult.authenticated) {
-      return radiusResult;
+    if (this.config.auth.mode === AuthMode.RADIUS) {
+      return this.authenticateWithRadius(email, password);
     }
 
     return { authenticated: false };
@@ -113,7 +115,7 @@ export class EnterpriseAuthService {
     password: string
   ): Promise<EnterpriseAuthResult> {
     const ldapConfig = this.config.auth.enterprise.ldap;
-    if (!ldapConfig.enabled || !ldapConfig.url || !ldapConfig.searchBase) {
+    if (!ldapConfig.url || !ldapConfig.searchBase) {
       return { authenticated: false };
     }
 
@@ -200,12 +202,7 @@ export class EnterpriseAuthService {
     password: string
   ): Promise<EnterpriseAuthResult> {
     const radiusConfig = this.config.auth.enterprise.radius;
-    if (
-      !radiusConfig.enabled ||
-      !radiusConfig.host ||
-      !radiusConfig.secret ||
-      !radiusConfig.port
-    ) {
+    if (!radiusConfig.host || !radiusConfig.secret || !radiusConfig.port) {
       return { authenticated: false };
     }
 

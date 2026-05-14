@@ -115,7 +115,7 @@ describe('SettingsPage', () => {
     cleanup();
   });
 
-  test('keeps all groups collapsed by default', () => {
+  test('shows the first settings group by default', () => {
     render(
       <MemoryRouter initialEntries={['/admin/settings']}>
         <Routes>
@@ -126,11 +126,11 @@ describe('SettingsPage', () => {
 
     const serverItem = document.getElementById('config-module-server');
     const authItem = document.getElementById('config-module-auth');
-    expect(serverItem?.dataset.state).toBe('closed');
-    expect(authItem?.dataset.state).toBe('closed');
+    expect(serverItem?.dataset.state).toBe('active');
+    expect(authItem?.dataset.state).toBe('inactive');
   });
 
-  test('keeps previous group open when another group is expanded', () => {
+  test('switches settings groups from the left navigation', () => {
     render(
       <MemoryRouter initialEntries={['/admin/settings']}>
         <Routes>
@@ -139,13 +139,12 @@ describe('SettingsPage', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Server/i })[0]);
-    fireEvent.click(screen.getAllByRole('button', { name: /Auth/i })[0]);
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /Auth/i }));
 
     const serverItem = document.getElementById('config-module-server');
     const authItem = document.getElementById('config-module-auth');
-    expect(serverItem?.dataset.state).toBe('open');
-    expect(authItem?.dataset.state).toBe('open');
+    expect(serverItem?.dataset.state).toBe('inactive');
+    expect(authItem?.dataset.state).toBe('active');
   });
 
   test('disables save when group has validation errors even if group is dirty', () => {
@@ -185,15 +184,15 @@ describe('SettingsPage', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Server/i })[0]);
-
     const serverItem = document.getElementById('config-module-server');
     expect(serverItem).not.toBeNull();
     if (!serverItem) {
       return;
     }
 
-    const saveButton = within(serverItem).getByRole('button', { name: 'Save' });
+    const saveButton = within(serverItem).getByRole('button', {
+      name: 'Сохранить',
+    });
     expect(saveButton.hasAttribute('disabled')).toBe(false);
 
     fireEvent.click(

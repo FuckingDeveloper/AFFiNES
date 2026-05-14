@@ -2834,6 +2834,7 @@ export const serverConfigQuery = {
     baseUrl
     name
     features
+    authMode
     type
     initialized
     calendarProviders
