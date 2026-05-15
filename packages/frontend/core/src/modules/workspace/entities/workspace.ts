@@ -93,6 +93,13 @@ export class Workspace extends Entity {
     undefined
   );
 
+  taskKey$ = LiveData.from<string | undefined>(
+    yjsGetPath(this.rootYDoc.getMap('meta'), 'taskKey') as Observable<
+      string | undefined
+    >,
+    undefined
+  );
+
   avatar$ = LiveData.from(
     yjsGetPath(this.rootYDoc.getMap('meta'), 'avatar') as Observable<
       string | undefined
@@ -115,6 +122,16 @@ export class Workspace extends Entity {
       this.rootYDoc,
       () => {
         this.rootYDoc.getMap('meta').set('name', name);
+      },
+      { force: true }
+    );
+  }
+
+  setTaskKey(taskKey: string) {
+    transact(
+      this.rootYDoc,
+      () => {
+        this.rootYDoc.getMap('meta').set('taskKey', taskKey);
       },
       { force: true }
     );

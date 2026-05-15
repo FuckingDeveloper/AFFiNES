@@ -1,4 +1,5 @@
 import { toArrayBuffer } from '@affine/core/utils/array-buffer';
+import { buildWorkspaceTaskKey } from '@affine/core/utils/first-app-data';
 import type { DocMode } from '@blocksuite/affine/model';
 import { ZipTransformer } from '@blocksuite/affine/widgets/linked-doc';
 import { Service } from '@toeverything/infra';
@@ -56,6 +57,9 @@ export class ImportTemplateService extends Service {
       async (docCollection, _, docStorage) => {
         docCollection.meta.initialize();
         docCollection.doc.getMap('meta').set('name', workspaceName);
+        docCollection.doc
+          .getMap('meta')
+          .set('taskKey', buildWorkspaceTaskKey(workspaceName));
         const doc = docCollection.createDoc();
         docId = doc.id;
         await docStorage.pushDocUpdate({

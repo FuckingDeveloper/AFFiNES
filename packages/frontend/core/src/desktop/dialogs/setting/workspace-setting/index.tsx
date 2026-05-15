@@ -8,6 +8,7 @@ import {
   PropertyIcon,
   SaveIcon,
   SettingsIcon,
+  ViewLayersIcon,
 } from '@blocksuite/icons/rc';
 import { useMemo } from 'react';
 
@@ -17,6 +18,7 @@ import { MembersPanel } from './members';
 import { WorkspaceSettingDetail } from './preference';
 import { WorkspaceSettingProperties } from './properties';
 import { WorkspaceSettingStorage } from './storage';
+import { WorkspaceTaskTrackerSetting } from './task-tracker';
 
 export const WorkspaceSetting = ({
   activeTab,
@@ -47,6 +49,8 @@ export const WorkspaceSetting = ({
       return <IntegrationSetting scrollAnchor={scrollAnchor} />;
     case 'workspace:embedding':
       return <EmbeddingSettings />;
+    case 'workspace:task-tracker':
+      return <WorkspaceTaskTrackerSetting />;
     default:
       return null;
   }
@@ -95,6 +99,12 @@ export const useWorkspaceSettingList = (): SettingSidebarItem[] => {
           ](),
         icon: <AiEmbeddingIcon />,
         testId: 'workspace-setting:embedding',
+      },
+      {
+        key: 'workspace:task-tracker',
+        title: 'Task Tracker',
+        icon: <ViewLayersIcon />,
+        testId: 'workspace-setting:task-tracker',
       },
     ].filter((item): item is SettingSidebarItem => !!item);
   }, [t]);

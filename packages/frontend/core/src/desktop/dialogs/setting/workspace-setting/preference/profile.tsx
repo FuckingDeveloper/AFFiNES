@@ -5,6 +5,7 @@ import { Upload } from '@affine/core/components/pure/file-upload';
 import { WorkspaceAvatar } from '@affine/core/components/workspace-avatar';
 import { WorkspacePermissionService } from '@affine/core/modules/permissions';
 import { WorkspaceService } from '@affine/core/modules/workspace';
+import { normalizeWorkspaceTaskKey } from '@affine/core/utils/first-app-data';
 import { validateAndReduceImage } from '@affine/core/utils/reduce-image';
 import { UNTITLED_WORKSPACE_NAME } from '@affine/env/constant';
 import { useI18n } from '@affine/i18n';
@@ -38,11 +39,17 @@ export const ProfilePanel = () => {
     }, [workspace])
   );
   const [name, setName] = useState('');
+  const [taskKey, setTaskKey] = useState('');
   const currentName = useLiveData(workspace.name$);
+  const currentTaskKey = useLiveData(workspace.taskKey$);
 
   useEffect(() => {
     setName(currentName ?? UNTITLED_WORKSPACE_NAME);
   }, [currentName]);
+
+  useEffect(() => {
+    setTaskKey(currentTaskKey ?? 'TASK');
+  }, [currentTaskKey]);
 
   const setWorkspaceAvatar = useCallback(
     async (file: File | null) => {
@@ -76,6 +83,16 @@ export const ProfilePanel = () => {
     [workspace]
   );
 
+  const setWorkspaceTaskKey = useCallback(
+    (taskKey: string) => {
+      if (!workspace) {
+        return;
+      }
+      workspace.setTaskKey(taskKey);
+    },
+    [workspace]
+  );
+
   const [input, setInput] = useState<string>('');
   useEffect(() => {
     setInput(name);
@@ -105,6 +122,17 @@ export const ProfilePanel = () => {
   const handleClick = useCallback(() => {
     handleUpdateWorkspaceName(input);
   }, [handleUpdateWorkspaceName, input]);
+
+  const handleUpdateTaskKey = useCallback(() => {
+    const nextTaskKey = normalizeWorkspaceTaskKey(taskKey);
+    if (nextTaskKey.length !== 4) {
+      notify.error({ title: 'Workspace task key must contain 4 letters' });
+      return;
+    }
+
+    setWorkspaceTaskKey(nextTaskKey);
+    notify.success({ title: 'Update workspace task key success' });
+  }, [setWorkspaceTaskKey, taskKey]);
 
   const handleRemoveUserAvatar = useCatchEventCallback(async () => {
     await setWorkspaceAvatar(null);
@@ -177,6 +205,32 @@ export const ProfilePanel = () => {
             <Button
               data-testid="save-workspace-name"
               onClick={handleClick}
+              style={{
+                marginLeft: '12px',
+              }}
+            >
+              {t['com.affine.editCollection.save']()}
+            </Button>
+          )}
+        </FlexWrapper>
+        <div className={style.label}>Workspace Task Key</div>
+        <FlexWrapper alignItems="center" flexGrow="1">
+          <Input
+            disabled={!workspaceIsReady || !isOwner}
+            value={taskKey}
+            style={{ width: 280, height: 32 }}
+            data-testid="workspace-task-key-input"
+            placeholder="TASK"
+            maxLength={4}
+            minLength={0}
+            onChange={value => {
+              setTaskKey(normalizeWorkspaceTaskKey(value));
+            }}
+          />
+          {taskKey === (currentTaskKey ?? 'TASK') ? null : (
+            <Button
+              data-testid="save-workspace-task-key"
+              onClick={handleUpdateTaskKey}
               style={{
                 marginLeft: '12px',
               }}

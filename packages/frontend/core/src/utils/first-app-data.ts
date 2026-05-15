@@ -13,14 +13,29 @@ import {
   type WorkspacesService,
 } from '../modules/workspace';
 
+export const normalizeWorkspaceTaskKey = (value: string): string => {
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '')
+    .slice(0, 4);
+};
+
+export const buildWorkspaceTaskKey = (workspaceName: string): string => {
+  const letters = normalizeWorkspaceTaskKey(workspaceName);
+  return (letters || 'TASK').padEnd(4, 'X');
+};
+
 export async function buildShowcaseWorkspace(
   workspacesService: WorkspacesService,
   flavour: string,
-  workspaceName: string
+  workspaceName: string,
+  workspaceTaskKey = buildWorkspaceTaskKey(workspaceName)
 ) {
   const meta = await workspacesService.create(flavour, async docCollection => {
     docCollection.meta.initialize();
     docCollection.doc.getMap('meta').set('name', workspaceName);
+    docCollection.doc.getMap('meta').set('taskKey', workspaceTaskKey);
     const blob = await (await fetch(onboardingUrl)).blob();
 
     await ZipTransformer.importDocs(

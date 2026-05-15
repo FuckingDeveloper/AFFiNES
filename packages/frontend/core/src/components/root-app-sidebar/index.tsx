@@ -22,6 +22,7 @@ import {
   ImportIcon,
   JournalIcon,
   SettingsIcon,
+  ViewLayersIcon,
 } from '@blocksuite/icons/rc';
 import { useLiveData, useService, useServices } from '@toeverything/infra';
 import type { ReactElement } from 'react';
@@ -110,6 +111,28 @@ const AIChatButton = () => {
       <span data-testid="ai-chat">
         {t['com.affine.workspaceSubPath.chat']()}
       </span>
+    </MenuLinkItem>
+  );
+};
+
+const TaskTrackerButton = () => {
+  const { workbenchService } = useServices({
+    WorkbenchService,
+  });
+  const workbench = workbenchService.workbench;
+  const taskTrackerActive = useLiveData(
+    workbench.location$.selector(location =>
+      location.pathname.startsWith('/task-tracker')
+    )
+  );
+
+  return (
+    <MenuLinkItem
+      icon={<ViewLayersIcon />}
+      active={taskTrackerActive}
+      to={'/task-tracker'}
+    >
+      <span data-testid="task-tracker">Task Tracker</span>
     </MenuLinkItem>
   );
 };
@@ -210,6 +233,7 @@ export const RootAppSidebar = memo((): ReactElement => {
           <AddPageButton />
         </div>
         <AllDocsButton />
+        <TaskTrackerButton />
         <AppSidebarJournalButton />
         {sessionStatus === 'authenticated' && <NotificationButton />}
         <AIChatButton />
