@@ -1,0 +1,261 @@
+{
+  "nav": {
+    "dashboard": "Панель",
+    "accounts": "Аккаунты",
+    "workspaces": "Рабочие пространства",
+    "queue": "Очередь",
+    "settings": "Настройки",
+    "about": "О MRH ManSys"
+  },
+  "user": {
+    "admin": "Админ",
+    "logout": "Выйти",
+    "logoutSuccess": "Выход выполнен успешно",
+    "logoutError": "Не удалось выйти"
+  },
+  "settings": {
+    "title": "Настройки",
+    "manageGroup": "Управление настройками: {group}",
+    "cancel": "Отмена",
+    "saving": "Сохранение...",
+    "save": "Сохранить",
+    "saved": "Сохранено",
+    "savedMessage": "Настройки успешно сохранены.",
+    "saveError": "Ошибка сохранения",
+    "hideSecret": "Скрыть секретное значение",
+    "showSecret": "Показать секретное значение",
+    "hide": "Скрыть",
+    "show": "Показать",
+    "selectOption": "Выберите вариант",
+    "invalidJson": "Неверный формат JSON",
+    "testEmailSent": "Тестовое письмо отправлено",
+    "testEmailSentMessage": "Тестовое письмо успешно отправлено.",
+    "testEmailFailed": "Не удалось отправить тестовое письмо",
+    "sendTestEmail": "Отправить тестовое письмо",
+    "example": "Пример",
+    "description": "Описание"
+  },
+  "groups": {
+    "server": "Сервер",
+    "auth": "Авторизация",
+    "notification": "Уведомления",
+    "storage": "Хранилище",
+    "oauth": "OAuth",
+    "ai": "ИИ"
+  },
+  "fields": {
+    "server.externalUrl": {
+      "desc": "Базовый URL сервера MRH ManSys, используется для генерации внешних ссылок.",
+      "example": "https://affine.example.com"
+    },
+    "server.name": {
+      "desc": "Узнаваемое имя сервера. Отображается при подключении через MRH ManSys Desktop.",
+      "example": "Сервер моей компании"
+    },
+    "server.hosts": {
+      "desc": "Несколько хостов, с которых сервер будет принимать запросы.",
+      "example": "[\"affine.example.com\", \"app.example.com\"]"
+    },
+    "auth.allowSignup": {
+      "desc": "Разрешить ли регистрацию новых пользователей.",
+      "example": "true"
+    },
+    "auth.allowSignupForOauth": {
+      "desc": "Разрешить ли регистрацию через настроенные OAuth-провайдеры.",
+      "example": "true"
+    },
+    "auth.mode": {
+      "desc": "Активный метод аутентификации. Только один метод может быть активен одновременно.",
+      "example": "password"
+    },
+    "auth.enterprise.autoRegister": {
+      "desc": "Автоматически создавать пользователей, прошедших корпоративную аутентификацию.",
+      "example": "false"
+    },
+    "auth.enterprise.allowedEmailDomains": {
+      "desc": "Разрешённые домены email для корпоративной авторизации в формате JSON-массива.",
+      "example": "[\"company.com\", \"corp.io\"]"
+    },
+    "auth.enterprise.ldap.url": {
+      "desc": "URL сервера LDAP (ldap:// или ldaps://).",
+      "example": "ldap://ldap.company.com:389"
+    },
+    "auth.enterprise.ldap.bindDN": {
+      "desc": "Bind DN сервисной учётной записи LDAP для поиска пользователей.",
+      "example": "cn=admin,dc=company,dc=com"
+    },
+    "auth.enterprise.ldap.bindCredentials": {
+      "desc": "Пароль сервисной учётной записи LDAP.",
+      "example": "ваш-ldap-пароль"
+    },
+    "auth.enterprise.ldap.searchBase": {
+      "desc": "Базовый DN для поиска пользователей в LDAP.",
+      "example": "ou=users,dc=company,dc=com"
+    },
+    "auth.enterprise.ldap.searchFilter": {
+      "desc": "Фильтр поиска LDAP с плейсхолдерами {{email}} и {{username}}.",
+      "example": "(|(mail={{email}})(uid={{username}}))"
+    },
+    "auth.enterprise.ldap.nameAttribute": {
+      "desc": "Атрибут LDAP, используемый как отображаемое имя при авторегистрации.",
+      "example": "displayName"
+    },
+    "auth.enterprise.ldap.connectTimeoutMs": {
+      "desc": "Таймаут TCP-подключения к LDAP в миллисекундах.",
+      "example": "5000"
+    },
+    "auth.enterprise.ldap.timeoutMs": {
+      "desc": "Таймаут операции LDAP в миллисекундах.",
+      "example": "8000"
+    },
+    "auth.enterprise.ldap.rejectUnauthorized": {
+      "desc": "Отклонять ли недействительные TLS-сертификаты для LDAPS.",
+      "example": "true"
+    },
+    "auth.enterprise.radius.host": {
+      "desc": "Хост сервера RADIUS.",
+      "example": "radius.company.com"
+    },
+    "auth.enterprise.radius.port": {
+      "desc": "Порт сервера RADIUS.",
+      "example": "1812"
+    },
+    "auth.enterprise.radius.secret": {
+      "desc": "Общий секрет RADIUS.",
+      "example": "ваш-radius-секрет"
+    },
+    "auth.enterprise.radius.nasIpAddress": {
+      "desc": "NAS-IP-Address, отправляемый в RADIUS Access-Request.",
+      "example": "127.0.0.1"
+    },
+    "auth.enterprise.radius.timeoutMs": {
+      "desc": "Таймаут запроса RADIUS в миллисекундах.",
+      "example": "5000"
+    },
+    "auth.passwordRequirements.min": {
+      "desc": "Минимальная длина пароля.",
+      "example": "8"
+    },
+    "auth.passwordRequirements.max": {
+      "desc": "Максимальная длина пароля.",
+      "example": "32"
+    },
+    "mailer.SMTP.name": {
+      "desc": "Имя хоста для SMTP HELO/EHLO. Оставьте пустым для использования системного имени.",
+      "example": "mail.example.com"
+    },
+    "mailer.SMTP.host": {
+      "desc": "Хост почтового сервера.",
+      "example": "smtp.gmail.com"
+    },
+    "mailer.SMTP.port": {
+      "desc": "Порт почтового сервера (обычно 25, 465 или 587).",
+      "example": "587"
+    },
+    "mailer.SMTP.username": {
+      "desc": "Имя пользователя для аутентификации на почтовом сервере.",
+      "example": "noreply@example.com"
+    },
+    "mailer.SMTP.password": {
+      "desc": "Пароль для аутентификации на почтовом сервере.",
+      "example": "ваш-email-пароль"
+    },
+    "mailer.fallbackSMTP.password": {
+      "desc": "Пароль для резервного SMTP-сервера.",
+      "example": "ваш-резервный-пароль"
+    },
+    "mailer.SMTP.ignoreTLS": {
+      "desc": "Игнорировать ли проверку TLS-сертификата. Включите для самоподписанных сертификатов.",
+      "example": "false"
+    },
+    "mailer.SMTP.sender": {
+      "desc": "Адрес отправителя для всех исходящих писем.",
+      "example": "MRH ManSys <noreply@example.com>"
+    },
+    "storages.blob.storage.provider": {
+      "desc": "Провайдер хранилища для загруженных файлов (изображения, видео и т.д.).",
+      "example": "fs"
+    },
+    "storages.blob.storage.bucket": {
+      "desc": "Имя бакета для хранилища файлов (используется с S3/R2).",
+      "example": "my-blobs-bucket"
+    },
+    "storages.blob.storage.config": {
+      "desc": "S3-совместимая конфигурация провайдера хранилища (endpoint/region/credentials).",
+      "example": "{\"endpoint\":\"https://s3.amazonaws.com\",\"region\":\"us-east-1\"}"
+    },
+    "storages.avatar.storage.provider": {
+      "desc": "Провайдер хранилища для аватаров пользователей.",
+      "example": "fs"
+    },
+    "storages.avatar.storage.bucket": {
+      "desc": "Имя бакета для хранилища аватаров (используется с S3/R2).",
+      "example": "my-avatars-bucket"
+    },
+    "storages.avatar.storage.config": {
+      "desc": "S3-совместимая конфигурация провайдера хранилища аватаров.",
+      "example": "{\"endpoint\":\"https://s3.amazonaws.com\",\"region\":\"us-east-1\"}"
+    },
+    "storages.avatar.publicPath": {
+      "desc": "Публичный путь к аватарам пользователей.",
+      "example": "https://my-bucket.s3.amazonaws.com/"
+    },
+    "oauth.providers.google": {
+      "desc": "Конфигурация Google OAuth (clientId, clientSecret и т.д.).",
+      "example": "{\"clientId\":\"xxx.apps.googleusercontent.com\",\"clientSecret\":\"GOCSPX-xxx\"}"
+    },
+    "oauth.providers.github": {
+      "desc": "Конфигурация GitHub OAuth (clientId, clientSecret и т.д.).",
+      "example": "{\"clientId\":\"Ov23lixxx\",\"clientSecret\":\"xxx\"}"
+    },
+    "oauth.providers.oidc": {
+      "desc": "Конфигурация OIDC OAuth (issuer, clientId, clientSecret и т.д.).",
+      "example": "{\"issuer\":\"https://auth.example.com\",\"clientId\":\"xxx\",\"clientSecret\":\"xxx\"}"
+    },
+    "copilot.enabled": {
+      "desc": "Включить ли плагин ИИ-копайлота.",
+      "example": "false"
+    },
+    "copilot.providers.openai": {
+      "desc": "Конфигурация провайдера OpenAI (apiKey, baseUrl и т.д.).",
+      "example": "{\"apiKey\":\"sk-xxx\"}"
+    },
+    "copilot.providers.gemini": {
+      "desc": "Конфигурация провайдера Google Gemini.",
+      "example": "{\"apiKey\":\"AIzaxxx\"}"
+    },
+    "copilot.providers.anthropic": {
+      "desc": "Конфигурация провайдера Anthropic.",
+      "example": "{\"apiKey\":\"sk-ant-xxx\"}"
+    },
+    "copilot.providers.fal": {
+      "desc": "Конфигурация провайдера fal.ai.",
+      "example": "{\"apiKey\":\"fal-xxx\"}"
+    },
+    "copilot.unsplash": {
+      "desc": "Конфигурация API-ключа Unsplash для поиска изображений.",
+      "example": "{\"apiKey\":\"xxx\"}"
+    },
+    "copilot.exa": {
+      "desc": "Конфигурация API-ключа Exa для веб-поиска.",
+      "example": "{\"apiKey\":\"xxx\"}"
+    },
+    "copilot.storage.provider": {
+      "desc": "Провайдер хранилища для данных копайлота.",
+      "example": "fs"
+    },
+    "copilot.storage.bucket": {
+      "desc": "Имя бакета для хранилища данных копайлота.",
+      "example": "my-copilot-bucket"
+    },
+    "copilot.storage.config": {
+      "desc": "S3-совместимая конфигурация провайдера хранилища копайлота.",
+      "example": "{\"endpoint\":\"https://s3.amazonaws.com\",\"region\":\"us-east-1\"}"
+    }
+  },
+  "language": {
+    "switch": "Язык",
+    "en": "English",
+    "ru": "Русский"
+  }
+}

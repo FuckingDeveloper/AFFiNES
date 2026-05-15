@@ -9,6 +9,7 @@ import {
 import { get } from 'lodash-es';
 import { useCallback, useState } from 'react';
 
+import { useI18n } from '../../i18n';
 import { Header } from '../header';
 import {
   ALL_CONFIG_DESCRIPTORS,
@@ -29,10 +30,11 @@ export function SettingsPage() {
     isGroupSaving,
     getGroupVersion,
   } = useAppConfig();
+  const { t } = useI18n();
 
   return (
     <div className="flex h-dvh flex-1 flex-col bg-background">
-      <Header title="Настройки" />
+      <Header title={t('settings.title')} />
       <AdminPanel
         onUpdate={update}
         appConfig={appConfig}
@@ -66,6 +68,7 @@ const AdminPanel = ({
   isGroupSaving: (module: string) => boolean;
   getGroupVersion: (module: string) => number;
 }) => {
+  const { t } = useI18n();
   const [groupErrors, setGroupErrors] = useState<
     Record<string, Record<string, string>>
   >({});
@@ -127,6 +130,13 @@ const AdminPanel = ({
     });
   }, []);
 
+  const getGroupLabel = (module: string, name: string): string => {
+    const key = `groups.${module}`;
+    const translated = t(key);
+    if (translated !== key) return translated;
+    return name;
+  };
+
   return (
     <ScrollArea className="h-full">
       <div className="mx-auto w-full max-w-[1120px] px-6 py-5">
@@ -150,7 +160,7 @@ const AdminPanel = ({
                   value={group.module}
                   className="h-10 w-auto min-w-max justify-start gap-2 px-3 text-left data-[state=active]:bg-primary data-[state=active]:text-primary-foreground md:w-full"
                 >
-                  <span className="truncate">{group.name}</span>
+                  <span className="truncate">{getGroupLabel(group.module, group.name)}</span>
                   {hasValidationError ? (
                     <span className="ml-auto h-2 w-2 rounded-full bg-destructive" />
                   ) : dirty ? (
@@ -172,6 +182,7 @@ const AdminPanel = ({
                 groupErrors[module] &&
                   Object.keys(groupErrors[module] ?? {}).length > 0
               );
+              const groupLabel = getGroupLabel(module, name);
 
               return (
                 <TabsContent
@@ -181,9 +192,9 @@ const AdminPanel = ({
                   className="mt-0 rounded-xl border border-border/60 bg-card p-5 shadow-1"
                 >
                   <div className="mb-6 flex flex-col gap-1">
-                    <h2 className="text-lg font-semibold">{name}</h2>
+                    <h2 className="text-lg font-semibold">{groupLabel}</h2>
                     <p className="text-sm text-muted-foreground">
-                      Управление настройками: {name.toLowerCase()}
+                      {t('settings.manageGroup', { group: groupLabel.toLowerCase() })}
                     </p>
                   </div>
 
@@ -192,20 +203,25 @@ const AdminPanel = ({
                       let props: ConfigInputProps;
                       if (typeof field === 'string') {
                         const descriptor = ALL_CONFIG_DESCRIPTORS[module][field];
+                        const fieldKey = `${module}.${field}`;
+                        const translatedDesc = t(`fields.${fieldKey}.desc`);
                         props = {
                           field: `${module}/${field}`,
-                          desc: descriptor?.desc ?? field,
+                          desc: translatedDesc !== `fields.${fieldKey}.desc` ? translatedDesc : (descriptor?.desc ?? field),
                           type: descriptor?.type ?? 'String',
                           options: [],
                           defaultValue: get(sourceConfig, field),
                           onChange: onUpdate,
+                          example: t(`fields.${fieldKey}.example`),
                         };
                       } else {
                         const descriptor =
                           ALL_CONFIG_DESCRIPTORS[module][field.key];
+                        const fieldKey = `${module}.${field.key}${field.sub ? `.${field.sub}` : ''}`;
+                        const translatedDesc = t(`fields.${fieldKey}.desc`);
                         props = {
                           field: `${module}/${field.key}${field.sub ? `/${field.sub}` : ''}`,
-                          desc: field.desc ?? descriptor?.desc ?? field.key,
+                          desc: field.desc ?? (translatedDesc !== `fields.${fieldKey}.desc` ? translatedDesc : (descriptor?.desc ?? field.key)),
                           type: field.type ?? descriptor?.type ?? 'String',
                           sensitive: field.sensitive,
                           // @ts-expect-error for enum type
@@ -215,6 +231,7 @@ const AdminPanel = ({
                             field.key + (field.sub ? '.' + field.sub : '')
                           ),
                           onChange: onUpdate,
+                          example: t(`fields.${fieldKey}.example`),
                         };
                       }
 
@@ -246,7 +263,7 @@ const AdminPanel = ({
                           }}
                           disabled={saving}
                         >
-                          Отмена
+                          {t('settings.cancel')}
                         </Button>
                       ) : null}
                       <Button
@@ -259,7 +276,7 @@ const AdminPanel = ({
                         }}
                         disabled={!dirty || saving || hasValidationError}
                       >
-                        {saving ? 'Сохранение...' : 'Сохранить'}
+                        {saving ? t('settings.saving') : t('settings.save')}
                       </Button>
                     </div>
                   </div>

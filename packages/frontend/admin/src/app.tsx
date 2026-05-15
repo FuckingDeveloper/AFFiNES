@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner';
 import { SWRConfig } from 'swr';
 
+import { I18nProvider } from './i18n';
 import { ThemeProvider } from './components/theme-provider';
 import { TooltipProvider } from './components/ui/tooltip';
 import { isAdmin, useCurrentUser, useServerConfig } from './modules/common';
@@ -95,6 +96,7 @@ function RootRoutes() {
 
 export const App = () => {
   return (
+    <I18nProvider>
     <ThemeProvider>
       <TooltipProvider>
         <SWRConfig
@@ -145,5 +147,6 @@ export const App = () => {
         <Toaster />
       </TooltipProvider>
     </ThemeProvider>
+    </I18nProvider>
   );
 };

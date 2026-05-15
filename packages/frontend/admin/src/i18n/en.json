@@ -1,0 +1,261 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "accounts": "Accounts",
+    "workspaces": "Workspaces",
+    "queue": "Queue",
+    "settings": "Settings",
+    "about": "About MRH ManSys"
+  },
+  "user": {
+    "admin": "Admin",
+    "logout": "Logout",
+    "logoutSuccess": "Logged out successfully",
+    "logoutError": "Failed to logout"
+  },
+  "settings": {
+    "title": "Settings",
+    "manageGroup": "Manage settings: {group}",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "save": "Save",
+    "saved": "Saved",
+    "savedMessage": "Settings saved successfully.",
+    "saveError": "Save error",
+    "hideSecret": "Hide secret value",
+    "showSecret": "Show secret value",
+    "hide": "Hide",
+    "show": "Show",
+    "selectOption": "Select an option",
+    "invalidJson": "Invalid JSON format",
+    "testEmailSent": "Test email sent",
+    "testEmailSentMessage": "Test email was sent successfully.",
+    "testEmailFailed": "Failed to send test email",
+    "sendTestEmail": "Send test email",
+    "example": "Example",
+    "description": "Description"
+  },
+  "groups": {
+    "server": "Server",
+    "auth": "Auth",
+    "notification": "Notification",
+    "storage": "Storage",
+    "oauth": "OAuth",
+    "ai": "AI"
+  },
+  "fields": {
+    "server.externalUrl": {
+      "desc": "Base URL of MRH ManSys server, used for generating external links.",
+      "example": "https://affine.example.com"
+    },
+    "server.name": {
+      "desc": "A recognizable name for the server. Shown when connected with MRH ManSys Desktop.",
+      "example": "My Company Server"
+    },
+    "server.hosts": {
+      "desc": "Multiple hosts the server will accept requests from.",
+      "example": "[\"affine.example.com\", \"app.example.com\"]"
+    },
+    "auth.allowSignup": {
+      "desc": "Whether to allow new user registrations.",
+      "example": "true"
+    },
+    "auth.allowSignupForOauth": {
+      "desc": "Whether to allow new registrations via configured OAuth providers.",
+      "example": "true"
+    },
+    "auth.mode": {
+      "desc": "Active authentication method. Only one method can be active at a time.",
+      "example": "password"
+    },
+    "auth.enterprise.autoRegister": {
+      "desc": "Whether users authenticated by enterprise backends can be auto-created.",
+      "example": "false"
+    },
+    "auth.enterprise.allowedEmailDomains": {
+      "desc": "Allowed enterprise email domains in JSON array format.",
+      "example": "[\"company.com\", \"corp.io\"]"
+    },
+    "auth.enterprise.ldap.url": {
+      "desc": "LDAP server URL (ldap:// or ldaps://).",
+      "example": "ldap://ldap.company.com:389"
+    },
+    "auth.enterprise.ldap.bindDN": {
+      "desc": "LDAP service bind DN used to search users.",
+      "example": "cn=admin,dc=company,dc=com"
+    },
+    "auth.enterprise.ldap.bindCredentials": {
+      "desc": "LDAP service bind password.",
+      "example": "your-ldap-password"
+    },
+    "auth.enterprise.ldap.searchBase": {
+      "desc": "LDAP search base DN.",
+      "example": "ou=users,dc=company,dc=com"
+    },
+    "auth.enterprise.ldap.searchFilter": {
+      "desc": "LDAP search filter with placeholders {{email}} and {{username}}.",
+      "example": "(|(mail={{email}})(uid={{username}}))"
+    },
+    "auth.enterprise.ldap.nameAttribute": {
+      "desc": "LDAP attribute used as display name when auto-registering users.",
+      "example": "displayName"
+    },
+    "auth.enterprise.ldap.connectTimeoutMs": {
+      "desc": "LDAP TCP connect timeout in milliseconds.",
+      "example": "5000"
+    },
+    "auth.enterprise.ldap.timeoutMs": {
+      "desc": "LDAP operation timeout in milliseconds.",
+      "example": "8000"
+    },
+    "auth.enterprise.ldap.rejectUnauthorized": {
+      "desc": "Whether to reject invalid TLS certificates for LDAPS.",
+      "example": "true"
+    },
+    "auth.enterprise.radius.host": {
+      "desc": "RADIUS server host.",
+      "example": "radius.company.com"
+    },
+    "auth.enterprise.radius.port": {
+      "desc": "RADIUS server port.",
+      "example": "1812"
+    },
+    "auth.enterprise.radius.secret": {
+      "desc": "RADIUS shared secret.",
+      "example": "your-radius-secret"
+    },
+    "auth.enterprise.radius.nasIpAddress": {
+      "desc": "NAS-IP-Address sent in RADIUS Access-Request.",
+      "example": "127.0.0.1"
+    },
+    "auth.enterprise.radius.timeoutMs": {
+      "desc": "RADIUS request timeout in milliseconds.",
+      "example": "5000"
+    },
+    "auth.passwordRequirements.min": {
+      "desc": "Minimum password length requirement.",
+      "example": "8"
+    },
+    "auth.passwordRequirements.max": {
+      "desc": "Maximum password length requirement.",
+      "example": "32"
+    },
+    "mailer.SMTP.name": {
+      "desc": "Hostname used for SMTP HELO/EHLO. Leave empty to use system hostname.",
+      "example": "mail.example.com"
+    },
+    "mailer.SMTP.host": {
+      "desc": "Host of the email server.",
+      "example": "smtp.gmail.com"
+    },
+    "mailer.SMTP.port": {
+      "desc": "Port of the email server (commonly 25, 465 or 587).",
+      "example": "587"
+    },
+    "mailer.SMTP.username": {
+      "desc": "Username used to authenticate the email server.",
+      "example": "noreply@example.com"
+    },
+    "mailer.SMTP.password": {
+      "desc": "Password used to authenticate the email server.",
+      "example": "your-email-password"
+    },
+    "mailer.fallbackSMTP.password": {
+      "desc": "Password for the fallback SMTP server.",
+      "example": "your-fallback-password"
+    },
+    "mailer.SMTP.ignoreTLS": {
+      "desc": "Whether to ignore TLS certificate verification. Enable for self-signed certificates.",
+      "example": "false"
+    },
+    "mailer.SMTP.sender": {
+      "desc": "Sender address for all outgoing emails.",
+      "example": "MRH ManSys <noreply@example.com>"
+    },
+    "storages.blob.storage.provider": {
+      "desc": "The storage provider for user uploaded blobs (images, videos, etc.).",
+      "example": "fs"
+    },
+    "storages.blob.storage.bucket": {
+      "desc": "The bucket name for blob storage (used with S3/R2 providers).",
+      "example": "my-blobs-bucket"
+    },
+    "storages.blob.storage.config": {
+      "desc": "S3-compatible config for the storage provider (endpoint/region/credentials).",
+      "example": "{\"endpoint\":\"https://s3.amazonaws.com\",\"region\":\"us-east-1\"}"
+    },
+    "storages.avatar.storage.provider": {
+      "desc": "The storage provider for user avatars.",
+      "example": "fs"
+    },
+    "storages.avatar.storage.bucket": {
+      "desc": "The bucket name for avatar storage (used with S3/R2 providers).",
+      "example": "my-avatars-bucket"
+    },
+    "storages.avatar.storage.config": {
+      "desc": "S3-compatible config for the avatar storage provider.",
+      "example": "{\"endpoint\":\"https://s3.amazonaws.com\",\"region\":\"us-east-1\"}"
+    },
+    "storages.avatar.publicPath": {
+      "desc": "The public path prefix for user avatars.",
+      "example": "https://my-bucket.s3.amazonaws.com/"
+    },
+    "oauth.providers.google": {
+      "desc": "Google OAuth provider config (clientId, clientSecret, etc.).",
+      "example": "{\"clientId\":\"xxx.apps.googleusercontent.com\",\"clientSecret\":\"GOCSPX-xxx\"}"
+    },
+    "oauth.providers.github": {
+      "desc": "GitHub OAuth provider config (clientId, clientSecret, etc.).",
+      "example": "{\"clientId\":\"Ov23lixxx\",\"clientSecret\":\"xxx\"}"
+    },
+    "oauth.providers.oidc": {
+      "desc": "OIDC OAuth provider config (issuer, clientId, clientSecret, etc.).",
+      "example": "{\"issuer\":\"https://auth.example.com\",\"clientId\":\"xxx\",\"clientSecret\":\"xxx\"}"
+    },
+    "copilot.enabled": {
+      "desc": "Whether to enable the AI copilot plugin.",
+      "example": "false"
+    },
+    "copilot.providers.openai": {
+      "desc": "OpenAI provider config (apiKey, baseUrl, etc.).",
+      "example": "{\"apiKey\":\"sk-xxx\"}"
+    },
+    "copilot.providers.gemini": {
+      "desc": "Google Gemini provider config.",
+      "example": "{\"apiKey\":\"AIzaxxx\"}"
+    },
+    "copilot.providers.anthropic": {
+      "desc": "Anthropic provider config.",
+      "example": "{\"apiKey\":\"sk-ant-xxx\"}"
+    },
+    "copilot.providers.fal": {
+      "desc": "fal.ai provider config.",
+      "example": "{\"apiKey\":\"fal-xxx\"}"
+    },
+    "copilot.unsplash": {
+      "desc": "Unsplash API key config for image search.",
+      "example": "{\"apiKey\":\"xxx\"}"
+    },
+    "copilot.exa": {
+      "desc": "Exa web search API key config.",
+      "example": "{\"apiKey\":\"xxx\"}"
+    },
+    "copilot.storage.provider": {
+      "desc": "The storage provider for copilot blobs.",
+      "example": "fs"
+    },
+    "copilot.storage.bucket": {
+      "desc": "The bucket name for copilot blobs storage.",
+      "example": "my-copilot-bucket"
+    },
+    "copilot.storage.config": {
+      "desc": "S3-compatible config for the copilot storage provider.",
+      "example": "{\"endpoint\":\"https://s3.amazonaws.com\",\"region\":\"us-east-1\"}"
+    }
+  },
+  "language": {
+    "switch": "Language",
+    "en": "English",
+    "ru": "Русский"
+  }
+}

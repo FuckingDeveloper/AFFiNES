@@ -7,7 +7,9 @@ import {
   ListChecksIcon,
 } from 'lucide-react';
 
+import { useI18n } from '../../i18n';
 import { NavItem } from './nav-item';
+import { LanguageSwitcher } from './language-switcher';
 import { ServerVersion } from './server-version';
 import { SettingsItem } from './settings-item';
 import { UserDropdown } from './user-dropdown';
@@ -17,6 +19,8 @@ interface NavProps {
 }
 
 export function Nav({ isCollapsed = false }: NavProps) {
+  const { t } = useI18n();
+
   return (
     <div
       className={cn(
@@ -34,41 +38,35 @@ export function Nav({ isCollapsed = false }: NavProps) {
           <NavItem
             to={ROUTES.admin.dashboard}
             icon={<BarChart3Icon size={18} />}
-            label="Панель"
+            label={t('nav.dashboard')}
             isCollapsed={isCollapsed}
           />
         )}
         <NavItem
           to={ROUTES.admin.accounts}
           icon={<AccountIcon fontSize={20} />}
-          label="Аккаунты"
+          label={t('nav.accounts')}
           isCollapsed={isCollapsed}
         />
         {environment.isSelfHosted ? null : (
           <NavItem
             to={ROUTES.admin.workspaces}
             icon={<LayoutDashboardIcon size={18} />}
-            label="Рабочие пространства"
+            label={t('nav.workspaces')}
             isCollapsed={isCollapsed}
           />
         )}
         <NavItem
           to={ROUTES.admin.queue}
           icon={<ListChecksIcon size={18} />}
-          label="Очередь"
+          label={t('nav.queue')}
           isCollapsed={isCollapsed}
         />
-        {/* <NavItem
-          to="/admin/ai"
-          icon={<AiOutlineIcon fontSize={20} />}
-          label="AI"
-          isCollapsed={isCollapsed}
-        /> */}
         <SettingsItem isCollapsed={isCollapsed} />
         <NavItem
           to={ROUTES.admin.about}
           icon={<SelfhostIcon fontSize={20} />}
-          label="О MRH ManSys"
+          label={t('nav.about')}
           isCollapsed={isCollapsed}
         />
       </nav>
@@ -78,6 +76,7 @@ export function Nav({ isCollapsed = false }: NavProps) {
           isCollapsed && 'items-center px-0 gap-1'
         )}
       >
+        {isCollapsed ? null : <LanguageSwitcher />}
         <UserDropdown isCollapsed={isCollapsed} />
         {isCollapsed ? null : <ServerVersion />}
       </div>
