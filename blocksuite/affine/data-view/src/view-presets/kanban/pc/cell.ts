@@ -20,15 +20,16 @@ const styles = css`
   affine-data-view-kanban-cell {
     border-radius: 4px;
     display: flex;
-    align-items: center;
-    padding: 4px;
+    align-items: flex-start;
+    padding: 4px 0;
     min-height: 20px;
     border: 1px solid transparent;
     box-sizing: border-box;
+    color: var(--affine-text-secondary-color);
   }
 
   affine-data-view-kanban-cell:hover {
-    background-color: var(--affine-hover-color);
+    background-color: transparent;
   }
 
   affine-data-view-kanban-cell .icon {
@@ -36,8 +37,9 @@ const styles = css`
     align-items: center;
     justify-content: center;
     align-self: start;
-    margin-right: 12px;
+    margin-right: 8px;
     height: var(--data-view-cell-text-line-height);
+    opacity: 0.75;
   }
 
   affine-data-view-kanban-cell .icon svg {
@@ -50,7 +52,8 @@ const styles = css`
   .kanban-cell {
     flex: 1;
     display: block;
-    width: 196px;
+    width: 100%;
+    min-width: 0;
   }
 `;
 

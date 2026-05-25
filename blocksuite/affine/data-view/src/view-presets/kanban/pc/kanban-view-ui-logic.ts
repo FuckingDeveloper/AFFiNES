@@ -271,14 +271,16 @@ const kanbanViewStyle = css({
   userSelect: 'none',
   display: 'flex',
   flexDirection: 'column',
+  gap: '6px',
 });
 
 const kanbanGroupsStyle = css({
   position: 'relative',
   zIndex: 1,
   display: 'flex',
-  gap: '20px',
-  paddingBottom: '4px',
+  alignItems: 'flex-start',
+  gap: '12px',
+  paddingBottom: '8px',
   overflowX: 'scroll',
   overflowY: 'hidden',
 
@@ -315,14 +317,16 @@ const kanbanGroupsStyle = css({
 });
 
 const addGroupIconStyle = css({
-  padding: '4px',
-  borderRadius: '4px',
+  padding: '6px',
+  borderRadius: '6px',
   display: 'flex',
   alignItems: 'center',
   cursor: 'pointer',
+  backgroundColor: 'var(--affine-background-secondary-color)',
+  border: '1px solid var(--affine-border-color)',
 
   '&:hover': {
-    backgroundColor: 'var(--affine-hover-color)',
+    backgroundColor: 'var(--affine-background-primary-color)',
   },
 
   '& svg': {

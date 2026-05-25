@@ -2147,11 +2147,6 @@ const TaskTrackerPage = () => {
         <div className={styles.header}>
           <div className={styles.headerMain}>
             <div className={styles.headerTitle}>Task Tracker</div>
-            <div className={styles.headerMeta}>
-              {selectedBoardTasks.length} tasks in board • {flow.length} stages
-              {' • '}
-              {boards.length} boards
-            </div>
           </div>
           <div className={styles.headerActions}>
             <Button
@@ -2174,6 +2169,11 @@ const TaskTrackerPage = () => {
 
       <ViewBody>
         <div className={styles.page}>
+          <div className={styles.pageMeta}>
+            {selectedBoardTasks.length} tasks in board • {flow.length} stages •{' '}
+            {boards.length} boards
+          </div>
+
           <div className={styles.boardToolbar}>
             <select
               className={styles.boardSelect}

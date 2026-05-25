@@ -11,17 +11,21 @@ export const page = style({
 
 export const header = style({
   display: 'flex',
-  alignItems: 'flex-start',
+  alignItems: 'center',
   justifyContent: 'space-between',
   gap: 12,
-  flexWrap: 'wrap',
+  flexWrap: 'nowrap',
   padding: '8px 20px 0',
+  minWidth: 0,
 });
 
 export const headerTitle = style({
   fontSize: 20,
   fontWeight: 600,
   color: cssVarV2('text/primary'),
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 });
 
 export const headerMeta = style({
@@ -40,7 +44,14 @@ export const headerActions = style({
   display: 'flex',
   alignItems: 'center',
   gap: 8,
-  flexWrap: 'wrap',
+  flexWrap: 'nowrap',
+  flexShrink: 0,
+});
+
+export const pageMeta = style({
+  fontSize: 13,
+  color: cssVarV2('text/secondary'),
+  padding: '0 2px',
 });
 
 export const boardToolbar = style({
