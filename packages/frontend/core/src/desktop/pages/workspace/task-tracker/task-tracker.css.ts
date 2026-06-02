@@ -152,8 +152,8 @@ export const boardScroller = style({
 
 export const boardLayout = style({
   display: 'grid',
-  gridTemplateColumns: '1fr minmax(360px, 420px)',
-  gap: 12,
+  gridTemplateColumns: 'minmax(0, 1fr) minmax(420px, 520px)',
+  gap: 16,
   minHeight: 0,
   flex: 1,
   '@media': {
@@ -172,6 +172,7 @@ export const board = style({
   gap: 12,
   minWidth: 'fit-content',
   height: '100%',
+  minHeight: 560,
 });
 
 export const column = style({
@@ -179,6 +180,7 @@ export const column = style({
   minWidth: 360,
   maxWidth: 360,
   height: '100%',
+  minHeight: 560,
   display: 'flex',
   flexDirection: 'column',
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
@@ -260,11 +262,19 @@ export const smallButton = style({
 });
 
 export const tasks = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 0,
   flex: 1,
   minHeight: 0,
   overflowY: 'auto',
   borderRadius: 8,
   transition: 'background-color 0.12s ease',
+});
+
+export const tasksDropActive = style({
+  background: 'rgba(12, 102, 228, 0.06)',
+  boxShadow: 'inset 0 0 0 1px rgba(12, 102, 228, 0.16)',
 });
 
 export const taskWrapper = style({
@@ -323,11 +333,11 @@ export const dropZoneActive = style({
 });
 
 export const dropZoneExpanded = style({
-  minHeight: 64,
+  minHeight: 96,
   flex: 1,
   border: `1px dashed ${cssVarV2('layer/insideBorder/border')}`,
   borderRadius: 10,
-  background: cssVarV2('layer/background/primary'),
+  background: 'transparent',
   marginTop: 8,
 });
 
@@ -352,9 +362,86 @@ export const task = style({
   },
 });
 
+export const taskHero = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  padding: 12,
+  borderRadius: 10,
+  background:
+    'linear-gradient(135deg, rgba(12,102,228,0.08) 0%, rgba(106,160,255,0.03) 100%)',
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+});
+
+export const taskHeroTopline = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 8,
+});
+
+export const taskHeroTitleRow = style({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 8,
+});
+
+export const taskHeaderActionsInline = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+  flexShrink: 0,
+});
+
+export const taskComplexityBadge = style({
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  color: '#0c66e4',
+  borderRadius: 999,
+  padding: '4px 8px',
+  background: 'rgba(12, 102, 228, 0.12)',
+});
+
+export const taskHeroSummary = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  gap: 8,
+});
+
+export const taskSummaryMetric = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  padding: '8px 10px',
+  borderRadius: 8,
+  background: 'rgba(255,255,255,0.8)',
+});
+
+export const taskSummaryLabel = style({
+  fontSize: 10,
+  color: cssVarV2('text/secondary'),
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+});
+
+export const taskSummaryValue = style({
+  fontSize: 12,
+  fontWeight: 700,
+  color: cssVarV2('text/primary'),
+});
+
 export const taskSelected = style({
   borderColor: '#0c66e4',
   boxShadow: '0 0 0 2px rgba(12, 102, 228, 0.24)',
+});
+
+export const taskExpanded = style({
+  gap: 14,
+  padding: 14,
+  borderRadius: 14,
+  boxShadow: '0 12px 36px rgba(9, 30, 66, 0.14)',
 });
 
 export const taskHeader = style({
@@ -430,6 +517,22 @@ export const textButton = style({
   },
 });
 
+export const expandButton = style([
+  textButton,
+  {
+    fontWeight: 600,
+    color: '#0c66e4',
+    background: 'rgba(12, 102, 228, 0.08)',
+    padding: '4px 10px',
+    selectors: {
+      '&:hover': {
+        background: 'rgba(12, 102, 228, 0.14)',
+        color: '#0c66e4',
+      },
+    },
+  },
+]);
+
 export const taskMetaRow = style({
   display: 'flex',
   flexWrap: 'wrap',
@@ -464,12 +567,109 @@ export const taskTagsRow = style({
   gap: 6,
 });
 
+export const sectionTitle = style({
+  fontSize: 11,
+  fontWeight: 700,
+  color: cssVarV2('text/secondary'),
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+});
+
 export const taskTag = style({
   fontSize: 11,
   color: '#172b4d',
   borderRadius: 6,
   padding: '2px 7px 3px',
   background: '#dfe1e6',
+});
+
+export const subtasksSection = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+});
+
+export const subtasksListCompact = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4,
+});
+
+export const subtaskCompactItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  fontSize: 12,
+  color: cssVarV2('text/secondary'),
+});
+
+export const subtaskIndicator = style({
+  width: 8,
+  height: 8,
+  borderRadius: '50%',
+  background: '#c1c7d0',
+  flexShrink: 0,
+});
+
+export const subtaskIndicatorDone = style({
+  background: '#22a06b',
+});
+
+export const subtaskCompactTitle = style({
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+export const subtasksOverflowText = style({
+  fontSize: 11,
+  color: cssVarV2('text/secondary'),
+  paddingLeft: 16,
+});
+
+export const historySectionCompact = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+});
+
+export const historyListCompact = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+});
+
+export const historyItemCompact = style({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 8,
+});
+
+export const historyContentCompact = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  minWidth: 0,
+});
+
+export const historyMessage = style({
+  fontSize: 12,
+  color: cssVarV2('text/primary'),
+  lineHeight: 1.35,
+});
+
+export const historyTime = style({
+  fontSize: 11,
+  color: cssVarV2('text/secondary'),
+});
+
+export const historyDot = style({
+  width: 7,
+  height: 7,
+  borderRadius: '50%',
+  background: '#0c66e4',
+  marginTop: 5,
+  flexShrink: 0,
 });
 
 export const fieldGrid = style({
@@ -654,15 +854,392 @@ export const attachmentName = style({
 
 export const detailPanel = style({
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
-  borderRadius: 12,
-  background: cssVarV2('layer/background/secondary'),
-  padding: 12,
+  borderRadius: 18,
+  background: 'rgba(255,255,255,0.96)',
+  padding: 16,
   minHeight: 0,
+  maxHeight: 'calc(100vh - 140px)',
   overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column',
+  gap: 14,
+  position: 'sticky',
+  top: 12,
+  boxShadow: '0 18px 48px rgba(9, 30, 66, 0.14)',
+});
+
+export const editorSection = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12,
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+  borderRadius: 16,
+  background:
+    'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(247,248,252,0.98) 100%)',
+  padding: 14,
+});
+
+export const editorSectionHeader = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
   gap: 10,
-  boxShadow: '0 1px 2px rgba(9, 30, 66, 0.08)',
+});
+
+export const editorFieldGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'minmax(92px, 0.36fr) minmax(0, 1fr)',
+  gap: '10px 12px',
+  alignItems: 'center',
+});
+
+export const editorFieldLabel = style({
+  color: cssVarV2('text/secondary'),
+  fontSize: 12,
+  fontWeight: 600,
+});
+
+export const editorTextArea = style([
+  fieldTextarea,
+  {
+    minHeight: 92,
+    padding: '10px 12px',
+    lineHeight: 1.45,
+    background: cssVarV2('layer/background/primary'),
+  },
+]);
+
+export const editorTextAreaLarge = style([
+  fieldTextarea,
+  {
+    minHeight: 132,
+    padding: '12px 14px',
+    lineHeight: 1.5,
+    background: cssVarV2('layer/background/primary'),
+  },
+]);
+
+export const editorEmptyState = style({
+  border: `1px dashed ${cssVarV2('layer/insideBorder/border')}`,
+  borderRadius: 12,
+  padding: '14px 16px',
+  color: cssVarV2('text/secondary'),
+  fontSize: 12,
+  background: 'rgba(9, 30, 66, 0.03)',
+});
+
+export const expandedCardSurface = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 14,
+  borderTop: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+  paddingTop: 14,
+});
+
+export const expandedCardMain = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 14,
+});
+
+export const expandedCardHeader = style({
+  display: 'flex',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  gap: 12,
+});
+
+export const expandedCardTitleBlock = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  minWidth: 0,
+  flex: 1,
+});
+
+export const expandedTitleInput = style({
+  border: 'none',
+  background: 'transparent',
+  color: cssVarV2('text/primary'),
+  fontSize: 20,
+  lineHeight: 1.25,
+  fontWeight: 700,
+  outline: 'none',
+  padding: 0,
+  borderRadius: 8,
+  selectors: {
+    '&:focus': {
+      background: cssVarV2('layer/background/secondary'),
+      padding: '6px 8px',
+      margin: '-6px -8px',
+    },
+  },
+});
+
+export const expandedTitleText = style({
+  color: cssVarV2('text/primary'),
+  fontSize: 20,
+  lineHeight: 1.25,
+  fontWeight: 700,
+});
+
+export const expandedCardHeaderActions = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  flexShrink: 0,
+});
+
+export const expandedTopGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1.2fr) minmax(280px, 0.8fr)',
+  gap: 14,
+  '@media': {
+    '(max-width: 1100px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+});
+
+export const expandedTopGridSingle = style({
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr)',
+  gap: 14,
+});
+
+export const expandedOverviewCard = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 14,
+  borderRadius: 16,
+  padding: 16,
+  background:
+    'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(246,248,252,0.96) 100%)',
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+});
+
+export const expandedOverviewHeader = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 10,
+});
+
+export const expandedMetaPills = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  flexWrap: 'wrap',
+});
+
+export const expandedOverviewStats = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+  gap: 8,
+  '@media': {
+    '(max-width: 860px)': {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+  },
+});
+
+export const expandedOverviewStat = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4,
+  padding: '12px 12px 10px',
+  borderRadius: 12,
+  background: 'rgba(9, 30, 66, 0.04)',
+});
+
+export const expandedOverviewLabel = style({
+  fontSize: 11,
+  fontWeight: 600,
+  color: cssVarV2('text/secondary'),
+  letterSpacing: '0.03em',
+  textTransform: 'uppercase',
+});
+
+export const expandedOverviewValue = style({
+  fontSize: 14,
+  fontWeight: 700,
+  color: cssVarV2('text/primary'),
+});
+
+export const expandedDescriptionBlock = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+});
+
+export const expandedDescriptionTextarea = style([
+  fieldTextarea,
+  {
+    minHeight: 104,
+    fontSize: 13,
+    lineHeight: 1.5,
+    padding: '10px 12px',
+  },
+]);
+
+export const expandedNotesBlock = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+});
+
+export const expandedNotesTextarea = style([
+  fieldTextarea,
+  {
+    minHeight: 88,
+    fontSize: 13,
+    lineHeight: 1.5,
+    padding: '10px 12px',
+  },
+]);
+
+export const expandedReadOnlyText = style({
+  fontSize: 13,
+  lineHeight: 1.55,
+  color: cssVarV2('text/primary'),
+  borderRadius: 12,
+  background: 'rgba(9, 30, 66, 0.04)',
+  padding: '12px 14px',
+  whiteSpace: 'pre-wrap',
+});
+
+export const expandedFieldsCard = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12,
+  borderRadius: 16,
+  padding: 16,
+  background: cssVarV2('layer/background/primary'),
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+});
+
+export const expandedFieldsHeader = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+});
+
+export const expandedFieldGrid = style({
+  display: 'grid',
+  gridTemplateColumns: '96px 1fr',
+  gap: '8px 10px',
+  alignItems: 'center',
+});
+
+export const expandedFieldValue = style({
+  minHeight: 30,
+  display: 'flex',
+  alignItems: 'center',
+  borderRadius: 8,
+  padding: '0 8px',
+  fontSize: 12,
+  color: cssVarV2('text/primary'),
+  background: cssVarV2('layer/background/secondary'),
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+});
+
+export const expandedBottomGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr)',
+  gap: 14,
+});
+
+export const expandedSectionCard = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 10,
+  borderRadius: 16,
+  padding: 16,
+  background: cssVarV2('layer/background/primary'),
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+});
+
+export const expandedSectionHeader = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 10,
+});
+
+export const expandedSectionMeta = style({
+  fontSize: 12,
+  color: cssVarV2('text/secondary'),
+});
+
+export const expandedEmptyState = style({
+  fontSize: 12,
+  color: cssVarV2('text/secondary'),
+  borderRadius: 10,
+  border: `1px dashed ${cssVarV2('layer/insideBorder/border')}`,
+  padding: '10px 12px',
+  background: cssVarV2('layer/background/secondary'),
+});
+
+export const detailSubtasksEditor = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+});
+
+export const subtasksListDetail = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+});
+
+export const subtaskDetailItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+  borderRadius: 8,
+  background: cssVarV2('layer/background/primary'),
+  padding: '8px 10px',
+  cursor: 'pointer',
+});
+
+export const subtaskDetailItemDone = style({
+  opacity: 0.72,
+});
+
+export const subtaskDetailTitle = style({
+  fontSize: 12,
+  color: cssVarV2('text/primary'),
+  textAlign: 'left',
+});
+
+export const historyPanel = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+  borderRadius: 10,
+  background: cssVarV2('layer/background/primary'),
+  padding: 10,
+});
+
+export const historyListDetail = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+});
+
+export const historyItemDetail = style({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 8,
+});
+
+export const historyContentDetail = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  minWidth: 0,
 });
 
 export const detailHeader = style({

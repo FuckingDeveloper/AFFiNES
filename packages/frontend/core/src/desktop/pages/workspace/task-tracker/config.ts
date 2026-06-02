@@ -37,6 +37,26 @@ export type TaskAttachment = {
   createdAt?: number;
 };
 
+export type TaskComplexity =
+  | 'trivial'
+  | 'easy'
+  | 'medium'
+  | 'hard'
+  | 'extreme';
+
+export type TaskSubtask = {
+  id: string;
+  title: string;
+  done: boolean;
+};
+
+export type TaskHistoryEntry = {
+  id: string;
+  type: 'created' | 'edited' | 'moved';
+  message: string;
+  createdAt: number;
+};
+
 export const TASK_TRACKER_FLAG_PROPERTY = 'taskTrackerEnabled';
 export const TASK_BOARD_PROPERTY = 'taskBoardId';
 export const TASK_STATUS_PROPERTY = 'taskStatus';
@@ -49,6 +69,9 @@ export const TASK_DESCRIPTION_PROPERTY = 'taskDescription';
 export const TASK_EXTRA_INFO_PROPERTY = 'taskExtraInfo';
 export const TASK_ATTACHMENTS_PROPERTY = 'taskAttachments';
 export const TASK_NUMBER_PROPERTY = 'taskNumber';
+export const TASK_COMPLEXITY_PROPERTY = 'taskComplexity';
+export const TASK_SUBTASKS_PROPERTY = 'taskSubtasks';
+export const TASK_HISTORY_PROPERTY = 'taskHistory';
 
 export const DEFAULT_FLOW: TaskFlowColumn[] = [
   { id: 'todo', title: 'To Do' },
@@ -167,6 +190,76 @@ export const parseAttachments = (value?: string): TaskAttachment[] => {
 
 export const stringifyAttachments = (attachments: TaskAttachment[]): string => {
   return JSON.stringify(attachments);
+};
+
+export const parseSubtasks = (value?: string): TaskSubtask[] => {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter(item => item && typeof item === 'object')
+      .map(item => {
+        const next = item as Record<string, unknown>;
+        return {
+          id: String(next.id ?? ''),
+          title: String(next.title ?? '').trim(),
+          done: Boolean(next.done),
+        };
+      })
+      .filter(item => item.id.length > 0 && item.title.length > 0);
+  } catch {
+    return [];
+  }
+};
+
+export const stringifySubtasks = (subtasks: TaskSubtask[]): string => {
+  return JSON.stringify(subtasks);
+};
+
+export const parseHistoryEntries = (value?: string): TaskHistoryEntry[] => {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter(item => item && typeof item === 'object')
+      .map(item => {
+        const next = item as Record<string, unknown>;
+        return {
+          id: String(next.id ?? ''),
+          type:
+            next.type === 'created' || next.type === 'edited' || next.type === 'moved'
+              ? next.type
+              : 'edited',
+          message: String(next.message ?? '').trim(),
+          createdAt:
+            typeof next.createdAt === 'number' ? next.createdAt : Date.now(),
+        } as TaskHistoryEntry;
+      })
+      .filter(item => item.id.length > 0 && item.message.length > 0)
+      .sort((a, b) => b.createdAt - a.createdAt);
+  } catch {
+    return [];
+  }
+};
+
+export const stringifyHistoryEntries = (
+  history: TaskHistoryEntry[]
+): string => {
+  return JSON.stringify(history);
 };
 
 const sanitizeBoardTitle = (title: string | undefined, fallback: string) => {

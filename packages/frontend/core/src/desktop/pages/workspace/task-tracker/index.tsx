@@ -36,21 +36,31 @@ import {
   TASK_DESCRIPTION_PROPERTY,
   TASK_DUE_DATE_PROPERTY,
   TASK_EXTRA_INFO_PROPERTY,
+  TASK_COMPLEXITY_PROPERTY,
+  TASK_HISTORY_PROPERTY,
   TASK_ORDER_PROPERTY,
   TASK_PRIORITY_PROPERTY,
   TASK_NUMBER_PROPERTY,
   TASK_STATUS_PROPERTY,
+  TASK_SUBTASKS_PROPERTY,
   TASK_TRACKER_FLAG_PROPERTY,
   TASK_TYPE_PROPERTY,
   type TaskType,
   type TaskTrackerBoard,
   type TaskFlowColumn,
   type TaskTrackerPropertyAdditionalData,
+  type TaskComplexity,
+  type TaskHistoryEntry,
+  type TaskSubtask,
   buildDefaultTypeTransitions,
   buildDefaultTransitions,
   parseAttachments,
+  parseHistoryEntries,
+  parseSubtasks,
   resolveTaskTrackerBoards,
   stringifyAttachments,
+  stringifyHistoryEntries,
+  stringifySubtasks,
 } from './config';
 import * as styles from './task-tracker.css';
 
@@ -72,6 +82,9 @@ type TaskCard = {
   description: string;
   extraInfo: string;
   attachments: TaskAttachment[];
+  complexity: TaskComplexity;
+  subtasks: TaskSubtask[];
+  history: TaskHistoryEntry[];
 };
 
 type DocTitleItem = {
@@ -122,6 +135,18 @@ const TASK_TYPE_OPTIONS: Array<{ value: TaskType; label: string }> = [
   { value: 'epic', label: 'Epic' },
 ];
 
+const COMPLEXITY_OPTIONS: Array<{
+  value: TaskComplexity;
+  label: string;
+  short: string;
+}> = [
+  { value: 'trivial', label: 'Trivial', short: 'T0' },
+  { value: 'easy', label: 'Easy', short: 'T1' },
+  { value: 'medium', label: 'Medium', short: 'T2' },
+  { value: 'hard', label: 'Hard', short: 'T3' },
+  { value: 'extreme', label: 'Extreme', short: 'T4' },
+];
+
 const PRIORITY_WEIGHT: Record<TaskPriority, number> = {
   urgent: 0,
   high: 1,
@@ -150,6 +175,19 @@ const sanitizeTaskType = (value: string | undefined): TaskType => {
       return value;
     default:
       return 'task';
+  }
+};
+
+const sanitizeComplexity = (value: string | undefined): TaskComplexity => {
+  switch (value) {
+    case 'trivial':
+    case 'easy':
+    case 'medium':
+    case 'hard':
+    case 'extreme':
+      return value;
+    default:
+      return 'medium';
   }
 };
 
@@ -184,6 +222,51 @@ const formatDueDateLabel = (date: string): string => {
   }
 
   return date;
+};
+
+const formatHistoryTime = (timestamp: number): string => {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(timestamp);
+  } catch {
+    return '';
+  }
+};
+
+const buildHistoryEntry = (
+  type: TaskHistoryEntry['type'],
+  message: string
+): TaskHistoryEntry => ({
+  id: nanoid(),
+  type,
+  message,
+  createdAt: Date.now(),
+});
+
+const complexityMeta = (complexity: TaskComplexity) => {
+  return (
+    COMPLEXITY_OPTIONS.find(option => option.value === complexity) ??
+    COMPLEXITY_OPTIONS[2]
+  );
+};
+
+const parseSubtasksInput = (value: string): TaskSubtask[] => {
+  return Array.from(
+    new Set(
+      value
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean)
+    )
+  ).map(title => ({
+    id: nanoid(),
+    title,
+    done: false,
+  }));
 };
 
 const toBlobPart = (data: Uint8Array): ArrayBuffer => {
@@ -435,6 +518,79 @@ const TaskDropZone = ({
   );
 };
 
+const TaskColumnDropTarget = ({
+  columnId,
+  index,
+  hasActiveFilters,
+  isTransitionAllowed,
+  onDropTask,
+  children,
+}: {
+  columnId: string;
+  index: number;
+  hasActiveFilters: boolean;
+  isTransitionAllowed: (
+    fromColumnId: string,
+    toColumnId: string,
+    taskType: TaskType
+  ) => boolean;
+  onDropTask: (
+    taskId: string,
+    fromColumnId: string,
+    toColumnId: string,
+    toIndex: number
+  ) => void;
+  children: ReactNode;
+}) => {
+  const { dropTargetRef, draggedOver } = useDropTarget<TaskTrackerDndData>(
+    () => ({
+      data: {
+        columnId,
+        index,
+      },
+      isSticky: true,
+      canDrop: (args: any) => {
+        if (hasActiveFilters) {
+          return false;
+        }
+        if (args.source.data?.type !== 'task') {
+          return false;
+        }
+
+        return isTransitionAllowed(
+          args.source.data.fromColumnId,
+          columnId,
+          args.source.data.taskType ?? 'task'
+        );
+      },
+      onDrop: (args: any) => {
+        if (args.source.data?.type !== 'task') {
+          return;
+        }
+
+        onDropTask(
+          args.source.data.taskId,
+          args.source.data.fromColumnId,
+          columnId,
+          index
+        );
+      },
+    }),
+    [columnId, hasActiveFilters, index, isTransitionAllowed, onDropTask]
+  );
+
+  return (
+    <div
+      ref={dropTargetRef}
+      className={clsx(styles.tasks, {
+        [styles.tasksDropActive]: draggedOver,
+      })}
+    >
+      {children}
+    </div>
+  );
+};
+
 const TaskCardDropTarget = ({
   columnId,
   index,
@@ -520,8 +676,9 @@ const TaskCardItem = ({
   tagNameMap,
   workspace,
   hasActiveFilters,
-  selected,
-  onSelectTask,
+  expanded,
+  onToggleExpanded,
+  onOpenEditor,
   onOpenTaskDoc,
   onDeleteTask,
   onDownloadAttachment,
@@ -532,8 +689,9 @@ const TaskCardItem = ({
   tagNameMap: Map<string, string>;
   workspace: WorkspaceService['workspace'] | null;
   hasActiveFilters: boolean;
-  selected: boolean;
-  onSelectTask: (taskId: string) => void;
+  expanded: boolean;
+  onToggleExpanded: (taskId: string) => void;
+  onOpenEditor: (taskId: string) => void;
   onOpenTaskDoc: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onDownloadAttachment: (attachment: TaskAttachment) => void;
@@ -556,6 +714,8 @@ const TaskCardItem = ({
     .map(labelId => tagNameMap.get(labelId) ?? '')
     .filter(Boolean);
   const priorityTone = getPriorityTone(task.priority);
+  const complexity = complexityMeta(task.complexity);
+  const subtaskDoneCount = task.subtasks.filter(item => item.done).length;
 
   useEffect(() => {
     if (!dragging) {
@@ -576,53 +736,79 @@ const TaskCardItem = ({
     <article
       ref={dragRef}
       className={clsx(styles.task, {
-        [styles.taskSelected]: selected,
+        [styles.taskSelected]: expanded,
+        [styles.taskExpanded]: expanded,
       })}
       data-dragging={dragging}
       data-testid={`task-card:${task.id}`}
       onClick={() => {
-        onSelectTask(task.id);
+        onToggleExpanded(task.id);
       }}
     >
+      <div className={styles.taskHero}>
+        <div className={styles.taskHeroTopline}>
+          <span className={styles.taskNumber}>{task.number}</span>
+          <span className={styles.taskComplexityBadge}>{complexity.short}</span>
+        </div>
+        <div className={styles.taskHeroTitleRow}>
+          <div className={styles.taskTitle}>{task.title || 'Untitled task'}</div>
+          <div className={styles.taskHeaderActionsInline}>
+            <button
+              type="button"
+              className={styles.expandButton}
+              onClick={event => {
+                event.stopPropagation();
+                onOpenEditor(task.id);
+              }}
+              aria-label="Open task editor"
+            >
+              Open editor
+            </button>
+
+            <button
+              type="button"
+              className={styles.iconButton}
+              onClick={event => {
+                event.stopPropagation();
+                onOpenTaskDoc(task.id);
+              }}
+              aria-label="Open task document"
+            >
+              <LinkIcon />
+            </button>
+
+            <button
+              type="button"
+              className={styles.iconButton}
+              onClick={event => {
+                event.stopPropagation();
+                onDeleteTask(task.id);
+              }}
+              aria-label="Delete task"
+            >
+              <DeleteIcon />
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className={styles.taskHeader}>
-        <span className={styles.taskNumber}>{task.number}</span>
-        <div className={styles.taskTitle}>{task.title || 'Untitled task'}</div>
-
-        <button
-          type="button"
-          className={styles.textButton}
-          onClick={event => {
-            event.stopPropagation();
-            onSelectTask(task.id);
-          }}
-          aria-label="Open task details"
-        >
-          Details
-        </button>
-
-        <button
-          type="button"
-          className={styles.iconButton}
-          onClick={event => {
-            event.stopPropagation();
-            onOpenTaskDoc(task.id);
-          }}
-          aria-label="Open task document"
-        >
-          <LinkIcon />
-        </button>
-
-        <button
-          type="button"
-          className={styles.iconButton}
-          onClick={event => {
-            event.stopPropagation();
-            onDeleteTask(task.id);
-          }}
-          aria-label="Delete task"
-        >
-          <DeleteIcon />
-        </button>
+        <div className={styles.taskHeroSummary}>
+          <div className={styles.taskSummaryMetric}>
+            <span className={styles.taskSummaryLabel}>Complexity</span>
+            <span className={styles.taskSummaryValue}>{complexity.label}</span>
+          </div>
+          <div className={styles.taskSummaryMetric}>
+            <span className={styles.taskSummaryLabel}>Subtasks</span>
+            <span className={styles.taskSummaryValue}>
+              {subtaskDoneCount}/{task.subtasks.length}
+            </span>
+          </div>
+          <div className={styles.taskSummaryMetric}>
+            <span className={styles.taskSummaryLabel}>Files</span>
+            <span className={styles.taskSummaryValue}>{task.attachments.length}</span>
+          </div>
+        </div>
       </div>
 
       <div className={styles.taskMetaRow}>
@@ -655,10 +841,6 @@ const TaskCardItem = ({
         </span>
       </div>
 
-      {task.description ? (
-        <div className={styles.taskDescriptionPreview}>{task.description}</div>
-      ) : null}
-
       <div className={styles.taskTagsRow}>
         {labels.map(label => (
           <span className={styles.taskTag} key={label}>
@@ -667,24 +849,109 @@ const TaskCardItem = ({
         ))}
       </div>
 
-      <div className={styles.attachmentsSection}>
-        <div className={styles.attachmentsHeader}>
-          <span className={styles.attachmentsTitle}>
-            Files ({task.attachments.length})
-          </span>
-        </div>
+      {expanded ? (
+        <div className={styles.expandedCardSurface}>
+          <div className={styles.expandedDescriptionBlock}>
+            <span className={styles.sectionTitle}>Description</span>
+            <div className={styles.expandedReadOnlyText}>
+              {task.description || 'No description yet'}
+            </div>
+          </div>
 
-        {task.attachments.length === 0 ? (
-          <div className={styles.emptyAttachments}>No previews</div>
-        ) : (
-          <AttachmentPreviewStrip
-            attachments={task.attachments}
-            workspace={workspace}
-            onOpenAttachment={onDownloadAttachment}
-          />
-        )}
-      </div>
+          <div className={styles.expandedSectionCard}>
+            <div className={styles.expandedSectionHeader}>
+              <span className={styles.sectionTitle}>Subtasks</span>
+              <span className={styles.expandedSectionMeta}>
+                {subtaskDoneCount}/{task.subtasks.length} completed
+              </span>
+            </div>
+            {task.subtasks.length > 0 ? (
+              <div className={styles.subtasksListDetail}>
+                {task.subtasks.map(subtask => (
+                  <div
+                    key={subtask.id}
+                    className={clsx(styles.subtaskDetailItem, {
+                      [styles.subtaskDetailItemDone]: subtask.done,
+                    })}
+                  >
+                    <span
+                      className={clsx(styles.subtaskIndicator, {
+                        [styles.subtaskIndicatorDone]: subtask.done,
+                      })}
+                    />
+                    <span className={styles.subtaskDetailTitle}>{subtask.title}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.expandedEmptyState}>No subtasks yet</div>
+            )}
+          </div>
+
+          <div className={styles.expandedSectionCard}>
+            <div className={styles.expandedSectionHeader}>
+              <span className={styles.sectionTitle}>Files</span>
+              <span className={styles.expandedSectionMeta}>
+                {task.attachments.length} attached
+              </span>
+            </div>
+            <AttachmentPreviewStrip
+              attachments={task.attachments}
+              workspace={workspace}
+              max={6}
+              large
+              onOpenAttachment={onDownloadAttachment}
+            />
+            {task.attachments.length === 0 ? (
+              <div className={styles.expandedEmptyState}>No files attached</div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </article>
+  );
+};
+
+const InlineAttachmentUploader = ({
+  taskId,
+  uploading,
+  onUploadAttachments,
+}: {
+  taskId: string;
+  uploading: boolean;
+  onUploadAttachments: (taskId: string, files: FileList | null) => void;
+}) => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFilesChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      onUploadAttachments(taskId, event.target.files);
+      event.target.value = '';
+    },
+    [onUploadAttachments, taskId]
+  );
+
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        className={styles.hiddenFileInput}
+        type="file"
+        multiple
+        onChange={handleFilesChange}
+      />
+      <Button
+        variant="plain"
+        className={styles.smallButton}
+        disabled={uploading}
+        onClick={() => {
+          fileInputRef.current?.click();
+        }}
+      >
+        <PlusIcon />
+        {uploading ? 'Uploading...' : 'Attach file'}
+      </Button>
+    </>
   );
 };
 
@@ -704,9 +971,11 @@ const TaskDetailPanel = ({
   onLabelsChange,
   onDescriptionChange,
   onExtraInfoChange,
+  onComplexityChange,
+  onSubtasksChange,
+  onToggleSubtask,
   onUploadAttachments,
   onDownloadAttachment,
-  onRemoveAttachment,
 }: {
   task: TaskCard;
   workspace: WorkspaceService['workspace'] | null;
@@ -723,24 +992,17 @@ const TaskDetailPanel = ({
   onLabelsChange: (taskId: string, labels: string) => void;
   onDescriptionChange: (taskId: string, value: string) => void;
   onExtraInfoChange: (taskId: string, value: string) => void;
+  onComplexityChange: (taskId: string, complexity: TaskComplexity) => void;
+  onSubtasksChange: (taskId: string, value: string) => void;
+  onToggleSubtask: (taskId: string, subtaskId: string) => void;
   onUploadAttachments: (taskId: string, files: FileList | null) => void;
   onDownloadAttachment: (attachment: TaskAttachment) => void;
-  onRemoveAttachment: (taskId: string, attachmentId: string) => void;
 }) => {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const labelsText = task.labelIds
     .map(labelId => tagNameMap.get(labelId) ?? '')
     .filter(Boolean)
     .join(', ');
-
-  const handleFilesChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      onUploadAttachments(task.id, event.target.files);
-      event.target.value = '';
-    },
-    [onUploadAttachments, task.id]
-  );
+  const subtasksText = task.subtasks.map(item => item.title).join('\n');
 
   return (
     <aside className={styles.detailPanel}>
@@ -778,112 +1040,163 @@ const TaskDetailPanel = ({
         </div>
       </div>
 
-      <div className={styles.fieldGrid}>
-        <label className={styles.fieldLabel}>Assignee</label>
-        <input
-          className={styles.fieldInput}
-          defaultValue={task.assignee}
-          placeholder="Name or @handle"
-          onBlur={event => {
-            onAssigneeChange(task.id, event.target.value);
-          }}
-        />
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>Parameters</span>
+        </div>
+        <div className={styles.editorFieldGrid}>
+          <div className={styles.editorFieldLabel}>Assignee</div>
+          <input
+            className={styles.fieldInput}
+            defaultValue={task.assignee}
+            placeholder="Name or @handle"
+            onBlur={event => {
+              onAssigneeChange(task.id, event.target.value);
+            }}
+          />
 
-        <label className={styles.fieldLabel}>Type</label>
-        <select
-          className={styles.fieldInput}
-          value={task.type}
-          onChange={event => {
-            onTypeChange(task.id, sanitizeTaskType(event.target.value));
-          }}
-        >
-          {TASK_TYPE_OPTIONS.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <div className={styles.editorFieldLabel}>Type</div>
+          <select
+            className={styles.fieldInput}
+            value={task.type}
+            onChange={event => {
+              onTypeChange(task.id, sanitizeTaskType(event.target.value));
+            }}
+          >
+            {TASK_TYPE_OPTIONS.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
 
-        <label className={styles.fieldLabel}>Priority</label>
-        <select
-          className={styles.fieldInput}
-          value={task.priority}
-          onChange={event => {
-            onPriorityChange(task.id, sanitizePriority(event.target.value));
-          }}
-        >
-          {PRIORITY_OPTIONS.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <div className={styles.editorFieldLabel}>Priority</div>
+          <select
+            className={styles.fieldInput}
+            value={task.priority}
+            onChange={event => {
+              onPriorityChange(task.id, sanitizePriority(event.target.value));
+            }}
+          >
+            {PRIORITY_OPTIONS.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
 
-        <label className={styles.fieldLabel}>Due date</label>
-        <input
-          className={styles.fieldInput}
-          type="date"
-          value={task.dueDate}
-          onChange={event => {
-            onDueDateChange(task.id, event.target.value);
-          }}
-        />
+          <div className={styles.editorFieldLabel}>Complexity</div>
+          <select
+            className={styles.fieldInput}
+            value={task.complexity}
+            onChange={event => {
+              onComplexityChange(task.id, sanitizeComplexity(event.target.value));
+            }}
+          >
+            {COMPLEXITY_OPTIONS.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
 
-        <label className={styles.fieldLabel}>Labels</label>
-        <input
-          className={styles.fieldInput}
-          defaultValue={labelsText}
-          placeholder="frontend, bug, api"
-          onBlur={event => {
-            onLabelsChange(task.id, event.target.value);
-          }}
-        />
+          <div className={styles.editorFieldLabel}>Due date</div>
+          <input
+            className={styles.fieldInput}
+            type="date"
+            value={task.dueDate}
+            onChange={event => {
+              onDueDateChange(task.id, event.target.value);
+            }}
+          />
 
-        <label className={styles.fieldLabel}>Description</label>
+          <div className={styles.editorFieldLabel}>Labels</div>
+          <input
+            className={styles.fieldInput}
+            defaultValue={labelsText}
+            placeholder="frontend, bug, api"
+            onBlur={event => {
+              onLabelsChange(task.id, event.target.value);
+            }}
+          />
+        </div>
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>Description</span>
+        </div>
         <textarea
-          className={styles.fieldTextarea}
+          className={styles.editorTextAreaLarge}
           defaultValue={task.description}
           placeholder="Task summary and expected result"
           onBlur={event => {
             onDescriptionChange(task.id, event.target.value);
           }}
         />
-
-        <label className={styles.fieldLabel}>Extra info</label>
         <textarea
-          className={styles.fieldTextarea}
+          className={styles.editorTextArea}
           defaultValue={task.extraInfo}
           placeholder="Links, acceptance criteria, notes"
           onBlur={event => {
             onExtraInfoChange(task.id, event.target.value);
           }}
         />
-      </div>
+      </section>
 
-      <div className={styles.attachmentsSection}>
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>Subtasks</span>
+          <span className={styles.expandedSectionMeta}>
+            {task.subtasks.filter(item => item.done).length}/{task.subtasks.length} completed
+          </span>
+        </div>
+        <div className={styles.detailSubtasksEditor}>
+          <textarea
+            className={styles.editorTextArea}
+            defaultValue={subtasksText}
+            placeholder="One subtask per line"
+            onBlur={event => {
+              onSubtasksChange(task.id, event.target.value);
+            }}
+          />
+          {task.subtasks.length > 0 ? (
+            <div className={styles.subtasksListDetail}>
+              {task.subtasks.map(subtask => (
+                <button
+                  key={subtask.id}
+                  type="button"
+                  className={clsx(styles.subtaskDetailItem, {
+                    [styles.subtaskDetailItemDone]: subtask.done,
+                  })}
+                  onClick={() => {
+                    onToggleSubtask(task.id, subtask.id);
+                  }}
+                >
+                  <span
+                    className={clsx(styles.subtaskIndicator, {
+                      [styles.subtaskIndicatorDone]: subtask.done,
+                    })}
+                  />
+                  <span className={styles.subtaskDetailTitle}>{subtask.title}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className={styles.editorSection}>
         <div className={styles.attachmentsHeader}>
           <span className={styles.attachmentsTitle}>
             Files ({task.attachments.length})
           </span>
           <div className={styles.attachmentsActions}>
-            <input
-              ref={fileInputRef}
-              className={styles.hiddenFileInput}
-              type="file"
-              multiple
-              onChange={handleFilesChange}
+            <InlineAttachmentUploader
+              taskId={task.id}
+              uploading={uploading}
+              onUploadAttachments={onUploadAttachments}
             />
-            <Button
-              variant="plain"
-              className={styles.smallButton}
-              disabled={uploading}
-              onClick={() => {
-                fileInputRef.current?.click();
-              }}
-            >
-              <PlusIcon />
-              {uploading ? 'Uploading...' : 'Attach file'}
-            </Button>
           </div>
         </div>
 
@@ -897,34 +1210,40 @@ const TaskDetailPanel = ({
 
         {task.attachments.length === 0 ? (
           <div className={styles.emptyAttachments}>No files attached</div>
-        ) : (
-          <div className={styles.attachmentsList}>
-            {task.attachments.map(attachment => (
-              <div key={attachment.id} className={styles.attachmentRow}>
-                <button
-                  type="button"
-                  className={styles.attachmentName}
-                  onClick={() => {
-                    onDownloadAttachment(attachment);
-                  }}
-                >
-                  {attachment.name}
-                </button>
-                <button
-                  type="button"
-                  className={styles.iconButton}
-                  onClick={() => {
-                    onRemoveAttachment(task.id, attachment.id);
-                  }}
-                  aria-label="Remove attachment"
-                >
-                  <DeleteIcon />
-                </button>
+        ) : null}
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>Linked tasks</span>
+        </div>
+        <div className={styles.editorEmptyState}>
+          No linked tasks yet
+        </div>
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>History</span>
+        </div>
+        {task.history.length > 0 ? (
+          <div className={styles.historyListDetail}>
+            {task.history.slice(0, 12).map(entry => (
+              <div key={entry.id} className={styles.historyItemDetail}>
+                <span className={styles.historyDot} />
+                <div className={styles.historyContentDetail}>
+                  <div className={styles.historyMessage}>{entry.message}</div>
+                  <div className={styles.historyTime}>
+                    {formatHistoryTime(entry.createdAt)}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
+        ) : (
+          <div className={styles.editorEmptyState}>No history yet</div>
         )}
-      </div>
+      </section>
     </aside>
   );
 };
@@ -1069,6 +1388,39 @@ const TaskTrackerPage = () => {
     )
   );
 
+  const complexityValues = useLiveData(
+    useMemo(
+      () =>
+        LiveData.from(
+          docsService.propertyValues$(`custom:${TASK_COMPLEXITY_PROPERTY}`),
+          new Map<string, string | undefined>()
+        ),
+      [docsService]
+    )
+  );
+
+  const subtaskValues = useLiveData(
+    useMemo(
+      () =>
+        LiveData.from(
+          docsService.propertyValues$(`custom:${TASK_SUBTASKS_PROPERTY}`),
+          new Map<string, string | undefined>()
+        ),
+      [docsService]
+    )
+  );
+
+  const historyValues = useLiveData(
+    useMemo(
+      () =>
+        LiveData.from(
+          docsService.propertyValues$(`custom:${TASK_HISTORY_PROPERTY}`),
+          new Map<string, string | undefined>()
+        ),
+      [docsService]
+    )
+  );
+
   const workspaceTaskKey = useLiveData(workspace.taskKey$) || 'TASK';
 
   const docTitles = (useLiveData(
@@ -1128,6 +1480,15 @@ const TaskTrackerPage = () => {
   const numberPropertyInfo = useLiveData(
     workspacePropertyService.propertyInfo$(TASK_NUMBER_PROPERTY)
   );
+  const complexityPropertyInfo = useLiveData(
+    workspacePropertyService.propertyInfo$(TASK_COMPLEXITY_PROPERTY)
+  );
+  const subtasksPropertyInfo = useLiveData(
+    workspacePropertyService.propertyInfo$(TASK_SUBTASKS_PROPERTY)
+  );
+  const historyPropertyInfo = useLiveData(
+    workspacePropertyService.propertyInfo$(TASK_HISTORY_PROPERTY)
+  );
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBoardId, setSelectedBoardId] =
@@ -1139,10 +1500,9 @@ const TaskTrackerPage = () => {
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [labelFilter, setLabelFilter] = useState('all');
   const [dueFilter, setDueFilter] = useState<DueFilter>('all');
-  const [uploadingByTaskId, setUploadingByTaskId] = useState<
-    Record<string, boolean>
-  >({});
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [uploadingTaskId, setUploadingTaskId] = useState<string | null>(null);
   const [activeDragTask, setActiveDragTask] = useState<ActiveDragTask | null>(
     null
   );
@@ -1281,17 +1641,46 @@ const TaskTrackerPage = () => {
         show: 'always-hide',
       });
     });
+
+    ensureProperty(TASK_COMPLEXITY_PROPERTY, !!complexityPropertyInfo, () => {
+      workspacePropertyService.createProperty({
+        id: TASK_COMPLEXITY_PROPERTY,
+        name: 'Task Complexity',
+        type: 'text',
+      });
+    });
+
+    ensureProperty(TASK_SUBTASKS_PROPERTY, !!subtasksPropertyInfo, () => {
+      workspacePropertyService.createProperty({
+        id: TASK_SUBTASKS_PROPERTY,
+        name: 'Task Subtasks',
+        type: 'text',
+        show: 'always-hide',
+      });
+    });
+
+    ensureProperty(TASK_HISTORY_PROPERTY, !!historyPropertyInfo, () => {
+      workspacePropertyService.createProperty({
+        id: TASK_HISTORY_PROPERTY,
+        name: 'Task History',
+        type: 'text',
+        show: 'always-hide',
+      });
+    });
   }, [
     assigneePropertyInfo,
     attachmentsPropertyInfo,
     boardPropertyInfo,
+    complexityPropertyInfo,
     descriptionPropertyInfo,
     dueDatePropertyInfo,
     extraInfoPropertyInfo,
+    historyPropertyInfo,
     numberPropertyInfo,
     orderPropertyInfo,
     priorityPropertyInfo,
     statusPropertyInfo,
+    subtasksPropertyInfo,
     typePropertyInfo,
     trackerFlagPropertyInfo,
     workspacePropertyService,
@@ -1424,12 +1813,16 @@ const TaskTrackerPage = () => {
           description: descriptionValues.get(docId) ?? '',
           extraInfo: extraInfoValues.get(docId) ?? '',
           attachments: parseAttachments(attachmentValues.get(docId)),
+          complexity: sanitizeComplexity(complexityValues.get(docId)),
+          subtasks: parseSubtasks(subtaskValues.get(docId)),
+          history: parseHistoryEntries(historyValues.get(docId)),
         };
       });
   }, [
     assigneeValues,
     attachmentValues,
     boardValues,
+    complexityValues,
     descriptionValues,
     dueDateValues,
     extraInfoValues,
@@ -1439,10 +1832,12 @@ const TaskTrackerPage = () => {
     orderValues,
     priorityValues,
     statusValues,
+    subtaskValues,
     typeValues,
     tagIdsMap,
     titleMap,
     trackerEnabledValues,
+    historyValues,
     workspaceTaskKey,
   ]);
 
@@ -1617,11 +2012,6 @@ const TaskTrackerPage = () => {
     return grouped;
   }, [filteredTasks, flow]);
 
-  const selectedTask = useMemo(
-    () => selectedBoardTasks.find(task => task.id === selectedTaskId) ?? null,
-    [selectedBoardTasks, selectedTaskId]
-  );
-
   const allTasksByColumn = useMemo(() => {
     const grouped = new Map<string, TaskCard[]>();
     flow.forEach(column => {
@@ -1650,6 +2040,11 @@ const TaskTrackerPage = () => {
 
     return grouped;
   }, [flow, selectedBoardTasks]);
+
+  const selectedTask = useMemo(
+    () => selectedBoardTasks.find(task => task.id === selectedTaskId) ?? null,
+    [selectedBoardTasks, selectedTaskId]
+  );
 
   useEffect(() => {
     if (
@@ -1718,6 +2113,358 @@ const TaskTrackerPage = () => {
     [docsService.list]
   );
 
+  const appendTaskHistory = useCallback(
+    (
+      taskId: string,
+      entry: TaskHistoryEntry,
+      baseHistory?: TaskHistoryEntry[]
+    ) => {
+      const doc = docsService.list.doc$(taskId).value;
+      if (!doc) {
+        return;
+      }
+
+      const currentHistory =
+        baseHistory ?? tasks.find(item => item.id === taskId)?.history ?? [];
+
+      doc.setCustomProperty(
+        TASK_HISTORY_PROPERTY,
+        stringifyHistoryEntries([entry, ...currentHistory].slice(0, 30))
+      );
+    },
+    [docsService.list, tasks]
+  );
+
+  const handleCreateTask = useCallback(() => {
+    const targetColumn = flow[0];
+    if (!targetColumn) {
+      return;
+    }
+
+    const nextOrder =
+      (allTasksByColumn.get(targetColumn.id)?.length ?? 0) * 1000 + 1000;
+    const nextNumber =
+      Math.max(0, ...tasks.map(task => parseTaskNumber(task.number))) + 1;
+    const taskNumber = `${workspaceTaskKey}-${nextNumber}`;
+
+    const doc = docsService.createDoc({
+      primaryMode: 'page',
+    });
+
+    doc.setCustomProperty(TASK_TRACKER_FLAG_PROPERTY, 'true');
+    doc.setCustomProperty(
+      TASK_BOARD_PROPERTY,
+      selectedBoard?.id || DEFAULT_BOARD_ID
+    );
+    doc.setCustomProperty(TASK_STATUS_PROPERTY, targetColumn.id);
+    doc.setCustomProperty(TASK_TYPE_PROPERTY, 'task');
+    doc.setCustomProperty(TASK_PRIORITY_PROPERTY, 'medium');
+    doc.setCustomProperty(TASK_ASSIGNEE_PROPERTY, '');
+    doc.setCustomProperty(TASK_DUE_DATE_PROPERTY, '');
+    doc.setCustomProperty(TASK_ORDER_PROPERTY, String(nextOrder));
+    doc.setCustomProperty(TASK_NUMBER_PROPERTY, taskNumber);
+    doc.setCustomProperty(TASK_DESCRIPTION_PROPERTY, '');
+    doc.setCustomProperty(TASK_EXTRA_INFO_PROPERTY, '');
+    doc.setCustomProperty(TASK_ATTACHMENTS_PROPERTY, '[]');
+    doc.setCustomProperty(TASK_COMPLEXITY_PROPERTY, 'medium');
+    doc.setCustomProperty(TASK_SUBTASKS_PROPERTY, '[]');
+    doc.setCustomProperty(
+      TASK_HISTORY_PROPERTY,
+      stringifyHistoryEntries([
+        buildHistoryEntry('created', `Created in ${targetColumn.title}`),
+      ])
+    );
+
+    void docsService.changeDocTitle(doc.id, 'New task');
+    setSelectedTaskId(doc.id);
+  }, [
+    allTasksByColumn,
+    docsService,
+    flow,
+    selectedBoard,
+    tasks,
+    workspaceTaskKey,
+  ]);
+
+  const handleRenameTask = useCallback(
+    (taskId: string, title: string) => {
+      const nextTitle = title.trim();
+      const task = tasks.find(item => item.id === taskId);
+      if (!nextTitle || !task || task.title === nextTitle) {
+        return;
+      }
+
+      void docsService.changeDocTitle(taskId, nextTitle);
+      appendTaskHistory(
+        taskId,
+        buildHistoryEntry('edited', `Renamed task to “${nextTitle}”`),
+        task.history
+      );
+    },
+    [appendTaskHistory, docsService, tasks]
+  );
+
+  const handleDeleteTask = useCallback(
+    (taskId: string) => {
+      const doc = docsService.list.doc$(taskId).value;
+      doc?.moveToTrash();
+      if (selectedTaskId === taskId) {
+        setSelectedTaskId(null);
+      }
+    },
+    [docsService.list, selectedTaskId]
+  );
+
+  const handlePriorityChange = useCallback(
+    (taskId: string, priority: TaskPriority) => {
+      const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      if (!doc || !task || task.priority === priority) {
+        return;
+      }
+      doc?.setCustomProperty(TASK_PRIORITY_PROPERTY, priority);
+      appendTaskHistory(
+        taskId,
+        buildHistoryEntry('edited', `Changed priority to ${priority}`),
+        task.history
+      );
+    },
+    [appendTaskHistory, docsService.list, tasks]
+  );
+
+  const handleTypeChange = useCallback(
+    (taskId: string, type: TaskType) => {
+      const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      if (!doc || !task || task.type === type) {
+        return;
+      }
+      doc?.setCustomProperty(TASK_TYPE_PROPERTY, type);
+      appendTaskHistory(
+        taskId,
+        buildHistoryEntry('edited', `Changed type to ${type}`),
+        task.history
+      );
+    },
+    [appendTaskHistory, docsService.list, tasks]
+  );
+
+  const handleAssigneeChange = useCallback(
+    (taskId: string, assignee: string) => {
+      const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      const nextAssignee = assignee.trim();
+      if (!doc || !task || task.assignee === nextAssignee) {
+        return;
+      }
+      doc?.setCustomProperty(TASK_ASSIGNEE_PROPERTY, nextAssignee);
+      appendTaskHistory(
+        taskId,
+        buildHistoryEntry(
+          'edited',
+          nextAssignee
+            ? `Assigned to ${nextAssignee}`
+            : 'Cleared assignee'
+        ),
+        task.history
+      );
+    },
+    [appendTaskHistory, docsService.list, tasks]
+  );
+
+  const handleDueDateChange = useCallback(
+    (taskId: string, dueDate: string) => {
+      const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      if (!doc || !task || task.dueDate === dueDate) {
+        return;
+      }
+      doc?.setCustomProperty(TASK_DUE_DATE_PROPERTY, dueDate);
+      appendTaskHistory(
+        taskId,
+        buildHistoryEntry(
+          'edited',
+          dueDate ? `Set due date to ${dueDate}` : 'Cleared due date'
+        ),
+        task.history
+      );
+    },
+    [appendTaskHistory, docsService.list, tasks]
+  );
+
+  const handleLabelsChange = useCallback(
+    (taskId: string, labelsInput: string) => {
+      const names = Array.from(
+        new Set(
+          labelsInput
+            .split(',')
+            .map(value => value.trim())
+            .filter(Boolean)
+        )
+      );
+
+      const labelIds: string[] = [];
+      names.forEach(name => {
+        const normalized = name.toLowerCase();
+        const existing = tagByLowercaseName.get(normalized);
+        if (existing) {
+          labelIds.push(existing.id);
+          return;
+        }
+
+        const tag = tagService.tagList.createTag(
+          name,
+          tagService.randomTagColor()
+        );
+        labelIds.push(tag.id);
+      });
+
+      const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      doc?.setMeta({ tags: labelIds });
+      if (task) {
+        appendTaskHistory(
+          taskId,
+          buildHistoryEntry(
+            'edited',
+            labelIds.length > 0
+              ? `Updated tags: ${names.join(', ')}`
+              : 'Cleared tags'
+          ),
+          task.history
+        );
+      }
+    },
+    [appendTaskHistory, docsService.list, tagByLowercaseName, tagService, tasks]
+  );
+
+  const handleDescriptionChange = useCallback(
+    (taskId: string, value: string) => {
+      const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      const nextValue = value.trim();
+      if (!doc || !task || task.description === nextValue) {
+        return;
+      }
+      doc?.setCustomProperty(TASK_DESCRIPTION_PROPERTY, nextValue);
+      appendTaskHistory(
+        taskId,
+        buildHistoryEntry('edited', 'Updated description'),
+        task.history
+      );
+    },
+    [appendTaskHistory, docsService.list, tasks]
+  );
+
+  const handleExtraInfoChange = useCallback(
+    (taskId: string, value: string) => {
+      const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      const nextValue = value.trim();
+      if (!doc || !task || task.extraInfo === nextValue) {
+        return;
+      }
+      doc?.setCustomProperty(TASK_EXTRA_INFO_PROPERTY, nextValue);
+      appendTaskHistory(
+        taskId,
+        buildHistoryEntry('edited', 'Updated extra info'),
+        task.history
+      );
+    },
+    [appendTaskHistory, docsService.list, tasks]
+  );
+
+  const handleComplexityChange = useCallback(
+    (taskId: string, complexity: TaskComplexity) => {
+      const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      if (!doc || !task || task.complexity === complexity) {
+        return;
+      }
+
+      doc.setCustomProperty(TASK_COMPLEXITY_PROPERTY, complexity);
+      appendTaskHistory(
+        taskId,
+        buildHistoryEntry(
+          'edited',
+          `Changed complexity from ${complexityMeta(task.complexity).label} to ${complexityMeta(complexity).label}`
+        ),
+        task.history
+      );
+    },
+    [appendTaskHistory, docsService.list, tasks]
+  );
+
+  const handleSubtasksChange = useCallback(
+    (taskId: string, value: string) => {
+      const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      if (!doc || !task) {
+        return;
+      }
+
+      const nextSubtasks = parseSubtasksInput(value);
+      const prevSignature = JSON.stringify(
+        task.subtasks.map(item => ({ title: item.title, done: item.done }))
+      );
+      const nextSignature = JSON.stringify(
+        nextSubtasks.map(item => ({ title: item.title, done: item.done }))
+      );
+
+      if (prevSignature === nextSignature) {
+        return;
+      }
+
+      doc.setCustomProperty(
+        TASK_SUBTASKS_PROPERTY,
+        stringifySubtasks(nextSubtasks)
+      );
+      appendTaskHistory(
+        taskId,
+        buildHistoryEntry(
+          'edited',
+          nextSubtasks.length > task.subtasks.length
+            ? `Updated subtasks to ${nextSubtasks.length} items`
+            : `Reworked subtasks list (${nextSubtasks.length} items)`
+        ),
+        task.history
+      );
+    },
+    [appendTaskHistory, docsService.list, tasks]
+  );
+
+  const handleToggleSubtask = useCallback(
+    (taskId: string, subtaskId: string) => {
+      const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      if (!doc || !task) {
+        return;
+      }
+
+      const nextSubtasks = task.subtasks.map(item =>
+        item.id === subtaskId ? { ...item, done: !item.done } : item
+      );
+      const changed = nextSubtasks.find(item => item.id === subtaskId);
+      if (!changed) {
+        return;
+      }
+
+      doc.setCustomProperty(
+        TASK_SUBTASKS_PROPERTY,
+        stringifySubtasks(nextSubtasks)
+      );
+      appendTaskHistory(
+        taskId,
+        buildHistoryEntry(
+          'edited',
+          `${changed.done ? 'Completed' : 'Reopened'} subtask “${changed.title}”`
+        ),
+        task.history
+      );
+    },
+    [appendTaskHistory, docsService.list, tasks]
+  );
+
   const handleDropTask = useCallback(
     (
       taskId: string,
@@ -1770,162 +2517,28 @@ const TaskTrackerPage = () => {
       } else {
         setTaskStatusAndOrder(resolvedFromColumnId, sourceIds);
         setTaskStatusAndOrder(toColumnId, targetIds);
+        appendTaskHistory(
+          taskId,
+          buildHistoryEntry(
+            'moved',
+            `Moved from ${
+              flow.find(column => column.id === resolvedFromColumnId)?.title ??
+              resolvedFromColumnId
+            } to ${flow.find(column => column.id === toColumnId)?.title ?? toColumnId}`
+          ),
+          draggedTask?.history
+        );
       }
     },
     [
+      appendTaskHistory,
       allTasksByColumn,
+      flow,
       hasActiveFilters,
       isTransitionAllowed,
-      setTaskStatusAndOrder,
       selectedBoardTasks,
+      setTaskStatusAndOrder,
     ]
-  );
-
-  const handleCreateTask = useCallback(() => {
-    const targetColumn = flow[0];
-    if (!targetColumn) {
-      return;
-    }
-
-    const nextOrder =
-      (allTasksByColumn.get(targetColumn.id)?.length ?? 0) * 1000 + 1000;
-    const nextNumber =
-      Math.max(0, ...tasks.map(task => parseTaskNumber(task.number))) + 1;
-    const taskNumber = `${workspaceTaskKey}-${nextNumber}`;
-
-    const doc = docsService.createDoc({
-      primaryMode: 'page',
-    });
-
-    doc.setCustomProperty(TASK_TRACKER_FLAG_PROPERTY, 'true');
-    doc.setCustomProperty(
-      TASK_BOARD_PROPERTY,
-      selectedBoard?.id || DEFAULT_BOARD_ID
-    );
-    doc.setCustomProperty(TASK_STATUS_PROPERTY, targetColumn.id);
-    doc.setCustomProperty(TASK_TYPE_PROPERTY, 'task');
-    doc.setCustomProperty(TASK_PRIORITY_PROPERTY, 'medium');
-    doc.setCustomProperty(TASK_ASSIGNEE_PROPERTY, '');
-    doc.setCustomProperty(TASK_DUE_DATE_PROPERTY, '');
-    doc.setCustomProperty(TASK_ORDER_PROPERTY, String(nextOrder));
-    doc.setCustomProperty(TASK_NUMBER_PROPERTY, taskNumber);
-    doc.setCustomProperty(TASK_DESCRIPTION_PROPERTY, '');
-    doc.setCustomProperty(TASK_EXTRA_INFO_PROPERTY, '');
-    doc.setCustomProperty(TASK_ATTACHMENTS_PROPERTY, '[]');
-
-    void docsService.changeDocTitle(doc.id, 'New task');
-    setSelectedTaskId(doc.id);
-  }, [
-    allTasksByColumn,
-    docsService,
-    flow,
-    selectedBoard,
-    tasks,
-    workspaceTaskKey,
-  ]);
-
-  const handleRenameTask = useCallback(
-    (taskId: string, title: string) => {
-      const nextTitle = title.trim();
-      if (!nextTitle) {
-        return;
-      }
-
-      void docsService.changeDocTitle(taskId, nextTitle);
-    },
-    [docsService]
-  );
-
-  const handleDeleteTask = useCallback(
-    (taskId: string) => {
-      const doc = docsService.list.doc$(taskId).value;
-      doc?.moveToTrash();
-      if (selectedTaskId === taskId) {
-        setSelectedTaskId(null);
-      }
-    },
-    [docsService.list, selectedTaskId]
-  );
-
-  const handlePriorityChange = useCallback(
-    (taskId: string, priority: TaskPriority) => {
-      const doc = docsService.list.doc$(taskId).value;
-      doc?.setCustomProperty(TASK_PRIORITY_PROPERTY, priority);
-    },
-    [docsService.list]
-  );
-
-  const handleTypeChange = useCallback(
-    (taskId: string, type: TaskType) => {
-      const doc = docsService.list.doc$(taskId).value;
-      doc?.setCustomProperty(TASK_TYPE_PROPERTY, type);
-    },
-    [docsService.list]
-  );
-
-  const handleAssigneeChange = useCallback(
-    (taskId: string, assignee: string) => {
-      const doc = docsService.list.doc$(taskId).value;
-      doc?.setCustomProperty(TASK_ASSIGNEE_PROPERTY, assignee.trim());
-    },
-    [docsService.list]
-  );
-
-  const handleDueDateChange = useCallback(
-    (taskId: string, dueDate: string) => {
-      const doc = docsService.list.doc$(taskId).value;
-      doc?.setCustomProperty(TASK_DUE_DATE_PROPERTY, dueDate);
-    },
-    [docsService.list]
-  );
-
-  const handleLabelsChange = useCallback(
-    (taskId: string, labelsInput: string) => {
-      const names = Array.from(
-        new Set(
-          labelsInput
-            .split(',')
-            .map(value => value.trim())
-            .filter(Boolean)
-        )
-      );
-
-      const labelIds: string[] = [];
-      names.forEach(name => {
-        const normalized = name.toLowerCase();
-        const existing = tagByLowercaseName.get(normalized);
-        if (existing) {
-          labelIds.push(existing.id);
-          return;
-        }
-
-        const tag = tagService.tagList.createTag(
-          name,
-          tagService.randomTagColor()
-        );
-        labelIds.push(tag.id);
-      });
-
-      const doc = docsService.list.doc$(taskId).value;
-      doc?.setMeta({ tags: labelIds });
-    },
-    [docsService.list, tagByLowercaseName, tagService]
-  );
-
-  const handleDescriptionChange = useCallback(
-    (taskId: string, value: string) => {
-      const doc = docsService.list.doc$(taskId).value;
-      doc?.setCustomProperty(TASK_DESCRIPTION_PROPERTY, value.trim());
-    },
-    [docsService.list]
-  );
-
-  const handleExtraInfoChange = useCallback(
-    (taskId: string, value: string) => {
-      const doc = docsService.list.doc$(taskId).value;
-      doc?.setCustomProperty(TASK_EXTRA_INFO_PROPERTY, value.trim());
-    },
-    [docsService.list]
   );
 
   const handleUploadAttachments = useCallback(
@@ -1939,10 +2552,7 @@ const TaskTrackerPage = () => {
         return;
       }
 
-      setUploadingByTaskId(prev => ({
-        ...prev,
-        [taskId]: true,
-      }));
+      setUploadingTaskId(taskId);
 
       try {
         const nextAttachments = [...currentTask.attachments];
@@ -1974,10 +2584,7 @@ const TaskTrackerPage = () => {
       } catch {
         notify.error({ title: 'Failed to upload attachments' });
       } finally {
-        setUploadingByTaskId(prev => ({
-          ...prev,
-          [taskId]: false,
-        }));
+        setUploadingTaskId(current => (current === taskId ? null : current));
       }
     },
     [docsService.list, tasks, workspace]
@@ -2013,23 +2620,6 @@ const TaskTrackerPage = () => {
       }
     },
     [workspace]
-  );
-
-  const handleRemoveAttachment = useCallback(
-    (taskId: string, attachmentId: string) => {
-      const task = tasks.find(item => item.id === taskId);
-      if (!task) {
-        return;
-      }
-
-      const next = task.attachments.filter(item => item.id !== attachmentId);
-      const doc = docsService.list.doc$(taskId).value;
-      doc?.setCustomProperty(
-        TASK_ATTACHMENTS_PROPERTY,
-        stringifyAttachments(next)
-      );
-    },
-    [docsService.list, tasks]
   );
 
   const handleOpenTaskDoc = useCallback(
@@ -2377,7 +2967,13 @@ const TaskTrackerPage = () => {
                         </div>
                       </header>
 
-                      <div className={styles.tasks}>
+                      <TaskColumnDropTarget
+                        columnId={column.id}
+                        index={columnTasks.length}
+                        hasActiveFilters={hasActiveFilters}
+                        isTransitionAllowed={isTransitionAllowed}
+                        onDropTask={handleDropTask}
+                      >
                         {columnTasks.map((task, index) => {
                           return (
                             <div key={task.id} className={styles.taskWrapper}>
@@ -2394,8 +2990,13 @@ const TaskTrackerPage = () => {
                                   tagNameMap={tagNameMap}
                                   workspace={workspace}
                                   hasActiveFilters={hasActiveFilters}
-                                  selected={selectedTaskId === task.id}
-                                  onSelectTask={setSelectedTaskId}
+                                  expanded={expandedTaskId === task.id}
+                                  onToggleExpanded={taskId => {
+                                    setExpandedTaskId(current =>
+                                      current === taskId ? null : taskId
+                                    );
+                                  }}
+                                  onOpenEditor={setSelectedTaskId}
                                   onOpenTaskDoc={handleOpenTaskDoc}
                                   onDeleteTask={handleDeleteTask}
                                   onDownloadAttachment={
@@ -2411,12 +3012,12 @@ const TaskTrackerPage = () => {
                         <TaskDropZone
                           columnId={column.id}
                           index={columnTasks.length}
-                          expanded
+                          expanded={transitionAllowed}
                           hasActiveFilters={hasActiveFilters}
                           isTransitionAllowed={isTransitionAllowed}
                           onDropTask={handleDropTask}
                         />
-                      </div>
+                      </TaskColumnDropTarget>
                     </section>
                   );
                 })}
@@ -2428,7 +3029,7 @@ const TaskTrackerPage = () => {
                 task={selectedTask}
                 workspace={workspace}
                 tagNameMap={tagNameMap}
-                uploading={!!uploadingByTaskId[selectedTask.id]}
+                uploading={uploadingTaskId === selectedTask.id}
                 onClose={() => {
                   setSelectedTaskId(null);
                 }}
@@ -2442,9 +3043,11 @@ const TaskTrackerPage = () => {
                 onLabelsChange={handleLabelsChange}
                 onDescriptionChange={handleDescriptionChange}
                 onExtraInfoChange={handleExtraInfoChange}
+                onComplexityChange={handleComplexityChange}
+                onSubtasksChange={handleSubtasksChange}
+                onToggleSubtask={handleToggleSubtask}
                 onUploadAttachments={handleUploadAttachments}
                 onDownloadAttachment={handleDownloadAttachment}
-                onRemoveAttachment={handleRemoveAttachment}
               />
             ) : null}
           </div>
