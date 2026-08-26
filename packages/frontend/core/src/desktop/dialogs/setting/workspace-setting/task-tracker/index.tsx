@@ -4,6 +4,7 @@ import {
   SettingWrapper,
 } from '@affine/component/setting-components';
 import { WorkspacePropertyService } from '@affine/core/modules/workspace-property';
+import { useTaskTrackerI18n } from '@affine/core/utils/task-tracker-i18n';
 import { DeleteIcon, PlusIcon } from '@blocksuite/icons/rc';
 import { useLiveData, useService } from '@toeverything/infra';
 import { nanoid } from 'nanoid';
@@ -12,6 +13,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   buildDefaultTransitions,
   buildDefaultTypeTransitions,
+  DEFAULT_BOARD_ID,
+  DEFAULT_BOARD_TITLE,
   DEFAULT_FLOW,
   resolveTaskTrackerBoards,
   sanitizeTransitions,
@@ -25,23 +28,15 @@ import {
 } from '../../../../pages/workspace/task-tracker/config';
 import * as styles from './styles.css';
 
-const TASK_TYPE_OPTIONS: Array<{ value: TaskType; label: string }> = [
-  { value: 'story', label: 'Story' },
-  { value: 'bug', label: 'Bug' },
-  { value: 'task', label: 'Task' },
-  { value: 'epic', label: 'Epic' },
-];
-
+const TASK_TYPE_OPTIONS: TaskType[] = ['story', 'bug', 'task', 'epic'];
 const EMPTY_ADDITIONAL_DATA: TaskTrackerPropertyAdditionalData = {};
 
 const createDefaultBoardFlow = (): TaskFlowColumn[] => {
-  return DEFAULT_FLOW.map(column => ({
-    id: nanoid(),
-    title: column.title,
-  }));
+  return DEFAULT_FLOW.map(column => ({ ...column }));
 };
 
 export const WorkspaceTaskTrackerSetting = () => {
+  const { t } = useTaskTrackerI18n();
   const workspacePropertyService = useService(WorkspacePropertyService);
 
   const statusPropertyInfo = useLiveData(
@@ -83,6 +78,30 @@ export const WorkspaceTaskTrackerSetting = () => {
       selectedBoard?.typeTransitions ?? buildDefaultTypeTransitions(flow);
     return typed[selectedTaskType] ?? sanitizeTransitions(flow, undefined);
   }, [flow, selectedBoard?.typeTransitions, selectedTaskType]);
+
+  const localizedBoardTitle = useCallback(
+    (board: TaskTrackerBoard) =>
+      board.id === DEFAULT_BOARD_ID && board.title === DEFAULT_BOARD_TITLE
+        ? t('defaultBoard')
+        : board.title,
+    [t]
+  );
+
+  const localizedStageTitle = useCallback(
+    (stage: TaskFlowColumn) => {
+      if (stage.id === 'todo' && stage.title === 'To Do') {
+        return t('defaultTodo');
+      }
+      if (stage.id === 'in-progress' && stage.title === 'In Progress') {
+        return t('defaultInProgress');
+      }
+      if (stage.id === 'done' && stage.title === 'Done') {
+        return t('defaultDone');
+      }
+      return stage.title;
+    },
+    [t]
+  );
 
   const saveBoards = useCallback(
     (nextBoards: TaskTrackerBoard[]) => {
@@ -126,7 +145,7 @@ export const WorkspaceTaskTrackerSetting = () => {
     const boardFlow = createDefaultBoardFlow();
     const board: TaskTrackerBoard = {
       id: nanoid(),
-      title: `Board ${boards.length + 1}`,
+      title: t('boardNumber', { number: boards.length + 1 }),
       flow: boardFlow,
       transitions: buildDefaultTransitions(boardFlow),
       typeTransitions: buildDefaultTypeTransitions(boardFlow),
@@ -135,17 +154,25 @@ export const WorkspaceTaskTrackerSetting = () => {
     const nextBoards = [...boards, board];
     saveBoards(nextBoards);
     setSelectedBoardId(board.id);
-  }, [boards, saveBoards]);
+  }, [boards, saveBoards, t]);
 
   const onRenameBoard = useCallback(
     (boardId: string, title: string) => {
+      const board = boards.find(item => item.id === boardId);
       const nextTitle = title.trim();
-      if (!nextTitle) {
+      if (!board || !nextTitle) {
         return;
       }
-      updateBoard(boardId, board => ({ ...board, title: nextTitle }));
+      if (
+        board.id === DEFAULT_BOARD_ID &&
+        board.title === DEFAULT_BOARD_TITLE &&
+        nextTitle === t('defaultBoard')
+      ) {
+        return;
+      }
+      updateBoard(boardId, current => ({ ...current, title: nextTitle }));
     },
-    [updateBoard]
+    [boards, t, updateBoard]
   );
 
   const onDeleteBoard = useCallback(
@@ -168,7 +195,10 @@ export const WorkspaceTaskTrackerSetting = () => {
     }
 
     updateBoard(selectedBoard.id, board => {
-      const nextFlow = [...board.flow, { id: nanoid(), title: 'New stage' }];
+      const nextFlow = [
+        ...board.flow,
+        { id: nanoid(), title: t('newStage') },
+      ];
       const nextTypeTransitions = sanitizeTypeTransitions(
         nextFlow,
         board.typeTransitions
@@ -180,7 +210,7 @@ export const WorkspaceTaskTrackerSetting = () => {
         typeTransitions: nextTypeTransitions,
       };
     });
-  }, [selectedBoard, updateBoard]);
+  }, [selectedBoard, t, updateBoard]);
 
   const onRenameStage = useCallback(
     (stageId: string, title: string) => {
@@ -286,12 +316,9 @@ export const WorkspaceTaskTrackerSetting = () => {
 
   return (
     <>
-      <SettingHeader
-        title="Task Tracker Flow"
-        subtitle="Configure boards, statuses, and allowed drag transitions."
-      />
+      <SettingHeader title={t('flowTitle')} subtitle={t('flowSubtitle')} />
 
-      <SettingWrapper title="Boards">
+      <SettingWrapper title={t('boards')}>
         <div className={styles.boardControls}>
           <select
             className={styles.input}
@@ -303,7 +330,7 @@ export const WorkspaceTaskTrackerSetting = () => {
           >
             {boards.map(board => (
               <option key={board.id} value={board.id}>
-                {board.title}
+                {localizedBoardTitle(board)}
               </option>
             ))}
           </select>
@@ -311,8 +338,8 @@ export const WorkspaceTaskTrackerSetting = () => {
           {selectedBoard ? (
             <input
               className={styles.input}
-              key={selectedBoard.id}
-              defaultValue={selectedBoard.title}
+              key={`${selectedBoard.id}:${t('defaultBoard')}`}
+              defaultValue={localizedBoardTitle(selectedBoard)}
               onBlur={event => {
                 onRenameBoard(selectedBoard.id, event.target.value);
               }}
@@ -322,7 +349,7 @@ export const WorkspaceTaskTrackerSetting = () => {
 
           <Button variant="plain" onClick={onAddBoard} disabled={!hasProperty}>
             <PlusIcon />
-            New board
+            {t('newBoard')}
           </Button>
           <Button
             variant="plain"
@@ -334,24 +361,27 @@ export const WorkspaceTaskTrackerSetting = () => {
             }}
           >
             <DeleteIcon />
-            Delete board
+            {t('deleteBoard')}
           </Button>
         </div>
       </SettingWrapper>
 
-      <SettingWrapper title="Stages">
+      <SettingWrapper title={t('stages')}>
         <div className={styles.stagesList}>
           {flow.map(stage => (
             <div key={stage.id} className={styles.stageRow}>
               <input
                 className={styles.input}
-                value={stage.title}
+                value={localizedStageTitle(stage)}
                 onChange={event => {
                   onRenameStage(stage.id, event.target.value);
                 }}
                 onBlur={event => {
-                  const title = event.target.value.trim() || 'Untitled stage';
-                  onRenameStage(stage.id, title);
+                  const title = event.target.value.trim() || t('untitledStage');
+                  const displayed = localizedStageTitle(stage);
+                  if (title !== displayed || title === stage.title) {
+                    onRenameStage(stage.id, title);
+                  }
                 }}
                 disabled={!hasProperty}
               />
@@ -372,16 +402,14 @@ export const WorkspaceTaskTrackerSetting = () => {
 
         <Button variant="primary" onClick={onAddStage} disabled={!hasProperty}>
           <PlusIcon />
-          Add stage
+          {t('addStage')}
         </Button>
       </SettingWrapper>
 
-      <SettingWrapper title="Allowed transitions">
-        <div className={styles.transitionHint}>
-          Enable where tasks can be dragged from one stage to another.
-        </div>
+      <SettingWrapper title={t('allowedTransitions')}>
+        <div className={styles.transitionHint}>{t('transitionHint')}</div>
         <div className={styles.transitionTypeRow}>
-          <label className={styles.transitionTypeLabel}>Task type</label>
+          <label className={styles.transitionTypeLabel}>{t('taskType')}</label>
           <select
             className={styles.input}
             value={selectedTaskType}
@@ -390,9 +418,9 @@ export const WorkspaceTaskTrackerSetting = () => {
             }}
             disabled={!hasProperty}
           >
-            {TASK_TYPE_OPTIONS.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            {TASK_TYPE_OPTIONS.map(type => (
+              <option key={type} value={type}>
+                {t(type)}
               </option>
             ))}
           </select>
@@ -402,10 +430,10 @@ export const WorkspaceTaskTrackerSetting = () => {
           <table className={styles.transitionTable}>
             <thead>
               <tr>
-                <th className={styles.tableHeaderSticky}>From \\ To</th>
+                <th className={styles.tableHeaderSticky}>{t('fromTo')}</th>
                 {flow.map(to => (
                   <th key={`head:${to.id}`} className={styles.tableHeader}>
-                    {to.title}
+                    {localizedStageTitle(to)}
                   </th>
                 ))}
               </tr>
@@ -413,7 +441,9 @@ export const WorkspaceTaskTrackerSetting = () => {
             <tbody>
               {flow.map(from => (
                 <tr key={`row:${from.id}`}>
-                  <th className={styles.tableHeaderSticky}>{from.title}</th>
+                  <th className={styles.tableHeaderSticky}>
+                    {localizedStageTitle(from)}
+                  </th>
                   {flow.map(to => {
                     const checked =
                       from.id === to.id ||
@@ -433,7 +463,7 @@ export const WorkspaceTaskTrackerSetting = () => {
                             onToggleTransition(from.id, to.id, !checked);
                           }}
                         >
-                          {checked ? 'Allowed' : 'Blocked'}
+                          {checked ? t('allowed') : t('blocked')}
                         </button>
                       </td>
                     );
@@ -446,9 +476,7 @@ export const WorkspaceTaskTrackerSetting = () => {
       </SettingWrapper>
 
       {!hasProperty ? (
-        <div className={styles.helperText}>
-          Open Task Tracker board once to initialize workflow properties.
-        </div>
+        <div className={styles.helperText}>{t('initializeHint')}</div>
       ) : null}
     </>
   );
