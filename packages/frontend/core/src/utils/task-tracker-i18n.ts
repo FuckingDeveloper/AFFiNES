@@ -227,6 +227,10 @@ const resources = {
 } as const;
 
 export type TaskTrackerTranslationKey = keyof (typeof resources)['en'];
+export type TaskTrackerTranslator = (
+  key: TaskTrackerTranslationKey,
+  vars?: Record<string, string | number>
+) => string;
 type Vars = Record<string, string | number>;
 
 const renderTemplate = (template: string, vars?: Vars) => {
@@ -234,8 +238,128 @@ const renderTemplate = (template: string, vars?: Vars) => {
     return template;
   }
   return template.replace(/{{(\w+)}}/g, (_, key: string) =>
-    Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : `{{${key}}}`
+    Object.prototype.hasOwnProperty.call(vars, key)
+      ? String(vars[key])
+      : `{{${key}}}`
   );
+};
+
+const localizeKnownStageName = (title: string, t: TaskTrackerTranslator) => {
+  if (title === 'To Do') {
+    return t('defaultTodo');
+  }
+  if (title === 'In Progress') {
+    return t('defaultInProgress');
+  }
+  if (title === 'Done') {
+    return t('defaultDone');
+  }
+  return title;
+};
+
+export const localizeTaskTrackerBoardTitle = (
+  board: { id: string; title: string },
+  t: TaskTrackerTranslator
+) =>
+  board.id === 'default' && board.title === 'Main board'
+    ? t('defaultBoard')
+    : board.title;
+
+export const localizeTaskTrackerStageTitle = (
+  stage: { id: string; title: string },
+  t: TaskTrackerTranslator
+) => {
+  if (stage.id === 'todo' && stage.title === 'To Do') {
+    return t('defaultTodo');
+  }
+  if (stage.id === 'in-progress' && stage.title === 'In Progress') {
+    return t('defaultInProgress');
+  }
+  if (stage.id === 'done' && stage.title === 'Done') {
+    return t('defaultDone');
+  }
+  return stage.title;
+};
+
+export const localizeTaskTrackerHistory = (
+  message: string,
+  t: TaskTrackerTranslator
+) => {
+  let match = /^Created in (.+)$/.exec(message);
+  if (match) {
+    return t('createdIn', { stage: localizeKnownStageName(match[1], t) });
+  }
+  match = /^Renamed task to “(.+)”$/.exec(message);
+  if (match) {
+    return t('renamedTo', { title: match[1] });
+  }
+  match = /^Changed priority to (low|medium|high|urgent)$/.exec(message);
+  if (match) {
+    return t('changedPriority', {
+      priority: t(match[1] as 'low' | 'medium' | 'high' | 'urgent'),
+    });
+  }
+  match = /^Changed type to (story|bug|task|epic)$/.exec(message);
+  if (match) {
+    return t('changedType', {
+      type: t(match[1] as 'story' | 'bug' | 'task' | 'epic'),
+    });
+  }
+  match = /^Assigned to (.+)$/.exec(message);
+  if (match) {
+    return t('assignedTo', { assignee: match[1] });
+  }
+  if (message === 'Cleared assignee') {
+    return t('clearedAssignee');
+  }
+  match = /^Set due date to (.+)$/.exec(message);
+  if (match) {
+    return t('setDueDate', { date: match[1] });
+  }
+  if (message === 'Cleared due date') {
+    return t('clearedDueDate');
+  }
+  match = /^Updated tags: (.+)$/.exec(message);
+  if (match) {
+    return t('updatedTags', { tags: match[1] });
+  }
+  if (message === 'Cleared tags') {
+    return t('clearedTags');
+  }
+  if (message === 'Updated description') {
+    return t('updatedDescription');
+  }
+  if (message === 'Updated extra info') {
+    return t('updatedExtraInfo');
+  }
+  match = /^Changed complexity from (.+) to (.+)$/.exec(message);
+  if (match) {
+    return t('changedComplexity', { from: match[1], to: match[2] });
+  }
+  match = /^Updated subtasks to (\d+) items$/.exec(message);
+  if (match) {
+    return t('updatedSubtasks', { count: match[1] });
+  }
+  match = /^Reworked subtasks list \((\d+) items\)$/.exec(message);
+  if (match) {
+    return t('reworkedSubtasks', { count: match[1] });
+  }
+  match = /^Completed subtask “(.+)”$/.exec(message);
+  if (match) {
+    return t('completedSubtask', { title: match[1] });
+  }
+  match = /^Reopened subtask “(.+)”$/.exec(message);
+  if (match) {
+    return t('reopenedSubtask', { title: match[1] });
+  }
+  match = /^Moved from (.+) to (.+)$/.exec(message);
+  if (match) {
+    return t('movedTask', {
+      from: localizeKnownStageName(match[1], t),
+      to: localizeKnownStageName(match[2], t),
+    });
+  }
+  return message;
 };
 
 export const useTaskTrackerI18n = () => {
@@ -244,9 +368,8 @@ export const useTaskTrackerI18n = () => {
   const dictionary = language.startsWith('ru') ? resources.ru : resources.en;
   const locale = language.startsWith('ru') ? 'ru-RU' : 'en-US';
 
-  const t = useCallback(
-    (key: TaskTrackerTranslationKey, vars?: Vars) =>
-      renderTemplate(dictionary[key], vars),
+  const t = useCallback<TaskTrackerTranslator>(
+    (key, vars) => renderTemplate(dictionary[key], vars),
     [dictionary]
   );
 
