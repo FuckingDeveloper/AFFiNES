@@ -4,14 +4,32 @@ import { isNil, pick, pickBy } from 'lodash-es';
 import type { ParsedQuery, ParseOptions } from 'query-string';
 import queryString from 'query-string';
 
-function maybeAffineOrigin(origin: string, baseUrl: string) {
-  return (
-    origin.startsWith('assets://') ||
-    origin.endsWith('trackwork.mrhsoftware.com') ||
-    origin.endsWith('apple.getaffineapp.com') || // stable/beta
-    origin.endsWith('affine.fail') || // canary
-    origin === baseUrl // localhost or self-hosted
+const AFFINE_HOSTS = [
+  'trackwork.mrhsoftware.com',
+  'apple.getaffineapp.com', // stable/beta
+  'affine.fail', // canary
+] as const;
+
+const isAllowedHostname = (hostname: string) =>
+  AFFINE_HOSTS.some(
+    domain => hostname === domain || hostname.endsWith(`.${domain}`)
   );
+
+function maybeAffineOrigin(origin: string, baseUrl: string) {
+  if (origin.startsWith('assets://')) {
+    return true;
+  }
+
+  if (origin === baseUrl) {
+    // localhost or self-hosted
+    return true;
+  }
+
+  try {
+    return isAllowedHostname(new URL(origin).hostname);
+  } catch {
+    return false;
+  }
 }
 
 export const resolveRouteLinkMeta = (
