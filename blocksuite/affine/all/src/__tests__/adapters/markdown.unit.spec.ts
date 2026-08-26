@@ -1361,7 +1361,7 @@ hhh
                     {
                       insert: 'bbb',
                       attributes: {
-                        link: 'https://affine.pro/',
+                        link: 'https://trackwork.mrhsoftware.com/',
                       },
                     },
                     {
@@ -1376,7 +1376,7 @@ hhh
         },
       ],
     };
-    const markdown = 'aaa [bbb](https://affine.pro/) ccc\n';
+    const markdown = 'aaa [bbb](https://trackwork.mrhsoftware.com/) ccc\n';
 
     const mdAdapter = new MarkdownAdapter(createJob(), provider);
     const target = await mdAdapter.fromBlockSnapshot({
@@ -1431,9 +1431,9 @@ hhh
                       insert: 'aaa ',
                     },
                     {
-                      insert: 'https://affine.pro/  ',
+                      insert: 'https://trackwork.mrhsoftware.com/  ',
                       attributes: {
-                        link: 'https://affine.pro/  ',
+                        link: 'https://trackwork.mrhsoftware.com/  ',
                       },
                     },
                   ],
@@ -1445,7 +1445,7 @@ hhh
         },
       ],
     };
-    const markdown = 'aaa https://affine.pro/  \n';
+    const markdown = 'aaa https://trackwork.mrhsoftware.com/  \n';
 
     const mdAdapter = new MarkdownAdapter(createJob(), provider);
     const target = await mdAdapter.fromBlockSnapshot({
@@ -3925,7 +3925,7 @@ bbb
   });
 
   test('link', async () => {
-    const markdown = 'aaa [bbb](https://affine.pro/) ccc\n';
+    const markdown = 'aaa [bbb](https://trackwork.mrhsoftware.com/) ccc\n';
     const blockSnapshot: BlockSnapshot = {
       type: 'block',
       id: 'matchesReplaceMap[0]',
@@ -3953,7 +3953,7 @@ bbb
                 {
                   insert: 'bbb',
                   attributes: {
-                    link: 'https://affine.pro/',
+                    link: 'https://trackwork.mrhsoftware.com/',
                   },
                 },
                 {
@@ -3975,7 +3975,7 @@ bbb
   });
 
   test('inline link', async () => {
-    const markdown = 'aaa https://affine.pro/ ccc\n';
+    const markdown = 'aaa https://trackwork.mrhsoftware.com/ ccc\n';
     const blockSnapshot: BlockSnapshot = {
       type: 'block',
       id: 'matchesReplaceMap[0]',
@@ -4001,9 +4001,9 @@ bbb
                   insert: 'aaa ',
                 },
                 {
-                  insert: 'https://affine.pro/',
+                  insert: 'https://trackwork.mrhsoftware.com/',
                   attributes: {
-                    link: 'https://affine.pro/',
+                    link: 'https://trackwork.mrhsoftware.com/',
                   },
                 },
                 {

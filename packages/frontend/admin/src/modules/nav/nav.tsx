@@ -34,14 +34,12 @@ export function Nav({ isCollapsed = false }: NavProps) {
           isCollapsed && 'items-center px-0 gap-1 overflow-visible'
         )}
       >
-        {environment.isSelfHosted ? null : (
-          <NavItem
-            to={ROUTES.admin.dashboard}
-            icon={<BarChart3Icon size={18} />}
-            label={t('nav.dashboard')}
-            isCollapsed={isCollapsed}
-          />
-        )}
+        <NavItem
+          to={ROUTES.admin.dashboard}
+          icon={<BarChart3Icon size={18} />}
+          label={t('nav.dashboard')}
+          isCollapsed={isCollapsed}
+        />
         <NavItem
           to={ROUTES.admin.accounts}
           icon={<AccountIcon fontSize={20} />}

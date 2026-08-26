@@ -15,9 +15,9 @@ Y-Octo also has interoperability and binary compatibility with [yjs]. Developers
 
 ## Who are using
 
-<a href="https://affine.pro"><img src="./assets/affine.svg" /></a>
+<a href="https://trackwork.mrhsoftware.com"><img src="./assets/affine.svg" /></a>
 
-[TrackWork](https://affine.pro) is using y-octo in production. There are [Electron](https://affine.pro/download) app and [Node.js server](https://github.com/toeverything/AFFiNE/tree/canary/packages/backend/native) using y-octo in production.
+[TrackWork](https://trackwork.mrhsoftware.com) is using y-octo in production. There are [Electron](https://trackwork.mrhsoftware.com/download) app and [Node.js server](https://github.com/toeverything/AFFiNE/tree/canary/packages/backend/native) using y-octo in production.
 
 <a href="https://www.mysc.app/"><img src="https://www.mysc.app/images/logo_blk.webp" width="120px" /></a>
 

@@ -40,6 +40,7 @@ function UserForm({
 
   const defaultUser: Partial<UserInput> = useMemo(
     () => ({
+      username: defaultValue?.username ?? '',
       name: defaultValue?.name ?? '',
       email: defaultValue?.email ?? '',
       password: defaultValue?.password ?? '',
@@ -70,6 +71,7 @@ function UserForm({
 
   useEffect(() => {
     const normalize = (value: Partial<UserInput>) => ({
+      username: value.username ?? '',
       name: value.name ?? '',
       email: value.email ?? '',
       password: value.password ?? '',
@@ -78,7 +80,8 @@ function UserForm({
     const current = normalize(changes);
     const baseline = normalize(defaultUser);
     const dirty =
-      (current.name !== baseline.name ||
+      (current.username !== baseline.username ||
+        current.name !== baseline.name ||
         current.email !== baseline.email ||
         current.password !== baseline.password ||
         current.features.join(',') !== baseline.features.join(',')) &&
@@ -122,6 +125,14 @@ function UserForm({
       />
       <div className="flex-grow space-y-3 overflow-y-auto p-4">
         <div className="flex flex-col rounded-xl border border-border bg-card shadow-sm">
+          <InputItem
+            label="Логин"
+            field="username"
+            value={changes.username}
+            onChange={setField}
+            placeholder="Например: ivan.petrov"
+          />
+          <Separator />
           <InputItem
             label="Имя пользователя"
             field="name"
@@ -211,11 +222,11 @@ function InputItem({
 }
 
 const validateCreateUser = (user: Partial<UserInput>) => {
-  return !!user.name && !!user.email && !!user.features;
+  return !!user.username && !!user.name && !!user.email && !!user.features;
 };
 
 const validateUpdateUser = (user: Partial<UserInput>) => {
-  return !!user.name || !!user.email;
+  return !!user.username || !!user.name || !!user.email;
 };
 
 export function CreateUserForm({

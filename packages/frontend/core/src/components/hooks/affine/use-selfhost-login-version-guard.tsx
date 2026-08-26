@@ -32,7 +32,7 @@ const rules = [
               lineHeight: '16px',
             }}
           >
-            https://docs.affine.pro/self-host-affine/install/upgrade
+            https://trackwork.mrhsoftware.com/self-host-affine/install/upgrade
           </a>
         </div>
       </div>

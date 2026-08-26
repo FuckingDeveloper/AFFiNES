@@ -49,7 +49,7 @@ export const ImportPage = ({
         TrackWork will gradually support more and more file types for
         import.&nbsp;
         <a
-          href="https://affine.pro/redirect/discord"
+          href="https://trackwork.mrhsoftware.com/redirect/discord"
           target="_blank"
           rel="noreferrer"
         >

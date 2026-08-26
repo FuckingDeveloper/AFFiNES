@@ -5,11 +5,11 @@
   <summary>Productivity and note-taking app</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT AND LicenseRef-proprietary=https://github.com/toeverything/AFFiNE/blob/canary/LICENSE</project_license>
-  <url type="homepage">https://affine.pro</url>
+  <url type="homepage">https://trackwork.mrhsoftware.com</url>
   <url type="bugtracker">https://github.com/toeverything/AFFiNE/issues</url>
-  <url type="help">https://docs.affine.pro/</url>
+  <url type="help">https://trackwork.mrhsoftware.com/</url>
   <url type="vcs-browser">https://github.com/toeverything/AFFiNE</url>
-  <url type="contribute">https://docs.affine.pro/contributing</url>
+  <url type="contribute">https://trackwork.mrhsoftware.com/contributing</url>
   <developer id="pro.affine.app">
     <name>affine</name>
   </developer>
@@ -51,15 +51,15 @@
   <launchable type="desktop-id">affine.desktop</launchable>
   <screenshots>
     <screenshot type="default">
-      <image>https://affine.pro/overview/Write.jpg</image>
+      <image>https://trackwork.mrhsoftware.com/overview/Write.jpg</image>
       <caption>Document writing interface with block-based editing</caption>
     </screenshot>
     <screenshot>
-      <image>https://affine.pro/overview/Draw.jpg</image>
+      <image>https://trackwork.mrhsoftware.com/overview/Draw.jpg</image>
       <caption>Whiteboard drawing and visualization capabilities</caption>
     </screenshot>
     <screenshot>
-      <image>https://affine.pro/overview/Plan.jpg</image>
+      <image>https://trackwork.mrhsoftware.com/overview/Plan.jpg</image>
       <caption>Project planning and task management view</caption>
     </screenshot>
   </screenshots>

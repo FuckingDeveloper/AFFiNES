@@ -994,11 +994,11 @@ test('should not show view toggle button when protocol of link is not http(s)', 
 }) => {
   await page.keyboard.press('Enter');
 
-  await writeTextToClipboard(page, 'ftp://affine.pro/blocksuite.pdf');
+  await writeTextToClipboard(page, 'https://trackwork.mrhsoftware.com/blocksuite.pdf');
 
   const inlineLink = page.locator('affine-link');
 
-  await expect(inlineLink).toHaveText('ftp://affine.pro/blocksuite.pdf');
+  await expect(inlineLink).toHaveText('https://trackwork.mrhsoftware.com/blocksuite.pdf');
 
   await inlineLink.hover();
 

@@ -72,6 +72,7 @@ import { toast } from 'sonner';
 import { useMutateQueryResource } from '../../use-mutation';
 import { Header } from '../header';
 import { formatBytes } from '../workspaces/utils';
+import { AdminAuditLog, OperationsHealth } from './operations';
 
 const adminDashboardOverviewQuery: typeof adminDashboardQuery = {
   ...adminDashboardQuery,
@@ -236,7 +237,7 @@ function TrendChart({
   secondaryFormatter?: (value: number) => string;
 }) {
   if (points.length === 0) {
-    return <div className="text-sm text-muted-foreground">No data</div>;
+    return <div className="text-sm text-muted-foreground">Нет данных</div>;
   }
 
   const chartPoints =
@@ -663,6 +664,7 @@ function DashboardPageSkeleton() {
         }
       />
       <div className="flex-1 overflow-auto p-6 space-y-6">
+        <OperationsHealth />
         <Card className="border-border/60 bg-card shadow-1">
           <CardHeader className="pb-3">
             <Skeleton className="h-5 w-36" />
@@ -1046,6 +1048,9 @@ function DashboardPageContent() {
             />
           </Suspense>
         ) : null}
+        <Suspense fallback={<Skeleton className="h-56 w-full" />}>
+          <AdminAuditLog />
+        </Suspense>
       </div>
     </div>
   );

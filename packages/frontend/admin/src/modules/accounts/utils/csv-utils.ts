@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { emailRegex } from '../../../utils';
 
 export interface ParsedUser {
+  username?: string;
   name: string | null;
   email: string;
   password?: string;
@@ -80,6 +81,26 @@ export const validateEmails = (users: ParsedUser[]): ParsedUser[] => {
   });
 };
 
+export const validateUsernames = (users: ParsedUser[]): ParsedUser[] => {
+  const counts = new Map<string, number>();
+  for (const user of users) {
+    const username = user.username?.trim().toLowerCase();
+    if (username) counts.set(username, (counts.get(username) ?? 0) + 1);
+  }
+
+  return users.map(user => {
+    const username = user.username?.trim().toLowerCase();
+    if (!username) return user;
+    if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username)) {
+      return { ...user, valid: false, error: 'Неверный формат логина' };
+    }
+    if ((counts.get(username) ?? 0) > 1) {
+      return { ...user, valid: false, error: 'Дублирующийся логин' };
+    }
+    return { ...user, username };
+  });
+};
+
 /**
  * Filters valid users for import
  */
@@ -87,6 +108,7 @@ export const getValidUsersToImport = (users: ParsedUser[]) => {
   return users
     .filter(user => user.valid === true)
     .map(user => ({
+      username: user.username || undefined,
       name: user.name || undefined,
       email: user.email,
       password: user.password,
@@ -97,7 +119,8 @@ export const getValidUsersToImport = (users: ParsedUser[]) => {
  * Downloads a CSV template for user import
  */
 export const downloadCsvTemplate = () => {
-  const csvContent = 'Имя пользователя,Email,Пароль\n,example@example.com,';
+  const csvContent =
+    'Логин,Имя пользователя,Email,Пароль\nexample-user,Пользователь,example@example.com,';
   downloadCsv(csvContent, 'user_import_template.csv');
 };
 
@@ -106,10 +129,10 @@ export const downloadCsvTemplate = () => {
  */
 export const exportImportResults = (results: ParsedUser[]) => {
   const csvContent = [
-    'Имя пользователя,Email,Пароль,Статус',
+    'Логин,Имя пользователя,Email,Пароль,Статус',
     ...results.map(
       user =>
-        `${user.name || ''},${user.email},${user.password || ''},${user.importStatus}${user.importError ? ` (${user.importError})` : ''}`
+        `${user.username || ''},${user.name || ''},${user.email},${user.password || ''},${user.importStatus}${user.importError ? ` (${user.importError})` : ''}`
     ),
   ].join('\n');
 
@@ -173,9 +196,10 @@ export const processCSVFile = async (
     const dataRows = rows.slice(1);
 
     const users = dataRows.map(row => ({
-      name: row[0]?.trim() || null,
-      email: row[1]?.trim() || '',
-      password: row[2]?.trim() || undefined,
+      username: row[0]?.trim() || undefined,
+      name: row[1]?.trim() || null,
+      email: row[2]?.trim() || '',
+      password: row[3]?.trim() || undefined,
     }));
 
     const usersWithEmail = users.filter(user => user.email);
@@ -186,7 +210,7 @@ export const processCSVFile = async (
       return;
     }
 
-    const validatedUsers = validateEmails(usersWithEmail);
+    const validatedUsers = validateUsernames(validateEmails(usersWithEmail));
     const hasValidUsers = validatedUsers.some(user => user.valid !== false);
 
     if (!hasValidUsers) {
@@ -211,7 +235,7 @@ export const validateUsers = (
   passwordLimits: { minLength: number; maxLength: number }
 ): ParsedUser[] => {
   // validate emails
-  const emailValidatedUsers = validateEmails(users);
+  const emailValidatedUsers = validateUsernames(validateEmails(users));
 
   // validate password
   return emailValidatedUsers.map(user => {

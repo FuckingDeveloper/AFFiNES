@@ -48,9 +48,9 @@ export function useAFFiNEI18N(): {
       */
     ["404.signOut"](): string;
     /**
-      * `TrackWork Cloud`
+      * `TrackWork`
       */
-    ["TrackWork Cloud"](): string;
+    TrackWork(): string;
     /**
       * `All docs`
       */
@@ -184,15 +184,15 @@ export function useAFFiNEI18N(): {
       */
     Enable(): string;
     /**
-      * `Enable TrackWork Cloud`
+      * `Enable TrackWork`
       */
-    ["Enable TrackWork Cloud"](): string;
+    ["Enable TrackWork"](): string;
     /**
-      * `If enabled, the data in this workspace will be backed up and synchronised via TrackWork Cloud.`
+      * `If enabled, the data in this workspace will be backed up and synchronised via TrackWork.`
       */
-    ["Enable TrackWork Cloud Description"](): string;
+    ["Enable TrackWork Description"](): string;
     /**
-      * `The following functions rely on TrackWork Cloud. All data is stored on the current device. You can enable TrackWork Cloud for this workspace to keep data in sync with the cloud.`
+      * `The following functions rely on TrackWork. All data is stored on the current device. You can enable TrackWork for this workspace to keep data in sync with the cloud.`
       */
     ["Enable cloud hint"](): string;
     /**
@@ -482,9 +482,9 @@ export function useAFFiNEI18N(): {
       */
     Sync(): string;
     /**
-      * `Synced with TrackWork Cloud`
+      * `Synced with TrackWork`
       */
-    ["Synced with TrackWork Cloud"](): string;
+    ["Synced with TrackWork"](): string;
     /**
       * `Tags`
       */
@@ -704,6 +704,28 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.aboutAFFiNE.contact.website"](): string;
     /**
+      * `Support`
+      */
+    ["com.affine.aboutAFFiNE.support.title"](): string;
+    /**
+      * `Login or email`
+      */
+    ["com.affine.auth.sign.login"](): string;
+    /**
+      * `Enter a valid login or email.`
+      */
+    ["com.affine.auth.sign.login.error"](): string;
+    /**
+      * `Login or email`
+      */
+    ["com.affine.auth.sign.login.placeholder"](): string;
+    /**
+      * `Sign in with {{mode}}`
+      */
+    ["com.affine.auth.sign.mode"](options: {
+        readonly mode: string;
+    }): string;
+    /**
       * `Privacy`
       */
     ["com.affine.aboutAFFiNE.legal.privacy"](): string;
@@ -856,7 +878,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.ai.login-required.dialog-confirm"](): string;
     /**
-      * `To use TrackWork AI, please sign in to your TrackWork Cloud account.`
+      * `To use TrackWork AI, please sign in to your TrackWork account.`
       */
     ["com.affine.ai.login-required.dialog-content"](): string;
     /**
@@ -1105,7 +1127,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.change.email.page.subtitle"](): string;
     /**
-      * `Congratulations! You have successfully updated the email address associated with your TrackWork Cloud account.`
+      * `Congratulations! You have successfully updated the email address associated with your TrackWork account.`
       */
     ["com.affine.auth.change.email.page.success.subtitle"](): string;
     /**
@@ -1168,7 +1190,7 @@ export function useAFFiNEI18N(): {
         max: string;
     }>): string;
     /**
-      * `Welcome to TrackWork Cloud, you are almost there!`
+      * `Welcome to TrackWork, you are almost there!`
       */
     ["com.affine.auth.page.sent.email.title"](): string;
     /**
@@ -1212,7 +1234,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.reset.password.page.success"](): string;
     /**
-      * `Reset your TrackWork Cloud password`
+      * `Reset your TrackWork password`
       */
     ["com.affine.auth.reset.password.page.title"](): string;
     /**
@@ -1266,7 +1288,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.sent.change.password.hint"](): string;
     /**
-      * `Your password has been updated! You can sign in TrackWork Cloud with new password!`
+      * `Your password has been updated! You can sign in TrackWork with new password!`
       */
     ["com.affine.auth.sent.reset.password.success.message"](): string;
     /**
@@ -1274,7 +1296,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.sent.set.password.hint"](): string;
     /**
-      * `Your password has saved! You can sign in TrackWork Cloud with email and password!`
+      * `Your password has saved! You can sign in TrackWork with email and password!`
       */
     ["com.affine.auth.sent.set.password.success.message"](): string;
     /**
@@ -1313,7 +1335,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.set.password.page.success"](): string;
     /**
-      * `Set your TrackWork Cloud password`
+      * `Set your TrackWork password`
       */
     ["com.affine.auth.set.password.page.title"](): string;
     /**
@@ -1431,7 +1453,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.toast.message.failed"](): string;
     /**
-      * `You have been signed in, start to sync your data with TrackWork Cloud!`
+      * `You have been signed in, start to sync your data with TrackWork!`
       */
     ["com.affine.auth.toast.message.signed-in"](): string;
     /**
@@ -1457,7 +1479,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.banner.local-warning"](): string;
     /**
-      * `TrackWork Cloud`
+      * `TrackWork`
       */
     ["com.affine.brand.affineCloud"](): string;
     /**
@@ -1477,7 +1499,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.cloud-scroll-tip.caption"](): string;
     /**
-      * `TrackWork Cloud`
+      * `TrackWork`
       */
     ["com.affine.cloud-scroll-tip.title"](): string;
     /**
@@ -2365,15 +2387,15 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.history-vision.tips-modal.cancel"](): string;
     /**
-      * `Enable TrackWork Cloud`
+      * `Enable TrackWork`
       */
     ["com.affine.history-vision.tips-modal.confirm"](): string;
     /**
-      * `The current workspace is a local workspace, and we do not support version history for it at the moment. You can enable TrackWork Cloud. This will sync the workspace with the Cloud, allowing you to use this feature.`
+      * `The current workspace is a local workspace, and we do not support version history for it at the moment. You can enable TrackWork. This will sync the workspace with the Cloud, allowing you to use this feature.`
       */
     ["com.affine.history-vision.tips-modal.description"](): string;
     /**
-      * `History vision needs TrackWork Cloud`
+      * `History vision needs TrackWork`
       */
     ["com.affine.history-vision.tips-modal.title"](): string;
     /**
@@ -2915,6 +2937,10 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.mobile.setting.others.title"](): string;
     /**
+      * `Support`
+      */
+    ["com.affine.mobile.setting.others.support"](): string;
+    /**
       * `Official website`
       */
     ["com.affine.mobile.setting.others.website"](): string;
@@ -2973,11 +2999,11 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.multi-tab.new-tab"](): string;
     /**
-      * `Enabling TrackWork Cloud allows you to synchronise and backup data, as well as support multi-user collaboration and content publishing.`
+      * `Enabling TrackWork allows you to synchronise and backup data, as well as support multi-user collaboration and content publishing.`
       */
     ["com.affine.nameWorkspace.affine-cloud.description"](): string;
     /**
-      * `Sync across devices with TrackWork Cloud`
+      * `Sync across devices with TrackWork`
       */
     ["com.affine.nameWorkspace.affine-cloud.title"](): string;
     /**
@@ -3676,7 +3702,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.billing-setting.believer.price-caption"](): string;
     /**
-      * `TrackWork Cloud`
+      * `TrackWork`
       */
     ["com.affine.payment.billing-setting.believer.title"](): string;
     /**
@@ -3692,7 +3718,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.billing-setting.change-plan"](): string;
     /**
-      * `TrackWork Cloud`
+      * `TrackWork`
       */
     ["com.affine.payment.billing-setting.current-plan"](): string;
     /**
@@ -4427,11 +4453,11 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.modal.downgrade.cancel"](): string;
     /**
-      * `You can still use TrackWork Cloud Pro until the end of this billing period :)`
+      * `You can still use TrackWork Pro until the end of this billing period :)`
       */
     ["com.affine.payment.modal.downgrade.caption"](): string;
     /**
-      * `Keep TrackWork Cloud Pro`
+      * `Keep TrackWork Pro`
       */
     ["com.affine.payment.modal.downgrade.confirm"](): string;
     /**
@@ -4529,7 +4555,7 @@ export function useAFFiNEI18N(): {
         readonly plan: string;
     }): string;
     /**
-      * `This is the pricing plans of TrackWork Cloud. You can sign up or sign in to your account first.`
+      * `This is the pricing plans of TrackWork. You can sign up or sign in to your account first.`
       */
     ["com.affine.payment.subtitle-not-signed-in"](): string;
     /**
@@ -5107,7 +5133,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.setting.account.message"](): string;
     /**
-      * `Sync with TrackWork Cloud`
+      * `Sync with TrackWork`
       */
     ["com.affine.setting.sign.message"](): string;
     /**
@@ -5707,7 +5733,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.email.action.verify"](): string;
     /**
-      * `Enable TrackWork Cloud to collaborate with others`
+      * `Enable TrackWork to collaborate with others`
       */
     ["com.affine.settings.member-tooltip"](): string;
     /**
@@ -5852,6 +5878,10 @@ export function useAFFiNEI18N(): {
       * `Your account profile will be displayed to everyone.`
       */
     ["com.affine.settings.profile.message"](): string;
+    /**
+      * `Your display name is managed by an administrator.`
+      */
+    ["com.affine.settings.profile.managed-by-admin"](): string;
     /**
       * `Display name`
       */
@@ -6854,7 +6884,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.state.local"](): string;
     /**
-      * `Sync with TrackWork Cloud`
+      * `Sync with TrackWork`
       */
     ["com.affine.settings.workspace.state.sync-affine-cloud"](): string;
     /**
@@ -6930,7 +6960,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.storage.subtitle"](): string;
     /**
-      * `Enable TrackWork Cloud to publish this workspace`
+      * `Enable TrackWork to publish this workspace`
       */
     ["com.affine.settings.workspace.publish-tooltip"](): string;
     /**
@@ -7101,7 +7131,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.indexer-embedding.embedding.additional-attachments.remove-attachment.tooltip"](): string;
     /**
-      * `Sharing doc requires TrackWork Cloud.`
+      * `Sharing doc requires TrackWork.`
       */
     ["com.affine.share-menu.EnableCloudDescription"](): string;
     /**
@@ -7370,7 +7400,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.share-page.footer.create-with"](): string;
     /**
-      * `Empower your sharing with TrackWork Cloud: One-click doc sharing`
+      * `Empower your sharing with TrackWork: One-click doc sharing`
       */
     ["com.affine.share-page.footer.description"](): string;
     /**
@@ -7454,7 +7484,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.storage.plan"](): string;
     /**
-      * `TrackWork Cloud storage`
+      * `TrackWork storage`
       */
     ["com.affine.storage.title"](): string;
     /**
@@ -7782,7 +7812,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.workspace.cloud.auth"](): string;
     /**
-      * `Sync with TrackWork Cloud`
+      * `Sync with TrackWork`
       */
     ["com.affine.workspace.cloud.description"](): string;
     /**

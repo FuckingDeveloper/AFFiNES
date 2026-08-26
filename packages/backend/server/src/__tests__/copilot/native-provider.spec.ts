@@ -60,7 +60,7 @@ import {
 const mockDispatch = () =>
   (async function* (): AsyncIterableIterator<LlmToolLoopStreamEvent> {
     yield { type: 'text_delta', text: 'Use [^1] now' };
-    yield { type: 'citation', index: 1, url: 'https://affine.pro' };
+    yield { type: 'citation', index: 1, url: 'https://trackwork.mrhsoftware.com' };
     yield { type: 'done', finish_reason: 'stop' };
   })();
 

@@ -21,7 +21,7 @@ export const LocalDemoTips = ({
 }: LocalDemoTipsProps) => {
   const t = useI18n();
   const buttonLabel = isLoggedIn
-    ? t['Enable TrackWork Cloud']()
+    ? t['Enable TrackWork']()
     : t['Sign in and Enable']();
 
   const handleClick = useCallback(() => {

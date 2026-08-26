@@ -1693,7 +1693,7 @@ mod tests {
   fn test_validate_markdown_rejects_iframe_affine_domain() {
     let markdown = r#"# Title
 
-<iframe src="https://affine.pro/embed"></iframe>
+<iframe src="https://trackwork.mrhsoftware.com/embed"></iframe>
 "#;
     let result = validate_markdown(markdown);
     assert!(result.is_err());

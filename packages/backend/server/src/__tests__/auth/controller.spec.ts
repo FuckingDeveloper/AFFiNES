@@ -102,6 +102,24 @@ test('should be able to sign in with credential', async t => {
   t.is(session?.id, u1.id);
 });
 
+test('should be able to sign in with username and password', async t => {
+  const { app, models } = t.context;
+  const created = await models.user.create({
+    username: 'u1-login',
+    email: 'u1-login@example.com',
+    password: 'password',
+    registered: true,
+  });
+
+  const response = await app
+    .POST('/api/auth/sign-in')
+    .send({ email: 'u1-login', password: 'password' })
+    .expect(200);
+
+  t.is(response.body.id, created.id);
+  t.is(response.body.username, 'u1-login');
+});
+
 test('should require 2fa code when user has 2fa enabled', async t => {
   const { app, crypto, models } = t.context;
   const user = await app.createUser('u1-2fa-required@affine.pro');
@@ -196,7 +214,7 @@ test('should require a password and never send a sign-in email', async t => {
   t.falsy(await currentUser(app));
 });
 
-test('should not be able to sign in if email is invalid', async t => {
+test('should not be able to sign in if login is empty', async t => {
   const { app } = t.context;
 
   const res = await app
@@ -204,7 +222,7 @@ test('should not be able to sign in if email is invalid', async t => {
     .send({ email: '' })
     .expect(400);
 
-  t.is(res.body.message, 'An invalid email provided: ');
+  t.is(res.body.message, 'INVALID_LOGIN');
 });
 
 test('should not be able to sign in if forbidden', async t => {

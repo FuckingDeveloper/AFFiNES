@@ -413,6 +413,18 @@ export class UserModel extends BaseModel {
     if (keyword) {
       where.OR = [
         {
+          username: {
+            contains: keyword,
+            mode: 'insensitive',
+          },
+        },
+        {
+          name: {
+            contains: keyword,
+            mode: 'insensitive',
+          },
+        },
+        {
           email: {
             contains: keyword,
             mode: 'insensitive',

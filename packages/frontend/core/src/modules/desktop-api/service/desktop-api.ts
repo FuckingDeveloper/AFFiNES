@@ -131,7 +131,7 @@ export class DesktopApiService extends Service {
           targetServer = defaultServerService.server;
         }
         if (!targetServer) {
-          throw new Error('TrackWork Cloud server not found');
+          throw new Error('TrackWork server not found');
         }
         const authService = targetServer.scope.get(AuthService);
 

@@ -100,8 +100,8 @@ export const useEnableCloud = () => {
 
       openConfirmModal(
         {
-          title: t['Enable TrackWork Cloud'](),
-          description: t['Enable TrackWork Cloud Description'](),
+          title: t['Enable TrackWork'](),
+          description: t['Enable TrackWork Description'](),
           cancelText: t['com.affine.enableAffineCloudModal.button.cancel'](),
           confirmText:
             loginStatus === 'authenticated'

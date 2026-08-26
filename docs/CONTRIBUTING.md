@@ -1,1 +1,1 @@
-# Please visit https://docs.affine.pro/contributing
+# Please visit https://trackwork.mrhsoftware.com/contributing

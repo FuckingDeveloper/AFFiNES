@@ -97,6 +97,17 @@ export interface AdminAllSharedLinksFilterInput {
   workspaceId?: InputMaybe<Scalars['String']['input']>;
 }
 
+export interface AdminAuditLogType {
+  __typename?: 'AdminAuditLogType';
+  action: Scalars['String']['output'];
+  actorEmail: Scalars['String']['output'];
+  actorId: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  targetId: Maybe<Scalars['String']['output']>;
+  targetType: Scalars['String']['output'];
+}
+
 export interface AdminDashboard {
   __typename?: 'AdminDashboard';
   blobStorageBytes: Scalars['SafeInt']['output'];
@@ -900,6 +911,7 @@ export interface CreateUserInput {
   email: Scalars['String']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
   password?: InputMaybe<Scalars['String']['input']>;
+  username?: InputMaybe<Scalars['String']['input']>;
 }
 
 export interface CreateWorkspaceByokLocalLeaseInput {
@@ -1693,6 +1705,8 @@ export interface ManageUserInput {
   email?: InputMaybe<Scalars['String']['input']>;
   /** User name */
   name?: InputMaybe<Scalars['String']['input']>;
+  /** Unique login used for password authentication */
+  username?: InputMaybe<Scalars['String']['input']>;
 }
 
 export interface MeetingActionItemType {
@@ -2618,6 +2632,8 @@ export interface Query {
   __typename?: 'Query';
   /** List all shared links across workspaces for admin panel */
   adminAllSharedLinks: PaginatedAdminAllSharedLink;
+  /** List recent administrative actions */
+  adminAuditLogs: Array<AdminAuditLogType>;
   /** Get aggregated dashboard metrics for admin panel */
   adminDashboard: AdminDashboard;
   /** Get workspace detail for admin */
@@ -2671,6 +2687,11 @@ export interface Query {
 export interface QueryAdminAllSharedLinksArgs {
   filter?: InputMaybe<AdminAllSharedLinksFilterInput>;
   pagination: PaginationInput;
+}
+
+export interface QueryAdminAuditLogsArgs {
+  first?: Scalars['Int']['input'];
+  skip?: Scalars['Int']['input'];
 }
 
 export interface QueryAdminDashboardArgs {
@@ -3417,6 +3438,8 @@ export interface UserType {
   subscriptions: Array<SubscriptionType>;
   /** @deprecated use [/api/auth/sign-in?native=true] instead */
   token: TokenType;
+  /** Unique login used for password authentication */
+  username: Scalars['String']['output'];
 }
 
 export interface UserTypeCopilotArgs {

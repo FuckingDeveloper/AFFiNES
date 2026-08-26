@@ -118,7 +118,7 @@ describe('useAppConfig', () => {
     });
 
     act(() => {
-      result.current.update('server/name', 'TrackWork Cloud');
+      result.current.update('server/name', 'TrackWork');
     });
     expect(result.current.isGroupDirty('server')).toBe(true);
 
@@ -134,7 +134,7 @@ describe('useAppConfig', () => {
     });
 
     act(() => {
-      result.current.update('server/name', 'TrackWork Cloud');
+      result.current.update('server/name', 'TrackWork');
       result.current.update('auth/allowSignup', false);
     });
 
@@ -157,14 +157,14 @@ describe('useAppConfig', () => {
     });
 
     act(() => {
-      result.current.update('server/name', 'TrackWork Cloud');
+      result.current.update('server/name', 'TrackWork');
       result.current.update('auth/allowSignup', false);
     });
 
     mocked.saveUpdatesMock.mockResolvedValue({
       updateAppConfig: {
         server: {
-          name: 'TrackWork Cloud',
+          name: 'TrackWork',
         },
       },
     });
@@ -178,13 +178,13 @@ describe('useAppConfig', () => {
         {
           module: 'server',
           key: 'name',
-          value: 'TrackWork Cloud',
+          value: 'TrackWork',
         },
       ],
     });
     expect(result.current.isGroupDirty('server')).toBe(false);
     expect(result.current.isGroupDirty('auth')).toBe(true);
-    expect(result.current.patchedAppConfig.server.name).toBe('TrackWork Cloud');
+    expect(result.current.patchedAppConfig.server.name).toBe('TrackWork');
     expect(result.current.getGroupVersion('server')).toBe(1);
     expect(mocked.notifySuccessMock).toHaveBeenCalledTimes(1);
   });

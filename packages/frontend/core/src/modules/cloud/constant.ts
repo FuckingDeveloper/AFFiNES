@@ -4,7 +4,7 @@ import type { ServerConfig, ServerMetadata } from './types';
 
 /**
  * TrackWork is distributed as a self-hosted product. The built-in server must
- * never silently point users or telemetry at AFFiNE Cloud.
+ * never silently point users or telemetry at TrackWork.
  *
  * The `affine-cloud` id is intentionally preserved because it is persisted in
  * existing local databases and changing it would disconnect existing users

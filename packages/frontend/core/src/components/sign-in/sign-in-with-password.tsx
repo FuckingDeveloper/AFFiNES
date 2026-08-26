@@ -167,10 +167,12 @@ export const SignInWithPasswordStep = ({
       />
 
       <AuthContent>
-        <div className={styles.authModeHint}>Sign in with {authModeLabel}</div>
+        <div className={styles.authModeHint}>
+          {t['com.affine.auth.sign.mode']({ mode: authModeLabel })}
+        </div>
 
         <AuthInput
-          label={t['com.affine.settings.email']()}
+          label={t['com.affine.auth.sign.login']()}
           disabled={true}
           value={email}
         />

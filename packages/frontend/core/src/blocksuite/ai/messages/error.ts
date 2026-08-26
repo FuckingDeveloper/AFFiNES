@@ -196,7 +196,7 @@ const PaymentRequiredErrorRenderer = (host?: EditorHost | null) => html`
 
 const LoginRequiredErrorRenderer = (host?: EditorHost | null) => html`
   <ai-error-wrapper
-    .text=${'You need to login to TrackWork Cloud to continue using TrackWork AI.'}
+    .text=${'You need to login to TrackWork to continue using TrackWork AI.'}
     .actionText=${'Login'}
     .onClick=${() => AIAppEvents.requestLogin.next({ host })}
   ></ai-error-wrapper>

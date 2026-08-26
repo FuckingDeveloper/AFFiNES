@@ -39,6 +39,12 @@ function validateEmail(email: string) {
   return emailRegex.test(email);
 }
 
+function validateLogin(login: string) {
+  return (
+    validateEmail(login) || /^[a-zA-Z0-9][a-zA-Z0-9._-]{2,31}$/.test(login)
+  );
+}
+
 export const SignInStep = ({
   state,
   changeState,
@@ -86,7 +92,7 @@ export const SignInStep = ({
   }, [loginStatus, onAuthenticated, t]);
 
   const onContinue = useAsyncCallback(async () => {
-    if (!validateEmail(email)) {
+    if (!validateLogin(email)) {
       setIsValidEmail(false);
       return;
     }
@@ -150,18 +156,20 @@ export const SignInStep = ({
       />
 
       <AuthContent>
-        <div className={style.authModeHint}>Sign in with {authModeLabel}</div>
+        <div className={style.authModeHint}>
+          {t['com.affine.auth.sign.mode']({ mode: authModeLabel })}
+        </div>
 
         <OAuth redirectUrl={state.redirectUrl} />
 
         <AuthInput
           className={style.authInput}
-          label={t['com.affine.settings.email']()}
-          placeholder={t['com.affine.auth.sign.email.placeholder']()}
+          label={t['com.affine.auth.sign.login']()}
+          placeholder={t['com.affine.auth.sign.login.placeholder']()}
           onChange={setEmail}
           error={!isValidEmail}
           errorHint={
-            isValidEmail ? '' : t['com.affine.auth.sign.email.error']()
+            isValidEmail ? '' : t['com.affine.auth.sign.login.error']()
           }
           onEnter={onContinue}
         />
@@ -186,7 +194,7 @@ export const SignInStep = ({
               {/*prettier-ignore*/}
               <Trans i18nKey="com.affine.auth.sign.message">
                 By clicking &quot;Continue with Google/Email&quot; above, you acknowledge that
-                you agree to TrackWork&apos;s <a href="https://affine.pro/terms" target="_blank" rel="noreferrer">Terms of Conditions</a> and <a href="https://affine.pro/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.
+                you agree to TrackWork&apos;s <a href="https://trackwork.mrhsoftware.com/terms" target="_blank" rel="noreferrer">Terms of Conditions</a> and <a href="https://trackwork.mrhsoftware.com/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.
             </Trans>
             </div>
             <div className={style.skipDivider}>

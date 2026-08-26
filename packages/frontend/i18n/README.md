@@ -61,7 +61,7 @@ export TOLGEE_API_KEY=tgpak_XXXXXXX
 
 ## References
 
-- [TrackWork | Tolgee](https://i18n.affine.pro/)
+- [TrackWork | Tolgee](https://trackwork.mrhsoftware.com/)
 - [Tolgee Documentation](https://tolgee.io/docs/)
 - [i18next](https://www.i18next.com/)
 - [react-i18next](https://react.i18next.com/)

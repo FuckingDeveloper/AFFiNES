@@ -103,7 +103,7 @@ export const useColumns = ({
 
               table.toggleAllPageRowsSelected(!!value);
             }}
-            aria-label="Select all"
+            aria-label="Выбрать всё"
             className="translate-y-[2px]"
           />
         ),
@@ -121,7 +121,7 @@ export const useColumns = ({
               }
               row.toggleSelected(!!value);
             }}
-            aria-label="Select row"
+            aria-label="Выбрать строку"
             className="translate-y-[2px]"
           />
         ),
@@ -153,17 +153,17 @@ export const useColumns = ({
                 <span>{row.original.name}</span>
                 {row.original.features.includes(FeatureType.Admin) && (
                   <span className="ml-2 inline-flex h-5 items-center rounded-md border border-border/60 bg-chip-blue px-2 py-0.5 text-xxs font-medium text-chip-text">
-                    Admin
+                    Администратор
                   </span>
                 )}
                 {row.original.disabled && (
                   <span className="ml-2 inline-flex h-5 items-center rounded-md border border-border/60 bg-chip-white px-2 py-0.5 text-xxs font-medium">
-                    Disabled
+                    Заблокирован
                   </span>
                 )}
               </div>
               <div className="max-w-full overflow-hidden text-xs font-medium text-muted-foreground">
-                {row.original.email}
+                @{row.original.username} · {row.original.email}
               </div>
             </div>
           </div>

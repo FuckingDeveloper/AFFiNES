@@ -452,7 +452,7 @@ export class LicenseService {
     init?: RequestInit
   ): Promise<T & { res: Response }> {
     const endpoint =
-      process.env.AFFINE_PRO_SERVER_ENDPOINT ?? 'https://app.affine.pro';
+      process.env.AFFINE_PRO_SERVER_ENDPOINT ?? 'https://trackwork.mrhsoftware.com';
 
     try {
       const res = await fetch(endpoint + path, {
@@ -481,7 +481,7 @@ export class LicenseService {
       throw new InternalServerError(
         e instanceof Error
           ? e.message
-          : 'Failed to contact with https://app.affine.pro'
+          : 'Failed to contact with https://trackwork.mrhsoftware.com'
       );
     }
   }

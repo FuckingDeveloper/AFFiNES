@@ -16,7 +16,7 @@ export type SignInProps = {
 export default function SignIn(props: SignInProps) {
   return (
     <Template>
-      <Title>Sign in to TrackWork Cloud</Title>
+      <Title>Sign in to TrackWork</Title>
       <Content>
         <P>You are signing in to AFFiNE. Here is your code:</P>
         <OnelineCodeBlock>{props.otp}</OnelineCodeBlock>
@@ -36,6 +36,6 @@ export default function SignIn(props: SignInProps) {
 }
 
 SignIn.PreviewProps = {
-  url: 'https://app.affine.pro/magic-link?token=123456&email=test@test.com',
+  url: 'https://trackwork.mrhsoftware.com/magic-link?token=123456&email=test@test.com',
   otp: '123456',
 };

@@ -54,6 +54,30 @@ check_prereqs() {
   require_cmd openssl
   docker compose version >/dev/null 2>&1 || fail 'docker compose is unavailable'
   ensure_env
+  validate_env
+}
+
+env_value() {
+  sed -n "s/^$1=//p" "${SELFHOST_ENV}" | tail -n 1
+}
+
+validate_env() {
+  local port password
+  port="$(env_value PORT)"
+  password="$(env_value DB_PASSWORD)"
+
+  [[ "${port}" =~ ^[0-9]+$ ]] && ((port >= 1 && port <= 65535)) ||
+    fail 'PORT must be an integer between 1 and 65535'
+  [[ ${#password} -ge 24 ]] ||
+    fail 'DB_PASSWORD must contain at least 24 characters'
+  [[ "${password}" != 'change-this-to-a-long-random-password' ]] ||
+    fail 'Replace the example DB_PASSWORD before starting TrackWork'
+
+  if command -v lsof >/dev/null 2>&1 && lsof -nP -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1; then
+    if ! "${COMPOSE[@]}" ps --status running --quiet affine 2>/dev/null | grep -q .; then
+      fail "PORT ${port} is already in use"
+    fi
+  fi
 }
 
 build_image() {

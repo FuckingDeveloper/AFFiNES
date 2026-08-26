@@ -155,6 +155,7 @@ test('should report liveness and dependency readiness', async t => {
 test('should atomically create only one initial administrator', async t => {
   const server = t.context.app.getHttpServer();
   const credentials = {
+    username: 'trackwork-admin',
     name: 'TrackWork Admin',
     email: 'admin@mrhsoftware.com',
     password: 'a-secure-trackwork-password',

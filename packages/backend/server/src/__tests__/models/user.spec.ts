@@ -36,11 +36,23 @@ test('should create a new user', async t => {
   });
 
   t.is(user.email, 'test@affine.pro');
+  t.truthy(user.username);
 
   const user2 = await t.context.user.getUserByEmail('test@affine.pro');
 
   t.not(user2, null);
   t.is(user2!.email, 'test@affine.pro');
+});
+
+test('should sign in user by username', async t => {
+  const user = await t.context.user.create({
+    username: 'track-worker',
+    email: 'track-worker@example.com',
+    password: 'password',
+  });
+
+  const signedInUser = await t.context.user.signIn('track-worker', 'password');
+  t.is(signedInUser.id, user.id);
 });
 
 test('should trigger user.created event', async t => {

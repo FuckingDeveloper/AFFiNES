@@ -59,6 +59,16 @@ input AdminAllSharedLinksFilterInput {
   workspaceId: String
 }
 
+type AdminAuditLogType {
+  action: String!
+  actorEmail: String!
+  actorId: String!
+  createdAt: DateTime!
+  id: String!
+  targetId: String
+  targetType: String!
+}
+
 type AdminDashboard {
   blobStorageBytes: SafeInt!
   blobStorageHistory: [AdminDashboardValueDayPoint!]!
@@ -761,6 +771,7 @@ input CreateUserInput {
   email: String!
   name: String
   password: String
+  username: String
 }
 
 input CreateWorkspaceByokLocalLeaseInput {
@@ -1475,6 +1486,9 @@ input ManageUserInput {
 
   """User name"""
   name: String
+
+  """Unique login used for password authentication"""
+  username: String
 }
 
 type MeetingActionItemType {
@@ -1945,6 +1959,9 @@ type PublicUserType {
 }
 
 type Query {
+  """List recent administrative actions"""
+  adminAuditLogs(first: Int! = 50, skip: Int! = 0): [AdminAuditLogType!]!
+
   """List all shared links across workspaces for admin panel"""
   adminAllSharedLinks(filter: AdminAllSharedLinksFilterInput, pagination: PaginationInput!): PaginatedAdminAllSharedLink!
 
@@ -2675,6 +2692,9 @@ type UserType {
 
   """User name"""
   name: String!
+
+  """Unique login used for password authentication"""
+  username: String!
 
   """Get user notification count"""
   notificationCount: Int! @deprecated(reason: "Use realtime subscription \"notification.count.changed\" instead.")

@@ -197,7 +197,7 @@ test('can get request base url with multiple hosts', t => {
 
 test('should allow websocket secure origin by normalizing wss to https', t => {
   const allowedOrigins = buildCorsAllowedOrigins({
-    allowedOrigins: ['https://app.affine.pro'],
+    allowedOrigins: ['https://trackwork.mrhsoftware.com'],
   } as any);
 
   t.true(isCorsOriginAllowed('wss://app.affine.pro', allowedOrigins));

@@ -13,7 +13,7 @@ datasource db {
 
 model User {
   id              String    @id @default(uuid()) @db.VarChar
-  username        String    @unique @db.VarChar(32)
+  username        String    @unique @default(cuid()) @db.VarChar(32)
   name            String    @db.VarChar
   email           String    @unique @db.VarChar
   emailVerifiedAt DateTime? @map("email_verified") @db.Timestamptz(3)
@@ -58,8 +58,21 @@ model User {
   workspaceMemberLastAccesses WorkspaceMemberLastAccess[]
 
   @@index([email])
-  @@index([username])
   @@map("users")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String   @map("actor_id") @db.VarChar
+  actorEmail String   @map("actor_email") @db.VarChar
+  action     String   @db.VarChar
+  targetType String   @map("target_type") @db.VarChar
+  targetId   String?  @map("target_id") @db.VarChar
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@map("admin_audit_logs")
 }
 
 model ConnectedAccount {
@@ -176,14 +189,14 @@ model Workspace {
 }
 
 model WorkspaceRuntimeState {
-  workspaceId        String    @id @map("workspace_id") @db.VarChar
-  known              Boolean   @default(false)
-  readonly           Boolean   @default(false)
-  readonlyReasons    String[]  @default([]) @map("readonly_reasons")
-  lastReconciledAt   DateTime? @map("last_reconciled_at") @db.Timestamptz(3)
-  staleAfter         DateTime? @map("stale_after") @db.Timestamptz(3)
-  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
-  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  workspaceId      String    @id @map("workspace_id") @db.VarChar
+  known            Boolean   @default(false)
+  readonly         Boolean   @default(false)
+  readonlyReasons  String[]  @default([]) @map("readonly_reasons")
+  lastReconciledAt DateTime? @map("last_reconciled_at") @db.Timestamptz(3)
+  staleAfter       DateTime? @map("stale_after") @db.Timestamptz(3)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
@@ -204,36 +217,36 @@ model WorkspaceMember {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([workspaceId, userId, state])
   @@index([userId, state])
   @@index([workspaceId, role, state])
-  @@unique([workspaceId, userId, state])
   @@map("workspace_members")
 }
 
 model WorkspaceInvitation {
-  id                 String   @id @default(uuid()) @db.VarChar
-  workspaceId        String   @map("workspace_id") @db.VarChar
-  inviteeUserId      String?  @map("invitee_user_id") @db.VarChar
-  normalizedEmail    String?  @map("normalized_email") @db.VarChar
-  inviterUserId      String?  @map("inviter_user_id") @db.VarChar
-  requestedRole      String   @default("member") @map("requested_role") @db.Text
-  status             String   @db.Text
-  kind               String   @default("email") @db.Text
-  tokenHash          String?  @unique(map: "workspace_invitations_token_hash_key") @map("token_hash") @db.Text
-  legacyPermissionId String?  @map("legacy_permission_id") @db.VarChar
+  id                 String    @id @default(uuid()) @db.VarChar
+  workspaceId        String    @map("workspace_id") @db.VarChar
+  inviteeUserId      String?   @map("invitee_user_id") @db.VarChar
+  normalizedEmail    String?   @map("normalized_email") @db.VarChar
+  inviterUserId      String?   @map("inviter_user_id") @db.VarChar
+  requestedRole      String    @default("member") @map("requested_role") @db.Text
+  status             String    @db.Text
+  kind               String    @default("email") @db.Text
+  tokenHash          String?   @unique(map: "workspace_invitations_token_hash_key") @map("token_hash") @db.Text
+  legacyPermissionId String?   @map("legacy_permission_id") @db.VarChar
   expiresAt          DateTime? @map("expires_at") @db.Timestamptz(3)
   acceptedAt         DateTime? @map("accepted_at") @db.Timestamptz(3)
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   inviteeUser User?     @relation("workspace_invitation_invitee", fields: [inviteeUserId], references: [id], onDelete: SetNull)
   inviter     User?     @relation("workspace_invitation_inviter", fields: [inviterUserId], references: [id], onDelete: SetNull)
 
+  @@unique([workspaceId, inviteeUserId])
   @@index([workspaceId, status])
   @@index([inviteeUserId, status])
   @@index([workspaceId, normalizedEmail, status])
-  @@unique([workspaceId, inviteeUserId])
   @@map("workspace_invitations")
 }
 
@@ -272,17 +285,17 @@ model DocAccessPolicy {
 }
 
 model DocGrant {
-  workspaceId   String   @map("workspace_id") @db.VarChar
-  docId         String   @map("doc_id") @db.VarChar
-  principalType String   @map("principal_type") @db.Text
-  principalId   String   @map("principal_id") @db.VarChar
-  role          String   @db.Text
-  grantedBy     String?  @map("granted_by") @db.VarChar
-  legacyWorkspaceId String? @map("legacy_workspace_id") @db.VarChar
-  legacyDocId       String? @map("legacy_doc_id") @db.VarChar
-  legacyUserId      String? @map("legacy_user_id") @db.VarChar
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  workspaceId       String   @map("workspace_id") @db.VarChar
+  docId             String   @map("doc_id") @db.VarChar
+  principalType     String   @map("principal_type") @db.Text
+  principalId       String   @map("principal_id") @db.VarChar
+  role              String   @db.Text
+  grantedBy         String?  @map("granted_by") @db.VarChar
+  legacyWorkspaceId String?  @map("legacy_workspace_id") @db.VarChar
+  legacyDocId       String?  @map("legacy_doc_id") @db.VarChar
+  legacyUserId      String?  @map("legacy_user_id") @db.VarChar
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 

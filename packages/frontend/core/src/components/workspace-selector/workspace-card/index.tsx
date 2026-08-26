@@ -120,10 +120,10 @@ const useSyncEngineSyncProgress = (meta: WorkspaceMetadata) => {
     content = 'Sync disconnected due to unexpected issues, reconnecting.';
   } else if (syncing) {
     content =
-      `Syncing with TrackWork Cloud` +
+      `Syncing with TrackWork` +
       (progress ? ` (${Math.floor(progress * 100)}%)` : '');
   } else {
-    content = 'Synced with TrackWork Cloud';
+    content = 'Synced with TrackWork';
   }
 
   const CloudWorkspaceSyncStatus = () => {

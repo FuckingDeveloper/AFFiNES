@@ -200,14 +200,6 @@
       "desc": "Публичный путь к аватарам пользователей.",
       "example": "https://my-bucket.s3.amazonaws.com/"
     },
-    "oauth.providers.google": {
-      "desc": "Конфигурация Google OAuth (clientId, clientSecret и т.д.).",
-      "example": "{\"clientId\":\"xxx.apps.googleusercontent.com\",\"clientSecret\":\"GOCSPX-xxx\"}"
-    },
-    "oauth.providers.github": {
-      "desc": "Конфигурация GitHub OAuth (clientId, clientSecret и т.д.).",
-      "example": "{\"clientId\":\"Ov23lixxx\",\"clientSecret\":\"xxx\"}"
-    },
     "oauth.providers.oidc": {
       "desc": "Конфигурация OIDC OAuth (issuer, clientId, clientSecret и т.д.).",
       "example": "{\"issuer\":\"https://auth.example.com\",\"clientId\":\"xxx\",\"clientSecret\":\"xxx\"}"

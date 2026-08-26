@@ -962,6 +962,7 @@ test('should refresh user subscriptions (empty / revenuecat / stripe-only)', asy
   mockAlias(user.id);
   const currentUser = {
     id: user.id,
+    username: user.username,
     email: user.email,
     avatarUrl: '',
     name: '',

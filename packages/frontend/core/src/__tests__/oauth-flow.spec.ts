@@ -38,26 +38,26 @@ describe('oauth flow mode', () => {
   });
 
   test('keeps same-origin redirects direct', () => {
-    expect(resolveOAuthRedirect('/workspace', 'https://app.affine.pro')).toBe(
+    expect(resolveOAuthRedirect('/workspace', 'https://trackwork.mrhsoftware.com')).toBe(
       '/workspace'
     );
 
     expect(
       resolveOAuthRedirect(
-        'https://app.affine.pro/workspace?from=oauth',
-        'https://app.affine.pro'
+        'https://trackwork.mrhsoftware.com/workspace?from=oauth',
+        'https://trackwork.mrhsoftware.com'
       )
-    ).toBe('https://app.affine.pro/workspace?from=oauth');
+    ).toBe('https://trackwork.mrhsoftware.com/workspace?from=oauth');
   });
 
   test('wraps external redirects with redirect-proxy', () => {
     expect(
       resolveOAuthRedirect(
         'https://github.com/toeverything/AFFiNE',
-        'https://app.affine.pro'
+        'https://trackwork.mrhsoftware.com'
       )
     ).toBe(
-      'https://app.affine.pro/redirect-proxy?redirect_uri=https%3A%2F%2Fgithub.com%2Ftoeverything%2FAFFiNE'
+      'https://trackwork.mrhsoftware.com/redirect-proxy?redirect_uri=https%3A%2F%2Fgithub.com%2Ftoeverything%2FAFFiNE'
     );
   });
 });

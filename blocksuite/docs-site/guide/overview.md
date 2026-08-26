@@ -30,9 +30,9 @@ During the development of TrackWork, it became clear that BlockSuite was advanci
 
 ## Features
 
-With BlockSuite editors, you can selectively reuse all the editing features in [TrackWork](https://affine.pro/):
+With BlockSuite editors, you can selectively reuse all the editing features in [TrackWork](https://trackwork.mrhsoftware.com/):
 
-[![affine-demo](../images/affine-demo.jpg)](https://affine.pro)
+[![affine-demo](../images/affine-demo.jpg)](https://trackwork.mrhsoftware.com)
 
 And under the hood, the vanilla BlockSuite framework supports:
 

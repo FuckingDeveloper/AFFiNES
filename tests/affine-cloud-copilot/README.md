@@ -1,6 +1,6 @@
-# TrackWork Cloud Copilot E2E Tests
+# TrackWork Copilot E2E Tests
 
-This directory contains end-to-end tests for the TrackWork Cloud Copilot feature. The tests are organized in a structured way to ensure comprehensive coverage of different functionalities.
+This directory contains end-to-end tests for the TrackWork Copilot feature. The tests are organized in a structured way to ensure comprehensive coverage of different functionalities.
 
 ## Test Structure
 

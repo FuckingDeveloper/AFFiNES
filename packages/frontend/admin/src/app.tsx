@@ -80,15 +80,7 @@ function RootRoutes() {
   }
 
   if (/^\/admin\/?$/.test(location.pathname)) {
-    return (
-      <Navigate
-        to={
-          environment.isSelfHosted
-            ? ROUTES.admin.accounts
-            : ROUTES.admin.dashboard
-        }
-      />
-    );
+    return <Navigate to={ROUTES.admin.dashboard} />;
   }
 
   return <Outlet />;
@@ -113,13 +105,7 @@ export const App = () => {
                   <Route element={<AuthenticatedRoutes />}>
                     <Route
                       path={ROUTES.admin.dashboard}
-                      element={
-                        environment.isSelfHosted ? (
-                          <Navigate to={ROUTES.admin.accounts} replace />
-                        ) : (
-                          <Dashboard />
-                        )
-                      }
+                      element={<Dashboard />}
                     />
                     <Route
                       path={ROUTES.admin.accounts}

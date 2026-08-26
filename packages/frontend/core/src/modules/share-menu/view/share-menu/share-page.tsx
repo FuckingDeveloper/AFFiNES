@@ -38,7 +38,7 @@ export const LocalSharePage = (props: ShareMenuProps) => {
               variant="primary"
               data-testid="share-menu-enable-affine-cloud-button"
             >
-              {t['Enable TrackWork Cloud']()}
+              {t['Enable TrackWork']()}
             </Button>
           </div>
         </div>

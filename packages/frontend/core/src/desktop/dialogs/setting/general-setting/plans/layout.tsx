@@ -14,7 +14,7 @@ export const SeeAllLink = () => {
   return (
     <a
       className={styles.allPlansLink}
-      href="https://affine.pro/pricing"
+      href="https://trackwork.mrhsoftware.com/pricing"
       target="_blank"
       rel="noopener noreferrer"
     >
@@ -61,7 +61,7 @@ export interface PlanCardProps {
   scrollRef?: React.RefObject<HTMLDivElement>;
 }
 export const CloudPlanLayout = ({
-  title = 'TrackWork Cloud',
+  title = 'TrackWork',
   caption,
   select,
   toggle,

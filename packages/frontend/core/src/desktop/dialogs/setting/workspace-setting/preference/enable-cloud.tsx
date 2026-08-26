@@ -58,7 +58,7 @@ export const EnableCloudPanel = ({
         onClick={confirmEnableCloudAndClose}
         style={{ marginTop: '12px' }}
       >
-        {t['Enable TrackWork Cloud']()}
+        {t['Enable TrackWork']()}
       </Button>
     </SettingRow>
   );

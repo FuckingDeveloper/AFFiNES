@@ -3,31 +3,43 @@ import { Label } from '@affine/admin/components/ui/label';
 import { useCallback } from 'react';
 
 type CreateAdminProps = {
+  username: string;
   name: string;
   email: string;
   password: string;
   invalidEmail: boolean;
+  invalidUsername: boolean;
   invalidPassword: boolean;
   passwordLimits: {
     minLength: number;
     maxLength: number;
   };
   onNameChange: (name: string) => void;
+  onUsernameChange: (username: string) => void;
   onEmailChange: (email: string) => void;
   onPasswordChange: (password: string) => void;
 };
 
 export const CreateAdmin = ({
+  username,
   name,
   email,
   password,
   invalidEmail,
+  invalidUsername,
   invalidPassword,
   passwordLimits,
   onNameChange,
+  onUsernameChange,
   onEmailChange,
   onPasswordChange,
 }: CreateAdminProps) => {
+  const handleUsernameChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onUsernameChange(event.target.value);
+    },
+    [onUsernameChange]
+  );
   const handleNameChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       onNameChange(event.target.value);
@@ -57,10 +69,28 @@ export const CreateAdmin = ({
           </h1>
           <p className="text-sm text-muted-foreground">
             Этот аккаунт также можно использовать для входа как пользователь
-            AFFiNE.
+            TrackWork.
           </p>
         </div>
         <div className="flex flex-col gap-9">
+          <div className="grid gap-2 relative">
+            <Label htmlFor="username">Логин</Label>
+            <Input
+              id="username"
+              type="text"
+              autoComplete="username"
+              value={username}
+              onChange={handleUsernameChange}
+              minLength={3}
+              maxLength={32}
+              required
+            />
+            <p
+              className={`absolute text-sm text-destructive -bottom-6 ${invalidUsername ? '' : 'opacity-0 pointer-events-none'}`}
+            >
+              3–32 символа: латиница, цифры, точка, дефис или подчёркивание.
+            </p>
+          </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="name">Имя</Label>
             <Input

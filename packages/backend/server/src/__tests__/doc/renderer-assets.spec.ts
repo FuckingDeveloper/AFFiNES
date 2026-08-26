@@ -21,7 +21,7 @@ test.serial('production server does not require mobile assets', t => {
       JSON.stringify({
         js: ['main.js'],
         css: [],
-        publicPath: 'https://app.affine.pro/',
+        publicPath: 'https://trackwork.mrhsoftware.com/',
         gitHash: '',
         description: '',
       })
@@ -44,7 +44,7 @@ test.serial('production server does not require mobile assets', t => {
     const webAssets = (controller as any).webAssets;
     const mobileAssets = (controller as any).mobileAssets;
     t.is(mobileAssets, webAssets);
-    t.deepEqual(webAssets.js, ['https://app.affine.pro/main.js']);
+    t.deepEqual(webAssets.js, ['https://trackwork.mrhsoftware.com/main.js']);
   } finally {
     // @ts-expect-error test override
     env.projectRoot = previousProjectRoot;

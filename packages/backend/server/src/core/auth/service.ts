@@ -36,8 +36,8 @@ export function sessionUser(
   return assign(
     pick(user, 'id', 'username', 'email', 'avatarUrl', 'name', 'disabled'),
     {
-    hasPassword: user.password !== null,
-    emailVerified: user.emailVerifiedAt !== null,
+      hasPassword: user.password !== null,
+      emailVerified: user.emailVerifiedAt !== null,
     }
   );
 }

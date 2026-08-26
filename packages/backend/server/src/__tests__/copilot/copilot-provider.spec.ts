@@ -572,7 +572,7 @@ The term **“CRDT”** was first introduced by Marc Shapiro, Nuno Preguiça, Ca
     promptName: ['Generate a caption', 'Explain this image'],
     messages: singleUserPromptMessages('', {
       attachments: [
-        'https://cdn.affine.pro/copilot-test/Qgqy9qZT3VGIEuMIotJYoCCH.jpg',
+        'https://trackwork.mrhsoftware.com/copilot-test/Qgqy9qZT3VGIEuMIotJYoCCH.jpg',
       ],
     }),
     verifier: (t: ExecutionContext<Tester>, result: string) => {
@@ -591,7 +591,7 @@ The term **“CRDT”** was first introduced by Marc Shapiro, Nuno Preguiça, Ca
     promptName: ['Convert to sticker', 'Remove background', 'Upscale image'],
     messages: singleUserPromptMessages('', {
       attachments: [
-        'https://cdn.affine.pro/copilot-test/Zkas098lkjdf-908231.jpg',
+        'https://trackwork.mrhsoftware.com/copilot-test/Zkas098lkjdf-908231.jpg',
       ],
     }),
     verifier: (t: ExecutionContext<Tester>, link: string) => {
@@ -960,19 +960,19 @@ for (const { actionId, content, verifier } of actionRecipeCases) {
 const TRANSCRIPT_AUDIO_CASES = [
   {
     name: 'short audio',
-    url: 'https://cdn.affine.pro/copilot-test/MP9qDGuYgnY+ILoEAmHpp3h9Npuw2403EAYMEA.mp3',
+    url: 'https://trackwork.mrhsoftware.com/copilot-test/MP9qDGuYgnY+ILoEAmHpp3h9Npuw2403EAYMEA.mp3',
     mimeType: 'audio/mpeg',
     modelId: 'gemini-2.5-flash',
   },
   {
     name: 'middle audio',
-    url: 'https://cdn.affine.pro/copilot-test/2ed05eo1KvZ2tWB_BAjFo67EAPZZY-w4LylUAw.m4a',
+    url: 'https://trackwork.mrhsoftware.com/copilot-test/2ed05eo1KvZ2tWB_BAjFo67EAPZZY-w4LylUAw.m4a',
     mimeType: 'audio/m4a',
     modelId: 'gemini-2.5-flash',
   },
   {
     name: 'long audio',
-    url: 'https://cdn.affine.pro/copilot-test/nC9-e7P85PPI2rU29QWwf8slBNRMy92teLIIMw.opus',
+    url: 'https://trackwork.mrhsoftware.com/copilot-test/nC9-e7P85PPI2rU29QWwf8slBNRMy92teLIIMw.opus',
     mimeType: 'audio/opus',
     modelId: 'gemini-2.5-pro',
   },

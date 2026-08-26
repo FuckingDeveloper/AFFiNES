@@ -235,7 +235,7 @@ describe('markdown/list/paragraph/quote/code/link', () => {
     const { paragraphId: linkParagraphId } = await createParagraph();
     await triggerMarkdown(
       linkParagraphId,
-      '[TrackWork](https://affine.pro) ',
+      '[TrackWork](https://trackwork.mrhsoftware.com) ',
       'link'
     );
     const linkRichText = getRichTextByBlockId(linkParagraphId);
@@ -243,7 +243,7 @@ describe('markdown/list/paragraph/quote/code/link', () => {
     expect(
       linkRichText.inlineEditor.getFormat({ index: 1, length: 0 })
     ).toMatchObject({
-      link: 'https://affine.pro',
+      link: 'https://trackwork.mrhsoftware.com',
     });
   });
 });

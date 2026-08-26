@@ -16,6 +16,7 @@ import { ServerService } from '../config';
 import { validators } from '../utils/validators';
 
 interface CreateUserInput {
+  username: string;
   name?: string;
   email: string;
   password: string;
@@ -44,6 +45,7 @@ export class CustomSetupController {
       throw new ActionForbidden('First user already created');
     }
 
+    const username = validators.normalizeUsername(input.username);
     validators.assertValidEmail(input.email);
 
     if (!input.password) {
@@ -68,6 +70,7 @@ export class CustomSetupController {
     }
 
     const user = await this.models.user.create({
+      username,
       name: input.name?.trim() || undefined,
       email: input.email.trim().toLowerCase(),
       password: input.password,
@@ -82,7 +85,12 @@ export class CustomSetupController {
       );
 
       await this.auth.setCookies(req, res, user.id);
-      res.send({ id: user.id, email: user.email, name: user.name });
+      res.send({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+      });
     } catch (e) {
       await this.models.user.delete(user.id);
       throw e;

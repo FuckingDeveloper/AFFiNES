@@ -19,6 +19,7 @@ import { RealtimeRegistry } from '../registry';
 
 const user: CurrentUser = {
   id: 'u1',
+  username: 'u1',
   email: 'u1@affine.pro',
   name: 'User',
   avatarUrl: null,

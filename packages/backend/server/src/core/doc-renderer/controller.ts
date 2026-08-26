@@ -209,7 +209,7 @@ export class DocRendererController {
       ? htmlSanitize(`${opts.title} | TrackWork`)
       : 'TrackWork';
     const summary = opts ? htmlSanitize(opts.summary) : assets.description;
-    const image = opts?.avatar ?? 'https://affine.pro/og.jpeg';
+    const image = opts?.avatar ?? 'https://trackwork.mrhsoftware.com/og.jpeg';
 
     // TODO(@forehalo): parse assets/index.html
     return `<!DOCTYPE html>

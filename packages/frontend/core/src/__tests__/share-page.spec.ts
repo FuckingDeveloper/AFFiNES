@@ -52,7 +52,7 @@ describe('fetchSharedPublishMode', () => {
 
     await expect(
       fetchSharedPublishMode({
-        serverBaseUrl: 'https://app.affine.pro',
+        serverBaseUrl: 'https://trackwork.mrhsoftware.com',
         workspaceId: 'workspace-id',
         docId: 'doc-id',
       })
@@ -61,7 +61,7 @@ describe('fetchSharedPublishMode', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       new URL(
         '/api/workspaces/workspace-id/public-docs/doc-id',
-        'https://app.affine.pro'
+        'https://trackwork.mrhsoftware.com'
       ),
       expect.objectContaining({ method: 'HEAD' })
     );
@@ -79,7 +79,7 @@ describe('fetchSharedPublishMode', () => {
 
     await expect(
       fetchSharedPublishMode({
-        serverBaseUrl: 'https://app.affine.pro',
+        serverBaseUrl: 'https://trackwork.mrhsoftware.com',
         workspaceId: 'workspace-id',
         docId: 'doc-id',
       })

@@ -45,10 +45,11 @@ export const useCreateUser = () => {
   const revalidate = useMutateQueryResource();
 
   const create = useAsyncCallback(
-    async ({ name, email, password, features }: UserInput) => {
+    async ({ username, name, email, password, features }: UserInput) => {
       try {
         const account = await createAccount({
           input: {
+            username,
             name,
             email,
             password: password === '' ? undefined : password,
@@ -89,6 +90,7 @@ export const useUpdateUser = () => {
   const update = useAsyncCallback(
     async ({
       userId,
+      username,
       name,
       email,
       features,
@@ -97,6 +99,7 @@ export const useUpdateUser = () => {
         await updateAccount({
           id: userId,
           input: {
+            username,
             name,
             email,
           },

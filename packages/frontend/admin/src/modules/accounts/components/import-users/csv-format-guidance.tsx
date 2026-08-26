@@ -20,9 +20,10 @@ export const CsvFormatGuidance: FC<CsvFormatGuidanceProps> = ({
         <WarningIcon fontSize={16} className="text-foreground" />
       </div>
       <div>
-        <p>CSV-файл содержит имя пользователя, email и пароль.</p>
+        <p>CSV-файл содержит логин, имя пользователя, email и пароль.</p>
         <ul>
           {[
+            `Логин (необязательно): 3–32 символа, латиница, цифры, точка, дефис или подчёркивание.`,
             `Имя пользователя (необязательно): любой текст.`,
             `Email (обязательно): например, user@example.com.`,
             `Пароль (необязательно): ${passwordLimits.minLength}–${passwordLimits.maxLength} символов.`,

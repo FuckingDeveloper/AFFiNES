@@ -215,7 +215,7 @@ declare global {
 
 defineModuleConfig('copilot', {
   enabled: {
-    desc: 'Whether to enable the copilot plugin. <br> Document: <a href="https://docs.affine.pro/self-host-affine/administer/ai" target="_blank">https://docs.affine.pro/self-host-affine/administer/ai</a>',
+    desc: 'Whether to enable the copilot plugin. <br> Document: <a href="https://trackwork.mrhsoftware.com/self-host-affine/administer/ai" target="_blank">https://trackwork.mrhsoftware.com/self-host-affine/administer/ai</a>',
     default: false,
   },
   'byok.enabled': {

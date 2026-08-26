@@ -7,7 +7,7 @@ import {
 import { useAppUpdater } from '@affine/core/components/hooks/use-app-updater';
 import { appIconMap, appNames } from '@affine/core/utils/channel';
 import { useI18n } from '@affine/i18n';
-import { ArrowRightSmallIcon, OpenInNewIcon } from '@blocksuite/icons/rc';
+import { OpenInNewIcon } from '@blocksuite/icons/rc';
 import { useCallback } from 'react';
 
 import { useAppSettingHelper } from '../../../../../components/hooks/affine/use-app-setting-helper';
@@ -79,16 +79,6 @@ export const AboutAffine = () => {
                 checked={appSettings.autoDownloadUpdate}
                 onChange={onSwitchAutoDownload}
               />
-            </SettingRow>
-            <SettingRow
-              name={t['com.affine.aboutAFFiNE.changelog.title']()}
-              desc={t['com.affine.aboutAFFiNE.changelog.description']()}
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                urlService.openPopupWindow(BUILD_CONFIG.changelogUrl);
-              }}
-            >
-              <ArrowRightSmallIcon />
             </SettingRow>
           </>
         ) : null}

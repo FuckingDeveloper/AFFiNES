@@ -151,10 +151,12 @@ export const Form = () => {
 
   const navigate = useNavigate();
 
+  const [usernameValue, setUsernameValue] = useState('');
   const [nameValue, setNameValue] = useState('');
   const [emailValue, setEmailValue] = useState('');
   const [passwordValue, setPasswordValue] = useState('');
   const [invalidEmail, setInvalidEmail] = useState(false);
+  const [invalidUsername, setInvalidUsername] = useState(false);
   const [invalidPassword, setInvalidPassword] = useState(false);
   const [systemReady, setSystemReady] = useState(false);
 
@@ -166,7 +168,8 @@ export const Form = () => {
   const isSystemCheckStep = current - 1 === CarouselSteps.SystemCheck;
 
   const disableContinue =
-    ((!nameValue || !emailValue || !passwordValue) && isCreateAdminStep) ||
+    ((!usernameValue || !nameValue || !emailValue || !passwordValue) &&
+      isCreateAdminStep) ||
     (isSystemCheckStep && !systemReady);
 
   useEffect(() => {
@@ -187,6 +190,7 @@ export const Form = () => {
       const createResponse = await affineFetch('/api/setup/create-admin-user', {
         method: 'POST',
         body: JSON.stringify({
+          username: usernameValue,
           name: nameValue,
           email: emailValue,
           password: passwordValue,
@@ -211,10 +215,23 @@ export const Form = () => {
       console.error(err);
       throw err;
     }
-  }, [nameValue, emailValue, passwordValue, refreshServerConfig]);
+  }, [
+    usernameValue,
+    nameValue,
+    emailValue,
+    passwordValue,
+    refreshServerConfig,
+  ]);
 
   const onNext = useAsyncCallback(async () => {
     if (isCreateAdminStep) {
+      const validUsername = /^[a-z0-9][a-z0-9._-]{2,31}$/.test(
+        usernameValue.trim().toLowerCase()
+      );
+      setInvalidUsername(!validUsername);
+      if (!validUsername) {
+        return;
+      }
       if (
         !validateEmailAndPassword(
           emailValue,
@@ -254,6 +271,7 @@ export const Form = () => {
     navigate,
     passwordLimits,
     passwordValue,
+    usernameValue,
   ]);
 
   const onPrevious = useAsyncCallback(async () => {
@@ -278,15 +296,18 @@ export const Form = () => {
           {Object.entries(CarouselItemElements).map(([key, Element]) => (
             <CarouselItem key={key}>
               <Element
+                username={usernameValue}
                 name={nameValue}
                 email={emailValue}
                 password={passwordValue}
                 invalidEmail={invalidEmail}
+                invalidUsername={invalidUsername}
                 invalidPassword={invalidPassword}
                 passwordLimits={passwordLimits}
                 systemReady={systemReady}
                 onSystemReadyChange={setSystemReady}
                 onNameChange={setNameValue}
+                onUsernameChange={setUsernameValue}
                 onEmailChange={setEmailValue}
                 onPasswordChange={setPasswordValue}
               />

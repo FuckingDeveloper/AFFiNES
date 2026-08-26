@@ -295,7 +295,7 @@ export const RightPanel = ({
     return (
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
         <SheetHeader className="hidden">
-          <SheetTitle>Right Panel</SheetTitle>
+          <SheetTitle>Правая панель</SheetTitle>
           <SheetDescription>
             For displaying additional information
           </SheetDescription>

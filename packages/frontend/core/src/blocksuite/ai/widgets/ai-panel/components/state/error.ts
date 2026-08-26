@@ -146,7 +146,7 @@ export class AIPanelError extends WithDisposable(LitElement) {
           AIErrorType.Unauthorized,
           () =>
             html` <div class="error-info">
-                You need to login to TrackWork Cloud to continue using TrackWork
+                You need to login to TrackWork to continue using TrackWork
                 AI.
               </div>
               <div class="action-button-group">
