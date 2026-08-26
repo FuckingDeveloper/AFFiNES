@@ -1,4 +1,5 @@
 import { Button, notify, useDraggable, useDropTarget } from '@affine/component';
+import { useQuery } from '@affine/core/components/hooks/use-query';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { DocsService } from '@affine/core/modules/doc';
 import { TagService } from '@affine/core/modules/tag';
@@ -15,8 +16,11 @@ import {
   localizeTaskTrackerBoardTitle,
   localizeTaskTrackerHistory,
   localizeTaskTrackerStageTitle,
+  type TaskTrackerTranslationKey,
+  type TaskTrackerTranslator,
   useTaskTrackerI18n,
 } from '@affine/core/utils/task-tracker-i18n';
+import { trackWorkTaskDevelopmentQuery } from '@affine/graphql';
 import {
   formatTaskKey,
   nextTaskNumber,
@@ -1273,6 +1277,17 @@ const TaskDetailPanel = ({
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>{t('development')}</span>
+        </div>
+        <TaskDevelopmentSection
+          workspaceId={workspace?.id ?? ''}
+          taskKey={task.number}
+          t={t}
+        />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
           <span className={styles.sectionTitle}>{t('history')}</span>
         </div>
         {task.history.length > 0 ? (
@@ -1296,6 +1311,107 @@ const TaskDetailPanel = ({
         )}
       </section>
     </aside>
+  );
+};
+
+const TaskDevelopmentSection = ({
+  workspaceId,
+  taskKey,
+  t,
+}: {
+  workspaceId: string;
+  taskKey: string;
+  t: TaskTrackerTranslator;
+}) => {
+  const { data, isLoading, error } = useQuery({
+    query: trackWorkTaskDevelopmentQuery,
+    variables: { workspaceId, taskKey },
+  });
+
+  const development = data?.trackWorkTaskDevelopment;
+
+  if (isLoading || error || !development || !workspaceId) {
+    return (
+      <div className={styles.editorEmptyState}>
+        {error ? `${t('developmentError')}. ` : ''}
+      </div>
+    );
+  }
+
+  const isEmpty =
+    development.commits.length === 0 &&
+    development.branches.length === 0 &&
+    development.mergeRequests.length === 0;
+
+  if (isEmpty) {
+    return (
+      <div className={styles.editorEmptyState}>{t('developmentEmpty')}</div>
+    );
+  }
+
+  return (
+    <div>
+      {development.branches.length > 0 ? (
+        <div className={styles.developmentGroup}>
+          <span className={styles.developmentGroupTitle}>
+            {t('developmentBranches')}
+          </span>
+          {development.branches.map(branch => (
+            <div key={branch.name} className={styles.developmentItem}>
+              <span className={styles.developmentItemTitle}>{branch.name}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {development.mergeRequests.length > 0 ? (
+        <div className={styles.developmentGroup}>
+          <span className={styles.developmentGroupTitle}>
+            {t('developmentMergeRequests')}
+          </span>
+          {development.mergeRequests.map(mr => (
+            <div key={mr.externalId} className={styles.developmentItem}>
+              <a
+                className={styles.developmentLink}
+                href={mr.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                !{mr.iid} {mr.title}
+              </a>
+              <span className={styles.developmentItemMeta}>
+                {t(
+                  `mrStatus${mr.status.charAt(0).toUpperCase()}${mr.status.slice(1)}` as TaskTrackerTranslationKey
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {development.commits.length > 0 ? (
+        <div className={styles.developmentGroup}>
+          <span className={styles.developmentGroupTitle}>
+            {t('developmentCommits')}
+          </span>
+          {development.commits.slice(0, 10).map(commit => (
+            <div key={commit.externalId} className={styles.developmentItem}>
+              <span className={styles.developmentItemMeta}>
+                {commit.shortSha}
+              </span>
+              <a
+                className={styles.developmentLink}
+                href={commit.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {commit.title}
+              </a>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 };
 
