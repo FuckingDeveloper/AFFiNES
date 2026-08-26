@@ -79,9 +79,13 @@ export function verifyTotp(
   const digits = options?.digits ?? 6;
   const periodSeconds = options?.periodSeconds ?? 30;
   const window = options?.window ?? 1;
-  const normalized = code.replace(/\s+/g, '');
 
-  if (!new RegExp(`^\\d{${digits}}$`).test(normalized)) {
+  if (!Number.isInteger(digits) || digits <= 0) {
+    return false;
+  }
+
+  const normalized = code.replace(/\s+/g, '');
+  if (normalized.length !== digits || !/^\d+$/.test(normalized)) {
     return false;
   }
 
