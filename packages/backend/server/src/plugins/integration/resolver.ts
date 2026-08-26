@@ -17,6 +17,7 @@ import {
   CreateDevelopmentIntegrationInput,
   DevelopmentConnectionTestResultType,
   DevelopmentIntegrationConnectionType,
+  DevelopmentPipelineType,
   DevelopmentRepositoryInfoType,
   DevelopmentRepositoryType,
   ImportDevelopmentRepositoryInput,
@@ -144,7 +145,23 @@ export class DevelopmentInfoResolver {
           (link.metadata as { targetBranch?: string }).targetBranch ?? null,
       }));
 
-    return { commits, branches, mergeRequests };
+    const pipelines = links
+      .filter(link => link.entityType === 'pipeline')
+      .map(link => ({
+        externalId: link.externalId,
+        number: link.iid ?? link.externalId,
+        name: link.title,
+        url: link.url,
+        status: link.status ?? 'unknown',
+        startedAt: (link.metadata as { startedAt?: string }).startedAt
+          ? new Date((link.metadata as { startedAt: string }).startedAt)
+          : null,
+        finishedAt: (link.metadata as { finishedAt?: string }).finishedAt
+          ? new Date((link.metadata as { finishedAt: string }).finishedAt)
+          : null,
+      }));
+
+    return { commits, branches, mergeRequests, pipelines };
   }
 }
 
@@ -179,11 +196,12 @@ export class IntegrationMutationResolver {
 
     const record = await this.connections.create({
       workspaceId: input.workspaceId,
-      provider: input.provider as 'gitlab',
+      provider: input.provider as 'gitlab' | 'jenkins',
       name: input.name,
       baseUrl: input.baseUrl,
       token: input.token,
       webhookSecret: input.webhookSecret,
+      username: input.username,
       createdById: user.id,
     });
 
@@ -262,6 +280,31 @@ export class IntegrationMutationResolver {
     await this.assertCanManage(user.id, connection.workspaceId);
 
     return this.connections.testConnection(connectionId);
+  }
+
+  @Mutation(() => [DevelopmentPipelineType])
+  async refreshDevelopmentPipelines(
+    @CurrentUser() user: CurrentUser | null,
+    @Args('connectionId') connectionId: string
+  ) {
+    if (!user) {
+      throw new AuthenticationRequired();
+    }
+
+    const connection = await this.connections.get(connectionId);
+    await this.assertCanManage(user.id, connection.workspaceId);
+
+    const pipelines = await this.connections.refreshPipelines(connectionId);
+
+    return pipelines.map(pipeline => ({
+      externalId: pipeline.externalId,
+      number: pipeline.number,
+      name: pipeline.name,
+      status: pipeline.status,
+      url: pipeline.url,
+      startedAt: pipeline.startedAt,
+      finishedAt: pipeline.finishedAt,
+    }));
   }
 
   @Mutation(() => [DevelopmentRepositoryInfoType])

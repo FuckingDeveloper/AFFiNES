@@ -1423,12 +1423,14 @@ model DevelopmentIntegrationConnection {
   baseUrl             String   @map("base_url") @db.VarChar
   tokenCipher         String   @map("token_cipher") @db.Text
   webhookSecretCipher String?  @map("webhook_secret_cipher") @db.Text
+  username            String?  @db.VarChar
   enabled             Boolean  @default(true)
   createdById         String   @map("created_by_id") @db.VarChar
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  repositories DevelopmentRepository[]
+  repositories        DevelopmentRepository[]
+  DevelopmentPipeline DevelopmentPipeline[]
 
   @@index([workspaceId])
   @@map("development_integration_connections")
@@ -1484,4 +1486,25 @@ model DevelopmentWebhookEvent {
 
   @@unique([connectionId, idempotencyKey])
   @@map("development_webhook_events")
+}
+
+model DevelopmentPipeline {
+  id           String    @id @default(uuid()) @db.VarChar
+  connectionId String    @map("connection_id") @db.VarChar
+  externalId   String    @map("external_id") @db.VarChar
+  name         String    @db.VarChar
+  number       String    @db.VarChar
+  status       String    @db.VarChar
+  url          String    @db.VarChar
+  branch       String?   @db.VarChar
+  startedAt    DateTime? @map("started_at") @db.Timestamptz(3)
+  finishedAt   DateTime? @map("finished_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  connection DevelopmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, externalId])
+  @@index([connectionId, status])
+  @@map("development_pipelines")
 }

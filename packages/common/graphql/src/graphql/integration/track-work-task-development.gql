@@ -22,5 +22,14 @@ query trackWorkTaskDevelopment($workspaceId: String!, $taskKey: String!) {
       sourceBranch
       targetBranch
     }
+    pipelines {
+      externalId
+      number
+      name
+      status
+      url
+      startedAt
+      finishedAt
+    }
   }
 }

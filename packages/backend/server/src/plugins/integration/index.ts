@@ -6,6 +6,8 @@ import { WorkspaceModule } from '../../core/workspaces';
 import { IntegrationController } from './controller';
 import { IntegrationJob } from './job';
 import { DevelopmentLinkService } from './link-service';
+import { CiProviderRegistry } from './providers/ci';
+import { JenkinsCiProvider } from './providers/jenkins';
 import { GitLabScmProvider, ScmProviderRegistry } from './providers';
 import {
   DevelopmentInfoResolver,
@@ -19,6 +21,8 @@ import { IntegrationConnectionService } from './service';
   providers: [
     GitLabScmProvider,
     ScmProviderRegistry,
+    JenkinsCiProvider,
+    CiProviderRegistry,
     IntegrationConnectionService,
     DevelopmentLinkService,
     IntegrationJob,

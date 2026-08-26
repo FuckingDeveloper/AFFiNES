@@ -71,6 +71,7 @@ export type PipelineInfo = {
   url?: string;
   commitSha?: string;
   branch?: string;
+  description?: string;
   startedAt?: Date;
   finishedAt?: Date;
 };
@@ -155,6 +156,23 @@ export interface ScmProvider {
   }): Promise<boolean>;
 
   parseWebhook(input: { body: unknown }): Promise<DevelopmentEvent[]>;
+}
+
+export interface CiProvider {
+  readonly type: string;
+
+  testConnection(input: {
+    baseUrl: string;
+    username?: string;
+    token: string;
+  }): Promise<ConnectionTestResult>;
+
+  listPipelines(input: {
+    baseUrl: string;
+    username?: string;
+    token: string;
+    limit?: number;
+  }): Promise<PipelineInfo[]>;
 }
 
 export type IntegrationConnectionRecord = DevelopmentIntegrationConnection;
@@ -282,6 +300,9 @@ export class CreateDevelopmentIntegrationInput {
 
   @Field({ nullable: true })
   webhookSecret?: string;
+
+  @Field({ nullable: true })
+  username?: string;
 }
 
 @InputType()
@@ -396,4 +417,31 @@ export class TrackWorkDevelopmentInfoType {
 
   @Field(() => [DevelopmentMergeRequestType])
   mergeRequests!: DevelopmentMergeRequestType[];
+
+  @Field(() => [DevelopmentPipelineType])
+  pipelines!: DevelopmentPipelineType[];
+}
+
+@ObjectType('DevelopmentPipeline')
+export class DevelopmentPipelineType {
+  @Field()
+  externalId!: string;
+
+  @Field()
+  number!: string;
+
+  @Field()
+  name!: string;
+
+  @Field()
+  status!: string;
+
+  @Field()
+  url!: string;
+
+  @Field({ nullable: true })
+  startedAt?: Date;
+
+  @Field({ nullable: true })
+  finishedAt?: Date;
 }

@@ -912,6 +912,7 @@ export interface CreateDevelopmentIntegrationInput {
   name: Scalars['String']['input'];
   provider: Scalars['String']['input'];
   token: Scalars['String']['input'];
+  username?: InputMaybe<Scalars['String']['input']>;
   webhookSecret?: InputMaybe<Scalars['String']['input']>;
   workspaceId: Scalars['String']['input'];
 }
@@ -1006,6 +1007,17 @@ export interface DevelopmentMergeRequest {
   status: Scalars['String']['output'];
   targetBranch: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+}
+
+export interface DevelopmentPipeline {
+  __typename?: 'DevelopmentPipeline';
+  externalId: Scalars['String']['output'];
+  finishedAt: Maybe<Scalars['DateTime']['output']>;
+  name: Scalars['String']['output'];
+  number: Scalars['String']['output'];
+  startedAt: Maybe<Scalars['DateTime']['output']>;
+  status: Scalars['String']['output'];
   url: Scalars['String']['output'];
 }
 
@@ -1967,6 +1979,7 @@ export interface Mutation {
   /** mark notification as read */
   readNotification: Scalars['Boolean']['output'];
   recoverDoc: Scalars['DateTime']['output'];
+  refreshDevelopmentPipelines: Array<DevelopmentPipeline>;
   /** Refresh current user subscriptions and return latest. */
   refreshUserSubscriptions: Array<SubscriptionType>;
   releaseDeletedBlobs: Scalars['Boolean']['output'];
@@ -2323,6 +2336,10 @@ export interface MutationRecoverDocArgs {
   guid: Scalars['String']['input'];
   timestamp: Scalars['DateTime']['input'];
   workspaceId: Scalars['String']['input'];
+}
+
+export interface MutationRefreshDevelopmentPipelinesArgs {
+  connectionId: Scalars['String']['input'];
 }
 
 export interface MutationReleaseDeletedBlobsArgs {
@@ -3337,6 +3354,7 @@ export interface TrackWorkDevelopmentInfo {
   branches: Array<DevelopmentBranch>;
   commits: Array<DevelopmentCommit>;
   mergeRequests: Array<DevelopmentMergeRequest>;
+  pipelines: Array<DevelopmentPipeline>;
 }
 
 export interface TranscriptProviderMetaType {
@@ -7386,6 +7404,24 @@ export type ImportDevelopmentRepositoryMutation = {
   };
 };
 
+export type RefreshDevelopmentPipelinesMutationVariables = Exact<{
+  connectionId: Scalars['String']['input'];
+}>;
+
+export type RefreshDevelopmentPipelinesMutation = {
+  __typename?: 'Mutation';
+  refreshDevelopmentPipelines: Array<{
+    __typename?: 'DevelopmentPipeline';
+    externalId: string;
+    number: string;
+    name: string;
+    status: string;
+    url: string;
+    startedAt: string | null;
+    finishedAt: string | null;
+  }>;
+};
+
 export type RotateDevelopmentIntegrationCredentialsMutationVariables = Exact<{
   input: RotateDevelopmentCredentialsInput;
 }>;
@@ -7461,6 +7497,16 @@ export type TrackWorkTaskDevelopmentQuery = {
       status: string;
       sourceBranch: string | null;
       targetBranch: string | null;
+    }>;
+    pipelines: Array<{
+      __typename?: 'DevelopmentPipeline';
+      externalId: string;
+      number: string;
+      name: string;
+      status: string;
+      url: string;
+      startedAt: string | null;
+      finishedAt: string | null;
     }>;
   };
 };
@@ -9213,6 +9259,11 @@ export type Mutations =
       name: 'importDevelopmentRepositoryMutation';
       variables: ImportDevelopmentRepositoryMutationVariables;
       response: ImportDevelopmentRepositoryMutation;
+    }
+  | {
+      name: 'refreshDevelopmentPipelinesMutation';
+      variables: RefreshDevelopmentPipelinesMutationVariables;
+      response: RefreshDevelopmentPipelinesMutation;
     }
   | {
       name: 'rotateDevelopmentIntegrationCredentialsMutation';

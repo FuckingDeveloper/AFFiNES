@@ -2600,6 +2600,22 @@ export const importDevelopmentRepositoryMutation = {
 }`,
 };
 
+export const refreshDevelopmentPipelinesMutation = {
+  id: 'refreshDevelopmentPipelinesMutation' as const,
+  op: 'refreshDevelopmentPipelines',
+  query: `mutation refreshDevelopmentPipelines($connectionId: String!) {
+  refreshDevelopmentPipelines(connectionId: $connectionId) {
+    externalId
+    number
+    name
+    status
+    url
+    startedAt
+    finishedAt
+  }
+}`,
+};
+
 export const rotateDevelopmentIntegrationCredentialsMutation = {
   id: 'rotateDevelopmentIntegrationCredentialsMutation' as const,
   op: 'rotateDevelopmentIntegrationCredentials',
@@ -2661,6 +2677,15 @@ export const trackWorkTaskDevelopmentQuery = {
       status
       sourceBranch
       targetBranch
+    }
+    pipelines {
+      externalId
+      number
+      name
+      status
+      url
+      startedAt
+      finishedAt
     }
   }
 }`,

@@ -772,6 +772,7 @@ input CreateDevelopmentIntegrationInput {
   name: String!
   provider: String!
   token: String!
+  username: String
   webhookSecret: String
   workspaceId: String!
 }
@@ -863,6 +864,16 @@ type DevelopmentMergeRequest {
   status: String!
   targetBranch: String
   title: String!
+  url: String!
+}
+
+type DevelopmentPipeline {
+  externalId: String!
+  finishedAt: DateTime
+  name: String!
+  number: String!
+  startedAt: DateTime
+  status: String!
   url: String!
 }
 
@@ -1763,6 +1774,7 @@ type Mutation {
   """mark notification as read"""
   readNotification(id: String!): Boolean!
   recoverDoc(guid: String!, timestamp: DateTime!, workspaceId: String!): DateTime!
+  refreshDevelopmentPipelines(connectionId: String!): [DevelopmentPipeline!]!
 
   """Refresh current user subscriptions and return latest."""
   refreshUserSubscriptions: [SubscriptionType!]!
@@ -2564,6 +2576,7 @@ type TrackWorkDevelopmentInfo {
   branches: [DevelopmentBranch!]!
   commits: [DevelopmentCommit!]!
   mergeRequests: [DevelopmentMergeRequest!]!
+  pipelines: [DevelopmentPipeline!]!
 }
 
 type TranscriptProviderMetaType {
