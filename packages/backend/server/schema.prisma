@@ -1414,3 +1414,40 @@ model CalendarEventInstance {
   @@index([calendarEventId, startAtUtc])
   @@map("calendar_event_instances")
 }
+
+model DevelopmentIntegrationConnection {
+  id                  String   @id @default(uuid()) @db.VarChar
+  workspaceId         String   @map("workspace_id") @db.VarChar
+  provider            String   @db.VarChar
+  name                String   @db.VarChar
+  baseUrl             String   @map("base_url") @db.VarChar
+  tokenCipher         String   @map("token_cipher") @db.Text
+  webhookSecretCipher String?  @map("webhook_secret_cipher") @db.Text
+  enabled             Boolean  @default(true)
+  createdById         String   @map("created_by_id") @db.VarChar
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  repositories DevelopmentRepository[]
+
+  @@index([workspaceId])
+  @@map("development_integration_connections")
+}
+
+model DevelopmentRepository {
+  id            String   @id @default(uuid()) @db.VarChar
+  connectionId  String   @map("connection_id") @db.VarChar
+  externalId    String   @map("external_id") @db.VarChar
+  name          String   @db.VarChar
+  fullName      String   @map("full_name") @db.VarChar
+  webUrl        String   @map("web_url") @db.VarChar
+  defaultBranch String?  @map("default_branch") @db.VarChar
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  connection DevelopmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, externalId])
+  @@map("development_repositories")
+}
