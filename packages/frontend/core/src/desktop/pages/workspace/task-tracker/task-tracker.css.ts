@@ -1418,3 +1418,8 @@ export const developmentLink = style({
     },
   },
 });
+
+export const pipelineStatusSuccess = style({ color: '#216e4e' });
+export const pipelineStatusFailed = style({ color: '#ae2a19' });
+export const pipelineStatusUnstable = style({ color: '#a15c00' });
+export const pipelineStatusRunning = style({ color: '#0c66e4' });

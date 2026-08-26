@@ -1314,6 +1314,21 @@ const TaskDetailPanel = ({
   );
 };
 
+const pipelineStatusClass = (status: string) => {
+  switch (status) {
+    case 'success':
+      return styles.pipelineStatusSuccess;
+    case 'failed':
+      return styles.pipelineStatusFailed;
+    case 'unstable':
+      return styles.pipelineStatusUnstable;
+    case 'running':
+      return styles.pipelineStatusRunning;
+    default:
+      return undefined;
+  }
+};
+
 const TaskDevelopmentSection = ({
   workspaceId,
   taskKey,
@@ -1341,7 +1356,8 @@ const TaskDevelopmentSection = ({
   const isEmpty =
     development.commits.length === 0 &&
     development.branches.length === 0 &&
-    development.mergeRequests.length === 0;
+    development.mergeRequests.length === 0 &&
+    development.pipelines.length === 0;
 
   if (isEmpty) {
     return (
@@ -1382,6 +1398,36 @@ const TaskDevelopmentSection = ({
               <span className={styles.developmentItemMeta}>
                 {t(
                   `mrStatus${mr.status.charAt(0).toUpperCase()}${mr.status.slice(1)}` as TaskTrackerTranslationKey
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {development.pipelines.length > 0 ? (
+        <div className={styles.developmentGroup}>
+          <span className={styles.developmentGroupTitle}>
+            {t('developmentPipelines')}
+          </span>
+          {development.pipelines.slice(0, 10).map(pipeline => (
+            <div key={pipeline.externalId} className={styles.developmentItem}>
+              <a
+                className={styles.developmentLink}
+                href={pipeline.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {pipeline.name} #{pipeline.number}
+              </a>
+              <span
+                className={clsx(
+                  styles.developmentItemMeta,
+                  pipelineStatusClass(pipeline.status)
+                )}
+              >
+                {t(
+                  `pipelineStatus${pipeline.status.charAt(0).toUpperCase()}${pipeline.status.slice(1)}` as TaskTrackerTranslationKey
                 )}
               </span>
             </div>

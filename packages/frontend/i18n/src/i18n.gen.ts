@@ -9008,6 +9008,30 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.gitlab.name"](): string;
     /**
+      * `Jenkins`
+      */
+    ["com.affine.integration.jenkins.name"](): string;
+    /**
+      * `Link Jenkins pipeline statuses to TrackWork tasks.`
+      */
+    ["com.affine.integration.jenkins.desc"](): string;
+    /**
+      * `Username`
+      */
+    ["com.affine.integration.jenkins.username"](): string;
+    /**
+      * `Refresh pipelines`
+      */
+    ["com.affine.integration.jenkins.refresh"](): string;
+    /**
+      * `Pipelines refreshed`
+      */
+    ["com.affine.integration.jenkins.refreshed"](): string;
+    /**
+      * `Failed to refresh pipelines`
+      */
+    ["com.affine.integration.jenkins.refresh-failed"](): string;
+    /**
       * `Link GitLab repositories, commits, merge requests and pipelines to TrackWork tasks.`
       */
     ["com.affine.integration.gitlab.desc"](): string;
