@@ -1,0 +1,11 @@
+query adminAuditLogs($first: Int, $skip: Int) {
+  adminAuditLogs(first: $first, skip: $skip) {
+    id
+    actorId
+    actorEmail
+    action
+    targetType
+    targetId
+    createdAt
+  }
+}
