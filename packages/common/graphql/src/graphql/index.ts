@@ -2635,6 +2635,37 @@ export const testDevelopmentIntegrationMutation = {
 }`,
 };
 
+export const trackWorkTaskDevelopmentQuery = {
+  id: 'trackWorkTaskDevelopmentQuery' as const,
+  op: 'trackWorkTaskDevelopment',
+  query: `query trackWorkTaskDevelopment($workspaceId: String!, $taskKey: String!) {
+  trackWorkTaskDevelopment(workspaceId: $workspaceId, taskKey: $taskKey) {
+    commits {
+      externalId
+      title
+      url
+      shortSha
+      authorName
+      committedAt
+      branch
+    }
+    branches {
+      name
+      url
+    }
+    mergeRequests {
+      externalId
+      iid
+      title
+      url
+      status
+      sourceBranch
+      targetBranch
+    }
+  }
+}`,
+};
+
 export const updateDevelopmentIntegrationMutation = {
   id: 'updateDevelopmentIntegrationMutation' as const,
   op: 'updateDevelopmentIntegration',

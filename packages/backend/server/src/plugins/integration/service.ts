@@ -123,9 +123,7 @@ export class IntegrationConnectionService {
   async testConnection(connectionId: string): Promise<ConnectionTestResult> {
     const connection = await this.get(connectionId);
 
-    const provider = this.providers.get(
-      connection.provider as ScmProviderType
-    );
+    const provider = this.providers.get(connection.provider as ScmProviderType);
 
     return provider.testConnection({
       baseUrl: connection.baseUrl,
@@ -136,9 +134,7 @@ export class IntegrationConnectionService {
   async listRepositories(connectionId: string): Promise<RepositoryInfo[]> {
     const connection = await this.get(connectionId);
 
-    const provider = this.providers.get(
-      connection.provider as ScmProviderType
-    );
+    const provider = this.providers.get(connection.provider as ScmProviderType);
 
     return provider.listRepositories({
       baseUrl: connection.baseUrl,
@@ -177,6 +173,14 @@ export class IntegrationConnectionService {
     return this.prisma.developmentRepository.findMany({
       where: { connectionId },
       orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async getRepositoryByExternalId(connectionId: string, externalId: string) {
+    return this.prisma.developmentRepository.findUnique({
+      where: {
+        connectionId_externalId: { connectionId, externalId },
+      },
     });
   }
 

@@ -960,6 +960,23 @@ export interface DeleteSessionInput {
   workspaceId: Scalars['String']['input'];
 }
 
+export interface DevelopmentBranch {
+  __typename?: 'DevelopmentBranch';
+  name: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+}
+
+export interface DevelopmentCommit {
+  __typename?: 'DevelopmentCommit';
+  authorName: Scalars['String']['output'];
+  branch: Maybe<Scalars['String']['output']>;
+  committedAt: Maybe<Scalars['DateTime']['output']>;
+  externalId: Scalars['String']['output'];
+  shortSha: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+}
+
 export interface DevelopmentConnectionTestResult {
   __typename?: 'DevelopmentConnectionTestResult';
   message: Maybe<Scalars['String']['output']>;
@@ -979,6 +996,17 @@ export interface DevelopmentIntegrationConnection {
   updatedAt: Scalars['DateTime']['output'];
   webhookUrl: Scalars['String']['output'];
   workspaceId: Scalars['String']['output'];
+}
+
+export interface DevelopmentMergeRequest {
+  __typename?: 'DevelopmentMergeRequest';
+  externalId: Scalars['String']['output'];
+  iid: Scalars['String']['output'];
+  sourceBranch: Maybe<Scalars['String']['output']>;
+  status: Scalars['String']['output'];
+  targetBranch: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  url: Scalars['String']['output'];
 }
 
 export interface DevelopmentRepository {
@@ -2767,6 +2795,7 @@ export interface Query {
   revealedAccessTokens: Array<RevealedAccessToken>;
   /** server config */
   serverConfig: ServerConfigType;
+  trackWorkTaskDevelopment: TrackWorkDevelopmentInfo;
   /** Get user by email */
   user: Maybe<UserOrLimitedUser>;
   /** Get user by email for admin */
@@ -2829,6 +2858,11 @@ export interface QueryPublicUserByIdArgs {
 }
 
 export interface QueryQueryWorkspaceEmbeddingStatusArgs {
+  workspaceId: Scalars['String']['input'];
+}
+
+export interface QueryTrackWorkTaskDevelopmentArgs {
+  taskKey: Scalars['String']['input'];
   workspaceId: Scalars['String']['input'];
 }
 
@@ -3296,6 +3330,13 @@ export interface TimeWindow {
   requestedSize: Scalars['Int']['output'];
   timezone: Scalars['String']['output'];
   to: Scalars['DateTime']['output'];
+}
+
+export interface TrackWorkDevelopmentInfo {
+  __typename?: 'TrackWorkDevelopmentInfo';
+  branches: Array<DevelopmentBranch>;
+  commits: Array<DevelopmentCommit>;
+  mergeRequests: Array<DevelopmentMergeRequest>;
 }
 
 export interface TranscriptProviderMetaType {
@@ -7387,6 +7428,43 @@ export type TestDevelopmentIntegrationMutation = {
   };
 };
 
+export type TrackWorkTaskDevelopmentQueryVariables = Exact<{
+  workspaceId: Scalars['String']['input'];
+  taskKey: Scalars['String']['input'];
+}>;
+
+export type TrackWorkTaskDevelopmentQuery = {
+  __typename?: 'Query';
+  trackWorkTaskDevelopment: {
+    __typename?: 'TrackWorkDevelopmentInfo';
+    commits: Array<{
+      __typename?: 'DevelopmentCommit';
+      externalId: string;
+      title: string;
+      url: string;
+      shortSha: string;
+      authorName: string;
+      committedAt: string | null;
+      branch: string | null;
+    }>;
+    branches: Array<{
+      __typename?: 'DevelopmentBranch';
+      name: string;
+      url: string;
+    }>;
+    mergeRequests: Array<{
+      __typename?: 'DevelopmentMergeRequest';
+      externalId: string;
+      iid: string;
+      title: string;
+      url: string;
+      status: string;
+      sourceBranch: string | null;
+      targetBranch: string | null;
+    }>;
+  };
+};
+
 export type UpdateDevelopmentIntegrationMutationVariables = Exact<{
   input: UpdateDevelopmentIntegrationInput;
 }>;
@@ -8698,6 +8776,11 @@ export type Queries =
       name: 'developmentIntegrationsQuery';
       variables: DevelopmentIntegrationsQueryVariables;
       response: DevelopmentIntegrationsQuery;
+    }
+  | {
+      name: 'trackWorkTaskDevelopmentQuery';
+      variables: TrackWorkTaskDevelopmentQueryVariables;
+      response: TrackWorkTaskDevelopmentQuery;
     }
   | {
       name: 'getInvoicesCountQuery';
