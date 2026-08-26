@@ -1,8 +1,7 @@
-name: affine
+name: trackwork
 services:
   affine:
-    image: ghcr.io/toeverything/affine:${AFFINE_REVISION:-stable}
-    container_name: affine_server
+    image: ${TRACKWORK_IMAGE:-trackwork-local:dev}
     ports:
       - '${PORT:-3010}:3010'
     depends_on:
@@ -23,15 +22,31 @@ services:
       - DATABASE_URL=postgresql://${DB_USERNAME}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE:-affine}
       - AFFINE_INDEXER_ENABLED=false
     restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3010/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
 
   affine_migration:
-    image: ghcr.io/toeverything/affine:${AFFINE_REVISION:-stable}
-    container_name: affine_migration_job
+    image: ${TRACKWORK_IMAGE:-trackwork-local:dev}
     volumes:
       # custom configurations
       - ${UPLOAD_LOCATION}:/root/.affine/storage
       - ${CONFIG_LOCATION}:/root/.affine/config
-    command: ['sh', '-c', 'node ./scripts/self-host-predeploy.js']
+    command:
+      [
+        'sh',
+        '-c',
+        'node ./scripts/wait-for-dependencies.js && node ./scripts/self-host-predeploy.js',
+      ]
     env_file:
       - .env
     environment:
@@ -43,10 +58,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: 'on-failure:3'
 
   redis:
-    image: redis
-    container_name: affine_redis
+    image: redis:7.4-bookworm
     healthcheck:
       test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
       interval: 10s
@@ -56,7 +71,6 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: affine_postgres
     volumes:
       - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
     environment:
@@ -64,13 +78,11 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_DATABASE:-affine}
       POSTGRES_INITDB_ARGS: '--data-checksums'
-      # you better set a password for you database
-      # or you may add 'POSTGRES_HOST_AUTH_METHOD=trust' to ignore postgres security policy
-      POSTGRES_HOST_AUTH_METHOD: trust
     healthcheck:
       test:
         ['CMD', 'pg_isready', '-U', "${DB_USERNAME}", '-d', "${DB_DATABASE:-affine}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      start_period: 10s
+      retries: 12
     restart: unless-stopped

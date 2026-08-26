@@ -2,7 +2,7 @@
   "name": "@affine/server",
   "private": true,
   "version": "0.26.3",
-  "description": "MRH ManSys Node.js server",
+  "description": "TrackWork Node.js server",
   "type": "module",
   "scripts": {
     "build": "affine bundle -p @affine/server",

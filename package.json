@@ -25,6 +25,7 @@
     "build:server": "yarn run affine build -p server --deps",
     "build:admin": "yarn run affine build -p admin",
     "build:mobile": "yarn run affine build -p mobile",
+    "build:trackwork": "yarn run build:server && yarn run build && yarn run build:admin",
     "build:docker": "yarn run build:server && yarn run build && yarn run build:admin && yarn run build:mobile",
     "lint:eslint": "cross-env NODE_OPTIONS=\"--max-old-space-size=16384\" eslint --report-unused-disable-directives-severity=off . --cache",
     "lint:eslint:fix": "yarn lint:eslint --fix --fix-type problem,suggestion,layout",

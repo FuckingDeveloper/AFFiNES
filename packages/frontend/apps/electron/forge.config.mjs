@@ -170,7 +170,7 @@ const makers = [
       config: {
         format: 'ULMO',
         icon: icnsPath,
-        name: 'MRH ManSys',
+        name: 'TrackWork',
         'icon-size': 128,
         background: path.join(
           __dirname,

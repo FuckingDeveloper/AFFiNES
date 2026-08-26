@@ -7,7 +7,6 @@ import {
   SidebarContainer,
   SidebarScrollableContainer,
 } from '@affine/core/modules/app-sidebar/views';
-import { ExternalMenuLinkItem } from '@affine/core/modules/app-sidebar/views/menu-item/external-menu-link-item';
 import { AuthService, ServerService } from '@affine/core/modules/cloud';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { FeatureFlagService } from '@affine/core/modules/feature-flag';
@@ -20,7 +19,6 @@ import {
   AiOutlineIcon,
   AllDocsIcon,
   ImportIcon,
-  JournalIcon,
   SettingsIcon,
   ViewLayersIcon,
 } from '@blocksuite/icons/rc';
@@ -214,7 +212,6 @@ export const RootAppSidebar = memo((): ReactElement => {
         <div className={workspaceAndUserWrapper}>
           <div className={workspaceWrapper}>
             <WorkspaceNavigator
-              showEnableCloudButton
               showSyncStatus
               open={workspaceSelectorOpen}
               onOpenChange={onWorkspaceSelectorOpenChange}
@@ -268,11 +265,6 @@ export const RootAppSidebar = memo((): ReactElement => {
           </MenuItem>
           <InviteMembersButton />
           <TemplateDocEntrance />
-          <ExternalMenuLinkItem
-            href="https://affine.pro/blog?tag=Release+Note"
-            icon={<JournalIcon />}
-            label={t['com.affine.app-sidebar.learn-more']()}
-          />
         </CollapsibleSection>
       </SidebarScrollableContainer>
       <SidebarContainer className={bottomContainer}>

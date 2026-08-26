@@ -363,7 +363,7 @@ fn slides_outline_transform_accepts_page_name_from_item() {
         {
           "section": "Unified writing",
           "keywords": ["docs", "canvas"],
-          "text": "MRH ManSys combines documents and whiteboards."
+          "text": "TrackWork combines documents and whiteboards."
         }
       ]
     }
@@ -402,7 +402,7 @@ fn slides_outline_transform_accepts_page_name_from_item() {
         "- Workspace Benefits",
         "  - Unified writing",
         "    - docs, canvas",
-        "    - MRH ManSys combines documents and whiteboards."
+        "    - TrackWork combines documents and whiteboards."
       ]
       .join("\n")
     )

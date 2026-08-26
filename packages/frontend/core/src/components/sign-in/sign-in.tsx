@@ -95,23 +95,12 @@ export const SignInStep = ({
     setIsMutating(true);
 
     try {
-      const { hasPassword } = await authService.checkUserByEmail(email);
-
-      if (hasPassword) {
-        changeState(prev => ({
-          ...prev,
-          email,
-          step: 'signInWithPassword',
-          hasPassword: true,
-        }));
-      } else {
-        changeState(prev => ({
-          ...prev,
-          email,
-          step: 'signInWithEmail',
-          hasPassword: false,
-        }));
-      }
+      changeState(prev => ({
+        ...prev,
+        email,
+        step: 'signInWithPassword',
+        hasPassword: true,
+      }));
     } catch (err: any) {
       console.error(err);
 
@@ -123,7 +112,7 @@ export const SignInStep = ({
     }
 
     setIsMutating(false);
-  }, [authService, changeState, email]);
+  }, [changeState, email]);
 
   const onAddSelfhosted = useCallback(() => {
     changeState(prev => ({
@@ -161,9 +150,7 @@ export const SignInStep = ({
       />
 
       <AuthContent>
-        <div className={style.authModeHint}>
-          Sign in with {authModeLabel}
-        </div>
+        <div className={style.authModeHint}>Sign in with {authModeLabel}</div>
 
         <OAuth redirectUrl={state.redirectUrl} />
 
@@ -199,7 +186,7 @@ export const SignInStep = ({
               {/*prettier-ignore*/}
               <Trans i18nKey="com.affine.auth.sign.message">
                 By clicking &quot;Continue with Google/Email&quot; above, you acknowledge that
-                you agree to MRH ManSys&apos;s <a href="https://affine.pro/terms" target="_blank" rel="noreferrer">Terms of Conditions</a> and <a href="https://affine.pro/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.
+                you agree to TrackWork&apos;s <a href="https://affine.pro/terms" target="_blank" rel="noreferrer">Terms of Conditions</a> and <a href="https://affine.pro/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.
             </Trans>
             </div>
             <div className={style.skipDivider}>

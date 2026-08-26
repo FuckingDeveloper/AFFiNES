@@ -1,12 +1,12 @@
-## MRH ManSys Release Process
+## TrackWork Release Process
 
-> In order to make a stable/beta release, you need to get authorization from the MRH ManSys test team.
+> In order to make a stable/beta release, you need to get authorization from the TrackWork test team.
 
 ## Who Can Make a Release?
 
-The MRH ManSys core team grants release authorization and enforces the following requirements:
+The TrackWork core team grants release authorization and enforces the following requirements:
 
-- Commit access to the MRH ManSys repository.
+- Commit access to the TrackWork repository.
 - Access to GitHub Actions.
 
 ## How to Make a Release

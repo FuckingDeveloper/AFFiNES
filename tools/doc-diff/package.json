@@ -3,7 +3,7 @@
   "version": "0.26.3",
   "private": true,
   "type": "module",
-  "description": "Diff MRH ManSys Yjs snapshot docs (rootdoc/folder/favorite)",
+  "description": "Diff TrackWork Yjs snapshot docs (rootdoc/folder/favorite)",
   "main": "index.ts",
   "scripts": {
     "diff": "r ./src/index.ts",

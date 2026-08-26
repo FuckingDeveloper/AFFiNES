@@ -30,7 +30,7 @@ export class Workspace {
 
   readonly packageJson: CommonPackageJsonContent;
 
-  private readonly logger = new Logger('MRH ManSys');
+  private readonly logger = new Logger('TrackWork');
 
   readonly path = ProjectRoot;
 

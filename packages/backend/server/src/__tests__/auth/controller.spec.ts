@@ -7,9 +7,9 @@ import ava, { TestFn } from 'ava';
 import Sinon from 'sinon';
 import supertest from 'supertest';
 
+import { CryptoHelper } from '../../base/helpers/crypto';
 import { parseCookies as safeParseCookies } from '../../base/utils/request';
 import { AuthService } from '../../core/auth/service';
-import { CryptoHelper } from '../../base/helpers/crypto';
 import { Models } from '../../models';
 import {
   createTestingApp,
@@ -150,6 +150,8 @@ test('should sign in with valid 2fa code', async t => {
       twoFactorCode: generateTotpCode(secret),
     })
     .expect(200);
+
+  t.pass();
 });
 
 test('should record sign in client version when header is provided', async t => {
@@ -180,7 +182,7 @@ test('should record sign in client version when header is provided', async t => 
   t.is(userSession2?.signInClientVersion, '0.25.1');
 });
 
-test('should be able to sign in with email', async t => {
+test('should require a password and never send a sign-in email', async t => {
   const { app } = t.context;
 
   const u1 = await app.createUser('u1@affine.pro');
@@ -188,44 +190,10 @@ test('should be able to sign in with email', async t => {
   const res = await app
     .POST('/api/auth/sign-in')
     .send({ email: u1.email })
-    .expect(200);
+    .expect(HttpStatus.BAD_REQUEST);
 
-  t.is(res.body.email, u1.email);
-  const signInMail = app.mails.last('SignIn');
-
-  t.is(signInMail.to, u1.email);
-
-  const url = new URL(signInMail.props.url);
-  const email = url.searchParams.get('email');
-  const token = url.searchParams.get('token');
-
-  await app.POST('/api/auth/magic-link').send({ email, token }).expect(201);
-
-  const session = await currentUser(app);
-  t.is(session?.id, u1.id);
-});
-
-test('should be able to sign up with email', async t => {
-  const { app } = t.context;
-
-  const res = await app
-    .POST('/api/auth/sign-in')
-    .send({ email: 'u2@affine.pro' })
-    .expect(200);
-
-  t.is(res.body.email, 'u2@affine.pro');
-  const signUpMail = app.mails.last('SignUp');
-
-  t.is(signUpMail.to, 'u2@affine.pro');
-
-  const url = new URL(signUpMail.props.url);
-  const email = url.searchParams.get('email');
-  const token = url.searchParams.get('token');
-
-  await app.POST('/api/auth/magic-link').send({ email, token }).expect(201);
-
-  const session = await currentUser(app);
-  t.is(session?.email, 'u2@affine.pro');
+  t.is(res.body.name, 'PASSWORD_REQUIRED');
+  t.falsy(await currentUser(app));
 });
 
 test('should not be able to sign in if email is invalid', async t => {
@@ -251,36 +219,6 @@ test('should not be able to sign in if forbidden', async t => {
     .expect(HttpStatus.FORBIDDEN);
 
   canSignInStub.restore();
-  t.pass();
-});
-
-test('should forbid magic link with external callbackUrl', async t => {
-  const { app } = t.context;
-
-  const u1 = await app.createUser('u1@affine.pro');
-
-  await app
-    .POST('/api/auth/sign-in')
-    .send({
-      email: u1.email,
-      callbackUrl: 'https://evil.example/magic-link',
-    })
-    .expect(HttpStatus.FORBIDDEN);
-  t.pass();
-});
-
-test('should forbid magic link with untrusted redirect_uri in callbackUrl', async t => {
-  const { app } = t.context;
-
-  const u1 = await app.createUser('u1@affine.pro');
-
-  await app
-    .POST('/api/auth/sign-in')
-    .send({
-      email: u1.email,
-      callbackUrl: '/magic-link?redirect_uri=https://evil.example',
-    })
-    .expect(HttpStatus.FORBIDDEN);
   t.pass();
 });
 
@@ -553,146 +491,13 @@ test('should be able to sign out multiple accounts in one session', async t => {
   t.falsy(session.body.user);
 });
 
-test('should be able to sign in with email and client nonce', async t => {
-  const { app } = t.context;
-
-  const clientNonce = randomUUID();
-  const u1 = await app.createUser();
-
-  const res = await app
-    .POST('/api/auth/sign-in')
-    .send({ email: u1.email, client_nonce: clientNonce })
-    .expect(200);
-
-  t.is(res.body.email, u1.email);
-  const signInMail = app.mails.last('SignIn');
-
-  t.is(signInMail.to, u1.email);
-
-  const url = new URL(signInMail.props.url);
-  const email = url.searchParams.get('email');
-  const token = url.searchParams.get('token');
-
-  await app
-    .POST('/api/auth/magic-link')
-    .send({ email, token, client_nonce: clientNonce })
-    .expect(201);
-
-  const session = await currentUser(app);
-  t.is(session?.id, u1.id);
-});
-
-test('should not be able to sign in with email and client nonce if invalid', async t => {
-  const { app } = t.context;
-
-  const clientNonce = randomUUID();
-  const u1 = await app.createUser();
-
-  const res = await app
-    .POST('/api/auth/sign-in')
-    .send({ email: u1.email, client_nonce: clientNonce })
-    .expect(200);
-
-  t.is(res.body.email, u1.email);
-  const signInMail = app.mails.last('SignIn');
-
-  t.is(signInMail.to, u1.email);
-
-  const url = new URL(signInMail.props.url);
-  const email = url.searchParams.get('email');
-  const token = url.searchParams.get('token');
-
-  // invalid client nonce
-  await app
-    .POST('/api/auth/magic-link')
-    .send({ email, token, client_nonce: randomUUID() })
-    .expect(400)
-    .expect({
-      status: 400,
-      code: 'Bad Request',
-      type: 'BAD_REQUEST',
-      name: 'INVALID_AUTH_STATE',
-      message:
-        'Invalid auth state. You might start the auth progress from another device.',
-    });
-  // no client nonce
-  await app
-    .POST('/api/auth/magic-link')
-    .send({ email, token })
-    .expect(400)
-    .expect({
-      status: 400,
-      code: 'Bad Request',
-      type: 'BAD_REQUEST',
-      name: 'INVALID_AUTH_STATE',
-      message:
-        'Invalid auth state. You might start the auth progress from another device.',
-    });
-
-  const session = await currentUser(app);
-  t.falsy(session);
-});
-
-test('should not be able to sign in if token is invalid', async t => {
+test('should reject the disabled magic-link endpoint', async t => {
   const { app } = t.context;
 
   const res = await app
     .POST('/api/auth/magic-link')
     .send({ email: 'u1@affine.pro', token: 'invalid' })
-    .expect(400);
+    .expect(HttpStatus.FORBIDDEN);
 
-  t.is(res.body.message, 'An invalid email token provided.');
-});
-
-test('should not allow magic link OTP replay', async t => {
-  const { app } = t.context;
-
-  const u1 = await app.createUser('u1@affine.pro');
-
-  await app.POST('/api/auth/sign-in').send({ email: u1.email }).expect(200);
-  const signInMail = app.mails.last('SignIn');
-  const url = new URL(signInMail.props.url);
-  const email = url.searchParams.get('email');
-  const token = url.searchParams.get('token');
-
-  await app.POST('/api/auth/magic-link').send({ email, token }).expect(201);
-
-  await app
-    .POST('/api/auth/magic-link')
-    .send({ email, token })
-    .expect(400)
-    .expect({
-      status: 400,
-      code: 'Bad Request',
-      type: 'INVALID_INPUT',
-      name: 'INVALID_EMAIL_TOKEN',
-      message: 'An invalid email token provided.',
-    });
-  t.pass();
-});
-
-test('should lock magic link OTP after too many attempts', async t => {
-  const { app } = t.context;
-
-  const u1 = await app.createUser('u1@affine.pro');
-
-  await app.POST('/api/auth/sign-in').send({ email: u1.email }).expect(200);
-  const signInMail = app.mails.last('SignIn');
-  const url = new URL(signInMail.props.url);
-  const email = url.searchParams.get('email');
-  const token = url.searchParams.get('token') as string;
-
-  const wrongOtp = token === '000000' ? '000001' : '000000';
-
-  for (let i = 0; i < 10; i++) {
-    await app
-      .POST('/api/auth/magic-link')
-      .send({ email, token: wrongOtp })
-      .expect(400);
-  }
-
-  await app.POST('/api/auth/magic-link').send({ email, token }).expect(400);
-
-  const session = await currentUser(app);
-  t.falsy(session);
+  t.is(res.body.message, 'Email sign-in is disabled');
 });

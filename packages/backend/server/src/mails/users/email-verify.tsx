@@ -11,7 +11,7 @@ export default function VerifyEmail(props: VerifyEmailProps) {
       <Content>
         <P>
           You recently requested to verify the email address associated with
-          your MRH ManSys account.
+          your TrackWork account.
           <br />
           To complete this process, please click on the verification link below.
         </P>

@@ -76,12 +76,12 @@ export class ServerConfigResolver {
       name:
         this.config.server.name ??
         (env.selfhosted
-          ? 'MRH ManSys SelfHosted Cloud'
+          ? 'MRH TrackWork'
           : env.namespaces.canary
-            ? 'MRH ManSys Canary Cloud'
+            ? 'MRH TrackWork Canary'
             : env.namespaces.beta
-              ? 'MRH ManSys Beta Cloud'
-              : 'MRH ManSys Cloud'),
+              ? 'MRH TrackWork Beta'
+              : 'MRH TrackWork'),
       version: env.version,
       baseUrl: this.url.requestBaseUrl,
       type: env.DEPLOYMENT_TYPE,

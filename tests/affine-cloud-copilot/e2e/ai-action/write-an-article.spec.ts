@@ -14,7 +14,7 @@ test.describe('AIAction/WriteAnArticleAboutThis', () => {
   }) => {
     const { writeArticle } = await utils.editor.askAIWithText(
       page,
-      'MRH ManSys is a workspace with fully merged docs'
+      'TrackWork is a workspace with fully merged docs'
     );
     const { answer, responses } = await writeArticle();
     await expect(answer).toHaveText(/AFFiNE/);
@@ -30,7 +30,7 @@ test.describe('AIAction/WriteAnArticleAboutThis', () => {
       async () => {
         await utils.editor.createEdgelessText(
           page,
-          'MRH ManSys is a workspace with fully merged docs'
+          'TrackWork is a workspace with fully merged docs'
         );
       }
     );
@@ -48,7 +48,7 @@ test.describe('AIAction/WriteAnArticleAboutThis', () => {
       async () => {
         await utils.editor.createEdgelessNote(
           page,
-          'MRH ManSys is a workspace with fully merged docs'
+          'TrackWork is a workspace with fully merged docs'
         );
       }
     );
@@ -63,7 +63,7 @@ test.describe('AIAction/WriteAnArticleAboutThis', () => {
   }) => {
     const { writeArticle } = await utils.editor.askAIWithText(
       page,
-      'MRH ManSys is a workspace with fully merged docs'
+      'TrackWork is a workspace with fully merged docs'
     );
     const { answer } = await writeArticle();
     await expect(answer).toHaveText(/AFFiNE/);

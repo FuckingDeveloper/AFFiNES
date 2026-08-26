@@ -1,12 +1,9 @@
-import { resolveMx, resolveTxt, setServers } from 'node:dns/promises';
-
 import {
   Body,
   Controller,
   Get,
   Header,
   HttpStatus,
-  Logger,
   Post,
   Query,
   Req,
@@ -17,17 +14,11 @@ import type { Request, Response } from 'express';
 import {
   ActionForbidden,
   BadRequest,
-  Config,
-  CryptoHelper,
-  EmailTokenNotFound,
   InvalidAuthState,
   InvalidEmail,
-  InvalidEmailToken,
-  SignUpForbidden,
+  PasswordRequired,
   Throttle,
-  URLHelper,
   UseNamedGuard,
-  WrongSignInCredentials,
 } from '../../base';
 import { Models, TokenType } from '../../models';
 import { validators } from '../utils/validators';
@@ -70,24 +61,10 @@ interface TwoFactorCodeCredential {
 @Throttle('strict')
 @Controller('/api/auth')
 export class AuthController {
-  private readonly logger = new Logger(AuthController.name);
-
   constructor(
-    private readonly url: URLHelper,
     private readonly auth: AuthService,
-    private readonly models: Models,
-    private readonly config: Config,
-    private readonly crypto: CryptoHelper
-  ) {
-    if (env.dev) {
-      // set DNS servers in dev mode
-      // NOTE: some network debugging software uses DNS hijacking
-      // to better debug traffic, but their DNS servers may not
-      // handle the non dns query(like txt, mx) correctly, so we
-      // set a public DNS server here to avoid this issue.
-      setServers(['1.1.1.1', '8.8.8.8']);
-    }
-  }
+    private readonly models: Models
+  ) {}
 
   @Public()
   @UseNamedGuard('version')
@@ -98,10 +75,10 @@ export class AuthController {
     if (!params?.email) {
       throw new InvalidEmail({ email: 'not provided' });
     }
-    validators.assertValidEmail(params.email);
+    const login = validators.assertValidLogin(params.email);
 
-    const user = await this.models.user.getUserByEmail(params.email);
-    const canPasswordSignIn = await this.auth.canPasswordSignIn(params.email);
+    const user = await this.models.user.getUserByLogin(login);
+    const canPasswordSignIn = await this.auth.canPasswordSignIn(login);
 
     if (!user) {
       return {
@@ -125,28 +102,23 @@ export class AuthController {
     @Res() res: Response,
     @Body() credential: SignInCredential
   ) {
-    validators.assertValidEmail(credential.email);
-    const canSignIn = await this.auth.canSignIn(credential.email);
+    const login = validators.assertValidLogin(credential.email);
+    const canSignIn = await this.auth.canSignIn(login);
     if (!canSignIn) {
       throw new ActionForbidden();
     }
 
-    if (credential.password) {
-      await this.passwordSignIn(
-        req,
-        res,
-        credential.email,
-        credential.password,
-        credential.twoFactorCode
-      );
-    } else {
-      await this.sendMagicLink(
-        res,
-        credential.email,
-        credential.callbackUrl,
-        credential.client_nonce
-      );
+    if (!credential.password) {
+      throw new PasswordRequired();
     }
+
+    await this.passwordSignIn(
+      req,
+      res,
+      login,
+      credential.password,
+      credential.twoFactorCode
+    );
   }
 
   async passwordSignIn(
@@ -219,86 +191,6 @@ export class AuthController {
 
     await this.auth.disableTwoFactor(user.id, credential.code);
     return { enabled: false };
-  }
-
-  async sendMagicLink(
-    res: Response,
-    email: string,
-    callbackUrl = '/magic-link',
-    clientNonce?: string
-  ) {
-    if (!this.url.isAllowedCallbackUrl(callbackUrl)) {
-      throw new ActionForbidden();
-    }
-
-    const callbackUrlObj = this.url.url(callbackUrl);
-    const redirectUriInCallback =
-      callbackUrlObj.searchParams.get('redirect_uri');
-    if (
-      redirectUriInCallback &&
-      !this.url.isAllowedRedirectUri(redirectUriInCallback)
-    ) {
-      throw new ActionForbidden();
-    }
-
-    // send email magic link
-    const user = await this.models.user.getUserByEmail(email, {
-      withDisabled: true,
-    });
-
-    if (!user) {
-      if (!this.config.auth.allowSignup) {
-        throw new SignUpForbidden();
-      }
-
-      if (this.config.auth.requireEmailDomainVerification) {
-        // verify domain has MX, SPF, DMARC records
-        const [name, domain, ...rest] = email.split('@');
-        if (rest.length || !domain) {
-          throw new InvalidEmail({ email });
-        }
-        const [mx, spf, dmarc] = await Promise.allSettled([
-          resolveMx(domain).then(t => t.map(mx => mx.exchange).filter(Boolean)),
-          resolveTxt(domain).then(t =>
-            t.map(([k]) => k).filter(txt => txt.includes('v=spf1'))
-          ),
-          resolveTxt('_dmarc.' + domain).then(t =>
-            t.map(([k]) => k).filter(txt => txt.includes('v=DMARC1'))
-          ),
-        ]).then(t => t.filter(t => t.status === 'fulfilled').map(t => t.value));
-        if (!mx?.length || !spf?.length || !dmarc?.length) {
-          throw new InvalidEmail({ email });
-        }
-        // filter out alias emails
-        if (name.includes('+')) {
-          throw new InvalidEmail({ email });
-        }
-      }
-    } else if (user.disabled) {
-      throw new WrongSignInCredentials({ email });
-    }
-
-    const ttlInSec = 30 * 60;
-    const token = await this.models.verificationToken.create(
-      TokenType.SignIn,
-      email,
-      ttlInSec
-    );
-
-    const otp = this.crypto.otp();
-    await this.models.magicLinkOtp.upsert(email, otp, token, clientNonce);
-
-    const magicLink = this.url.link(callbackUrl, { token: otp, email });
-    if (env.dev) {
-      // make it easier to test in dev mode
-      this.logger.debug(`Magic link: ${magicLink}`);
-    }
-
-    await this.auth.sendSignInEmail(email, magicLink, otp, !user);
-
-    res.status(HttpStatus.OK).send({
-      email: email,
-    });
   }
 
   @Public()
@@ -401,48 +293,8 @@ export class AuthController {
   @Public()
   @UseNamedGuard('version')
   @Post('/magic-link')
-  async magicLinkSignIn(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Body()
-    { email, token: otp, client_nonce: clientNonce }: MagicLinkCredential
-  ) {
-    if (!otp || !email) {
-      throw new EmailTokenNotFound();
-    }
-
-    validators.assertValidEmail(email);
-
-    const consumed = await this.models.magicLinkOtp.consume(
-      email,
-      otp,
-      clientNonce
-    );
-    if (!consumed.ok) {
-      if (consumed.reason === 'nonce_mismatch') {
-        throw new InvalidAuthState();
-      }
-      throw new InvalidEmailToken();
-    }
-
-    const token = consumed.token;
-
-    const tokenRecord = await this.models.verificationToken.verify(
-      TokenType.SignIn,
-      token,
-      {
-        credential: email,
-      }
-    );
-
-    if (!tokenRecord) {
-      throw new InvalidEmailToken();
-    }
-
-    const user = await this.models.user.fulfill(email);
-
-    await this.auth.setCookies(req, res, user.id);
-    res.send({ id: user.id });
+  async magicLinkSignIn(@Body() _credential: MagicLinkCredential) {
+    throw new ActionForbidden('Email sign-in is disabled');
   }
 
   @UseNamedGuard('version')

@@ -8,7 +8,7 @@ In previous examples, we demonstrated how a `doc` collaborates with an `editor`.
 
 ## Block Tree Basics
 
-In BlockSuite, each `doc` object manages an independent block tree composed of various types of blocks. These blocks can be defined through the [`BlockSchema`](./block-schema.md), which specifies their fields and permissible nesting relationships among different block types. Each block type has a unique `block.flavour`, following a `namespace:name` naming structure. Since the preset editors in BlockSuite are derived from the [MRH ManSys](https://github.com/toeverything/AFFiNE) project, the default editable blocks use the `affine` prefix.
+In BlockSuite, each `doc` object manages an independent block tree composed of various types of blocks. These blocks can be defined through the [`BlockSchema`](./block-schema.md), which specifies their fields and permissible nesting relationships among different block types. Each block type has a unique `block.flavour`, following a `namespace:name` naming structure. Since the preset editors in BlockSuite are derived from the [TrackWork](https://github.com/toeverything/AFFiNE) project, the default editable blocks use the `affine` prefix.
 
 To manipulate blocks, you can utilize several primary APIs under `doc`:
 
@@ -341,7 +341,7 @@ After completing the above steps, you can insert the new block type into the blo
 
 ```ts
 const props = {
-  owner: 'toeverything', // The company behind BlockSuite and MRH ManSys 🤫
+  owner: 'toeverything', // The company behind BlockSuite and TrackWork 🤫
   repo: 'https://github.com/toeverything/blocksuite',
 };
 

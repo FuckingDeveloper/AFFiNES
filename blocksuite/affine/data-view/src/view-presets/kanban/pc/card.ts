@@ -309,7 +309,15 @@ export class KanbanCard extends SignalWatcher(
       }) ??
       this.findByName(
         columns,
-        ['assignee', 'owner', 'member', 'executor', 'responsible', 'исполн', 'ответствен'],
+        [
+          'assignee',
+          'owner',
+          'member',
+          'executor',
+          'responsible',
+          'исполн',
+          'ответствен',
+        ],
         excludes
       );
     if (footer.assignee) {
@@ -351,9 +359,7 @@ export class KanbanCard extends SignalWatcher(
       'card-header': true,
       'has-divider': columns.length > 0,
     });
-    return html`
-      <div class="${classList}">${this.renderTitle()}</div>
-    `;
+    return html` <div class="${classList}">${this.renderTitle()}</div> `;
   }
 
   private renderFooterCell(
@@ -483,8 +489,7 @@ export class KanbanCard extends SignalWatcher(
     }
     return html`
       ${this.renderHeader(bodyColumns)} ${this.renderBody(bodyColumns)}
-      ${this.renderFooter(footerColumns)}
-      ${this.renderOps()}
+      ${this.renderFooter(footerColumns)} ${this.renderOps()}
     `;
   }
 

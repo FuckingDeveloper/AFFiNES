@@ -48,9 +48,9 @@ export function useAFFiNEI18N(): {
       */
     ["404.signOut"](): string;
     /**
-      * `MRH ManSys Cloud`
+      * `TrackWork Cloud`
       */
-    ["MRH ManSys Cloud"](): string;
+    ["TrackWork Cloud"](): string;
     /**
       * `All docs`
       */
@@ -184,15 +184,15 @@ export function useAFFiNEI18N(): {
       */
     Enable(): string;
     /**
-      * `Enable MRH ManSys Cloud`
+      * `Enable TrackWork Cloud`
       */
-    ["Enable MRH ManSys Cloud"](): string;
+    ["Enable TrackWork Cloud"](): string;
     /**
-      * `If enabled, the data in this workspace will be backed up and synchronised via MRH ManSys Cloud.`
+      * `If enabled, the data in this workspace will be backed up and synchronised via TrackWork Cloud.`
       */
-    ["Enable MRH ManSys Cloud Description"](): string;
+    ["Enable TrackWork Cloud Description"](): string;
     /**
-      * `The following functions rely on MRH ManSys Cloud. All data is stored on the current device. You can enable MRH ManSys Cloud for this workspace to keep data in sync with the cloud.`
+      * `The following functions rely on TrackWork Cloud. All data is stored on the current device. You can enable TrackWork Cloud for this workspace to keep data in sync with the cloud.`
       */
     ["Enable cloud hint"](): string;
     /**
@@ -482,9 +482,9 @@ export function useAFFiNEI18N(): {
       */
     Sync(): string;
     /**
-      * `Synced with MRH ManSys Cloud`
+      * `Synced with TrackWork Cloud`
       */
-    ["Synced with MRH ManSys Cloud"](): string;
+    ["Synced with TrackWork Cloud"](): string;
     /**
       * `Tags`
       */
@@ -626,7 +626,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.aboutAFFiNE.autoDownloadUpdate.title"](): string;
     /**
-      * `View the MRH ManSys Changelog.`
+      * `View the TrackWork Changelog.`
       */
     ["com.affine.aboutAFFiNE.changelog.description"](): string;
     /**
@@ -692,7 +692,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.aboutAFFiNE.community.title"](): string;
     /**
-      * `MRH ManSys community`
+      * `TrackWork community`
       */
     ["com.affine.aboutAFFiNE.contact.community"](): string;
     /**
@@ -716,11 +716,11 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.aboutAFFiNE.legal.tos"](): string;
     /**
-      * `Information about MRH ManSys`
+      * `Information about TrackWork`
       */
     ["com.affine.aboutAFFiNE.subtitle"](): string;
     /**
-      * `About MRH ManSys`
+      * `About TrackWork`
       */
     ["com.affine.aboutAFFiNE.title"](): string;
     /**
@@ -756,15 +756,15 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.ai-onboarding.general.1.description"](): string;
     /**
-      * `Meet MRH ManSys AI`
+      * `Meet TrackWork AI`
       */
     ["com.affine.ai-onboarding.general.1.title"](): string;
     /**
-      * `Answer questions, draft docs, visualize ideas - MRH ManSys AI can save you time at every possible step. Powered by GPT's most powerful model.`
+      * `Answer questions, draft docs, visualize ideas - TrackWork AI can save you time at every possible step. Powered by GPT's most powerful model.`
       */
     ["com.affine.ai-onboarding.general.2.description"](): string;
     /**
-      * `Chat with MRH ManSys AI`
+      * `Chat with TrackWork AI`
       */
     ["com.affine.ai-onboarding.general.2.title"](): string;
     /**
@@ -772,7 +772,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.ai-onboarding.general.3.description"](): string;
     /**
-      * `Edit inline with MRH ManSys AI`
+      * `Edit inline with TrackWork AI`
       */
     ["com.affine.ai-onboarding.general.3.title"](): string;
     /**
@@ -784,7 +784,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.ai-onboarding.general.4.title"](): string;
     /**
-      * `MRH ManSys AI is ready`
+      * `TrackWork AI is ready`
       */
     ["com.affine.ai-onboarding.general.5.title"](): string;
     /**
@@ -828,7 +828,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.ai-onboarding.local.message"](): string;
     /**
-      * `Meet MRH ManSys AI`
+      * `Meet TrackWork AI`
       */
     ["com.affine.ai-onboarding.local.title"](): string;
     /**
@@ -836,7 +836,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.ai-scroll-tip.tag"](): string;
     /**
-      * `Meet MRH ManSys AI`
+      * `Meet TrackWork AI`
       */
     ["com.affine.ai-scroll-tip.title"](): string;
     /**
@@ -856,7 +856,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.ai.login-required.dialog-confirm"](): string;
     /**
-      * `To use MRH ManSys AI, please sign in to your MRH ManSys Cloud account.`
+      * `To use TrackWork AI, please sign in to your TrackWork Cloud account.`
       */
     ["com.affine.ai.login-required.dialog-content"](): string;
     /**
@@ -868,11 +868,11 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.ai.template-insert.failed"](): string;
     /**
-      * `MRH ManSys AI`
+      * `TrackWork AI`
       */
     ["com.affine.ai.chat-panel.title"](): string;
     /**
-      * `MRH ManSys AI is loading history...`
+      * `TrackWork AI is loading history...`
       */
     ["com.affine.ai.chat-panel.loading-history"](): string;
     /**
@@ -951,7 +951,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.appearanceSettings.color.title"](): string;
     /**
-      * `Edit all MRH ManSys theme variables here`
+      * `Edit all TrackWork theme variables here`
       */
     ["com.affine.appearanceSettings.customize-theme.description"](): string;
     /**
@@ -1019,7 +1019,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.appearanceSettings.sidebar.title"](): string;
     /**
-      * `Customize your MRH ManSys appearance`
+      * `Customize your TrackWork appearance`
       */
     ["com.affine.appearanceSettings.subtitle"](): string;
     /**
@@ -1031,7 +1031,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.appearanceSettings.menubar.toggle"](): string;
     /**
-      * `Display the menubar app in the tray for quick access to MRH ManSys or meeting recordings.`
+      * `Display the menubar app in the tray for quick access to TrackWork or meeting recordings.`
       */
     ["com.affine.appearanceSettings.menubar.description"](): string;
     /**
@@ -1043,7 +1043,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.appearanceSettings.menubar.windowBehavior.openOnLeftClick.toggle"](): string;
     /**
-      * `Open MRH ManSys when left‑clicking the tray icon.`
+      * `Open TrackWork when left‑clicking the tray icon.`
       */
     ["com.affine.appearanceSettings.menubar.windowBehavior.openOnLeftClick.description"](): string;
     /**
@@ -1051,7 +1051,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.appearanceSettings.menubar.windowBehavior.minimizeToTray.toggle"](): string;
     /**
-      * `Minimize MRH ManSys to the system tray.`
+      * `Minimize TrackWork to the system tray.`
       */
     ["com.affine.appearanceSettings.menubar.windowBehavior.minimizeToTray.description"](): string;
     /**
@@ -1059,7 +1059,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.appearanceSettings.menubar.windowBehavior.closeToTray.toggle"](): string;
     /**
-      * `Close MRH ManSys to the system tray.`
+      * `Close TrackWork to the system tray.`
       */
     ["com.affine.appearanceSettings.menubar.windowBehavior.closeToTray.description"](): string;
     /**
@@ -1067,7 +1067,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.appearanceSettings.menubar.windowBehavior.startMinimized.toggle"](): string;
     /**
-      * `Start MRH ManSys minimized to the system tray.`
+      * `Start TrackWork minimized to the system tray.`
       */
     ["com.affine.appearanceSettings.menubar.windowBehavior.startMinimized.description"](): string;
     /**
@@ -1105,7 +1105,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.change.email.page.subtitle"](): string;
     /**
-      * `Congratulations! You have successfully updated the email address associated with your MRH ManSys Cloud account.`
+      * `Congratulations! You have successfully updated the email address associated with your TrackWork Cloud account.`
       */
     ["com.affine.auth.change.email.page.success.subtitle"](): string;
     /**
@@ -1125,7 +1125,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.later"](): string;
     /**
-      * `Open MRH ManSys`
+      * `Open TrackWork`
       */
     ["com.affine.auth.open.affine"](): string;
     /**
@@ -1157,7 +1157,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.open.affine.doc.edit-settings"](): string;
     /**
-      * `Requires MRH ManSys desktop app version 0.18 or later.`
+      * `Requires TrackWork desktop app version 0.18 or later.`
       */
     ["com.affine.auth.open.affine.doc.footer-text"](): string;
     /**
@@ -1168,7 +1168,7 @@ export function useAFFiNEI18N(): {
         max: string;
     }>): string;
     /**
-      * `Welcome to MRH ManSys Cloud, you are almost there!`
+      * `Welcome to TrackWork Cloud, you are almost there!`
       */
     ["com.affine.auth.page.sent.email.title"](): string;
     /**
@@ -1179,6 +1179,22 @@ export function useAFFiNEI18N(): {
       * `Invalid password`
       */
     ["com.affine.auth.password.error"](): string;
+    /**
+      * `2FA code`
+      */
+    ["com.affine.auth.two-factor.label"](): string;
+    /**
+      * `Enter a valid 6-digit authentication code.`
+      */
+    ["com.affine.auth.two-factor.error.invalid"](): string;
+    /**
+      * `Enter your 2FA code to continue.`
+      */
+    ["com.affine.auth.two-factor.error.required"](): string;
+    /**
+      * `Invalid 2FA code. Try again.`
+      */
+    ["com.affine.auth.two-factor.error.try-again"](): string;
     /**
       * `Set password failed`
       */
@@ -1196,7 +1212,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.reset.password.page.success"](): string;
     /**
-      * `Reset your MRH ManSys Cloud password`
+      * `Reset your TrackWork Cloud password`
       */
     ["com.affine.auth.reset.password.page.title"](): string;
     /**
@@ -1250,7 +1266,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.sent.change.password.hint"](): string;
     /**
-      * `Your password has been updated! You can sign in MRH ManSys Cloud with new password!`
+      * `Your password has been updated! You can sign in TrackWork Cloud with new password!`
       */
     ["com.affine.auth.sent.reset.password.success.message"](): string;
     /**
@@ -1258,7 +1274,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.sent.set.password.hint"](): string;
     /**
-      * `Your password has saved! You can sign in MRH ManSys Cloud with email and password!`
+      * `Your password has saved! You can sign in TrackWork Cloud with email and password!`
       */
     ["com.affine.auth.sent.set.password.success.message"](): string;
     /**
@@ -1297,7 +1313,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.set.password.page.success"](): string;
     /**
-      * `Set your MRH ManSys Cloud password`
+      * `Set your TrackWork Cloud password`
       */
     ["com.affine.auth.set.password.page.title"](): string;
     /**
@@ -1395,7 +1411,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.sign.up.sent.email.subtitle"](): string;
     /**
-      * `The app will automatically open or redirect to the web version. If you encounter any issues, you can also click the button below to manually open the MRH ManSys app.`
+      * `The app will automatically open or redirect to the web version. If you encounter any issues, you can also click the button below to manually open the TrackWork app.`
       */
     ["com.affine.auth.sign.up.success.subtitle"](): string;
     /**
@@ -1403,7 +1419,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.sign.up.success.title"](): string;
     /**
-      * `You have successfully signed in. The app will automatically open or redirect to the web version. if you encounter any issues, you can also click the button below to  manually open the MRH ManSys app.`
+      * `You have successfully signed in. The app will automatically open or redirect to the web version. if you encounter any issues, you can also click the button below to  manually open the TrackWork app.`
       */
     ["com.affine.auth.signed.success.subtitle"](): string;
     /**
@@ -1415,7 +1431,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.auth.toast.message.failed"](): string;
     /**
-      * `You have been signed in, start to sync your data with MRH ManSys Cloud!`
+      * `You have been signed in, start to sync your data with TrackWork Cloud!`
       */
     ["com.affine.auth.toast.message.signed-in"](): string;
     /**
@@ -1441,7 +1457,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.banner.local-warning"](): string;
     /**
-      * `MRH ManSys Cloud`
+      * `TrackWork Cloud`
       */
     ["com.affine.brand.affineCloud"](): string;
     /**
@@ -1461,7 +1477,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.cloud-scroll-tip.caption"](): string;
     /**
-      * `MRH ManSys Cloud`
+      * `TrackWork Cloud`
       */
     ["com.affine.cloud-scroll-tip.title"](): string;
     /**
@@ -2117,7 +2133,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.error.refetch"](): string;
     /**
-      * `Reload MRH ManSys`
+      * `Reload TrackWork`
       */
     ["com.affine.error.reload"](): string;
     /**
@@ -2349,15 +2365,15 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.history-vision.tips-modal.cancel"](): string;
     /**
-      * `Enable MRH ManSys Cloud`
+      * `Enable TrackWork Cloud`
       */
     ["com.affine.history-vision.tips-modal.confirm"](): string;
     /**
-      * `The current workspace is a local workspace, and we do not support version history for it at the moment. You can enable MRH ManSys Cloud. This will sync the workspace with the Cloud, allowing you to use this feature.`
+      * `The current workspace is a local workspace, and we do not support version history for it at the moment. You can enable TrackWork Cloud. This will sync the workspace with the Cloud, allowing you to use this feature.`
       */
     ["com.affine.history-vision.tips-modal.description"](): string;
     /**
-      * `History vision needs MRH ManSys Cloud`
+      * `History vision needs TrackWork Cloud`
       */
     ["com.affine.history-vision.tips-modal.title"](): string;
     /**
@@ -2459,7 +2475,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.import_file"](): string;
     /**
-      * `MRH ManSys workspace data`
+      * `TrackWork workspace data`
       */
     ["com.affine.import.affine-workspace-data"](): string;
     /**
@@ -2467,7 +2483,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.import.bear"](): string;
     /**
-      * `Import your Bear note backup. Tags will be converted to MRH ManSys tags and folders.`
+      * `Import your Bear note backup. Tags will be converted to TrackWork tags and folders.`
       */
     ["com.affine.import.bear.tooltip"](): string;
     /**
@@ -2523,7 +2539,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.import.snapshot"](): string;
     /**
-      * `Import your MRH ManSys workspace and page snapshot file.`
+      * `Import your TrackWork workspace and page snapshot file.`
       */
     ["com.affine.import.snapshot.tooltip"](): string;
     /**
@@ -2531,7 +2547,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.import.dotaffinefile"](): string;
     /**
-      * `Import your MRH ManSys db file (.affine)`
+      * `Import your TrackWork db file (.affine)`
       */
     ["com.affine.import.dotaffinefile.tooltip"](): string;
     /**
@@ -2911,7 +2927,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.mobile.sign-in.skip.hint"](): string;
     /**
-      * `Start MRH ManSys without an account`
+      * `Start TrackWork without an account`
       */
     ["com.affine.mobile.sign-in.skip.link"](): string;
     /**
@@ -2957,11 +2973,11 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.multi-tab.new-tab"](): string;
     /**
-      * `Enabling MRH ManSys Cloud allows you to synchronise and backup data, as well as support multi-user collaboration and content publishing.`
+      * `Enabling TrackWork Cloud allows you to synchronise and backup data, as well as support multi-user collaboration and content publishing.`
       */
     ["com.affine.nameWorkspace.affine-cloud.description"](): string;
     /**
-      * `Sync across devices with MRH ManSys Cloud`
+      * `Sync across devices with TrackWork Cloud`
       */
     ["com.affine.nameWorkspace.affine-cloud.title"](): string;
     /**
@@ -3021,7 +3037,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.notFoundPage.title"](): string;
     /**
-      * `MRH ManSys Community`
+      * `TrackWork Community`
       */
     ["com.affine.other-page.nav.affine-community"](): string;
     /**
@@ -3041,7 +3057,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.other-page.nav.official-website"](): string;
     /**
-      * `Open MRH ManSys`
+      * `Open TrackWork`
       */
     ["com.affine.other-page.nav.open-affine"](): string;
     /**
@@ -3269,7 +3285,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.page-properties.property.select.tooltips"](): string;
     /**
-      * `Enter a link to websites or MRH ManSys docs. Useful for connecting to external resources and referencing internal docs.`
+      * `Enter a link to websites or TrackWork docs. Useful for connecting to external resources and referencing internal docs.`
       */
     ["com.affine.page-properties.property.link.tooltips"](): string;
     /**
@@ -3415,7 +3431,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.pageMode.page"](): string;
     /**
-      * `Congratulations on your successful purchase of MRH ManSys AI! You're now empowered to refine your content, generate images, and craft comprehensive mindmaps directly within MRH ManSys AI, dramatically enhancing your productivity.`
+      * `Congratulations on your successful purchase of TrackWork AI! You're now empowered to refine your content, generate images, and craft comprehensive mindmaps directly within TrackWork AI, dramatically enhancing your productivity.`
       */
     ["com.affine.payment.ai-upgrade-success-page.text"](): string;
     /**
@@ -3427,7 +3443,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.ai.action.cancel.button-label"](): string;
     /**
-      * `Keep MRH ManSys AI`
+      * `Keep TrackWork AI`
       */
     ["com.affine.payment.ai.action.cancel.confirm.cancel-text"](): string;
     /**
@@ -3435,7 +3451,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.ai.action.cancel.confirm.confirm-text"](): string;
     /**
-      * `If you end your subscription now, you can still use MRH ManSys AI until the end of this billing period.`
+      * `If you end your subscription now, you can still use TrackWork AI until the end of this billing period.`
       */
     ["com.affine.payment.ai.action.cancel.confirm.description"](): string;
     /**
@@ -3459,7 +3475,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.ai.action.resume.confirm.confirm-text"](): string;
     /**
-      * `Are you sure you want to resume the subscription for MRH ManSys AI? This means your payment method will be charged automatically at the end of each billing cycle, starting from the next billing cycle.`
+      * `Are you sure you want to resume the subscription for TrackWork AI? This means your payment method will be charged automatically at the end of each billing cycle, starting from the next billing cycle.`
       */
     ["com.affine.payment.ai.action.resume.confirm.description"](): string;
     /**
@@ -3523,13 +3539,13 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.ai.benefit.g3-3"](): string;
     /**
-      * `You have purchased MRH ManSys AI. The expiration date is {{end}}.`
+      * `You have purchased TrackWork AI. The expiration date is {{end}}.`
       */
     ["com.affine.payment.ai.billing-tip.end-at"](options: {
         readonly end: string;
     }): string;
     /**
-      * `You have purchased MRH ManSys AI. The next payment date is {{due}}.`
+      * `You have purchased TrackWork AI. The next payment date is {{due}}.`
       */
     ["com.affine.payment.ai.billing-tip.next-bill-at"](options: {
         readonly due: string;
@@ -3545,15 +3561,15 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.ai.pricing-plan.caption-free"](): string;
     /**
-      * `You have purchased MRH ManSys AI`
+      * `You have purchased TrackWork AI`
       */
     ["com.affine.payment.ai.pricing-plan.caption-purchased"](): string;
     /**
-      * `Learn about MRH ManSys AI`
+      * `Learn about TrackWork AI`
       */
     ["com.affine.payment.ai.pricing-plan.learn"](): string;
     /**
-      * `MRH ManSys AI`
+      * `TrackWork AI`
       */
     ["com.affine.payment.ai.pricing-plan.title"](): string;
     /**
@@ -3569,11 +3585,11 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.ai.subscribe.billed-annually"](): string;
     /**
-      * `You have purchased MRH ManSys AI.`
+      * `You have purchased TrackWork AI.`
       */
     ["com.affine.payment.ai.usage-description-purchased"](): string;
     /**
-      * `MRH ManSys AI usage`
+      * `TrackWork AI usage`
       */
     ["com.affine.payment.ai.usage-title"](): string;
     /**
@@ -3644,7 +3660,7 @@ export function useAFFiNEI18N(): {
         readonly capacity: string;
     }): string;
     /**
-      * `MRH ManSys AI`
+      * `TrackWork AI`
       */
     ["com.affine.payment.billing-setting.ai-plan"](): string;
     /**
@@ -3660,7 +3676,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.billing-setting.believer.price-caption"](): string;
     /**
-      * `MRH ManSys Cloud`
+      * `TrackWork Cloud`
       */
     ["com.affine.payment.billing-setting.believer.title"](): string;
     /**
@@ -3676,7 +3692,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.billing-setting.change-plan"](): string;
     /**
-      * `MRH ManSys Cloud`
+      * `TrackWork Cloud`
       */
     ["com.affine.payment.billing-setting.current-plan"](): string;
     /**
@@ -3770,7 +3786,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.billing-setting.year"](): string;
     /**
-      * `Please tell us more about your use case, to make MRH ManSys better.`
+      * `Please tell us more about your use case, to make TrackWork better.`
       */
     ["com.affine.payment.billing-type-form.description"](): string;
     /**
@@ -3886,7 +3902,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.cloud.pro.benefit.g1"](): string;
     /**
-      * `Everything in MRH ManSys FOSS & Basic.`
+      * `Everything in TrackWork FOSS & Basic.`
       */
     ["com.affine.payment.cloud.pro.benefit.g1-1"](): string;
     /**
@@ -3944,7 +3960,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.cloud.team-workspace.benefit.g1"](): string;
     /**
-      * `Everything in MRH ManSys Pro.`
+      * `Everything in TrackWork Pro.`
       */
     ["com.affine.payment.cloud.team-workspace.benefit.g1-1"](): string;
     /**
@@ -4008,7 +4024,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.downgrade"](): string;
     /**
-      * `We'd like to hear more about where we fall short, so that we can make MRH ManSys better.`
+      * `We'd like to hear more about where we fall short, so that we can make TrackWork better.`
       */
     ["com.affine.payment.downgraded-notify.content"](): string;
     /**
@@ -4052,7 +4068,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.dynamic-benefit-5"](): string;
     /**
-      * `Everything in MRH ManSys Pro`
+      * `Everything in TrackWork Pro`
       */
     ["com.affine.payment.lifetime.benefit-1"](): string;
     /**
@@ -4066,7 +4082,7 @@ export function useAFFiNEI18N(): {
         readonly capacity: string;
     }): string;
     /**
-      * `Dedicated Discord support with MRH ManSys makers`
+      * `Dedicated Discord support with TrackWork makers`
       */
     ["com.affine.payment.lifetime.benefit-4"](): string;
     /**
@@ -4097,7 +4113,7 @@ export function useAFFiNEI18N(): {
         quota: string;
     }>): string;
     /**
-      * `Upgrade to MRH ManSys Pro for expanded member capacity`
+      * `Upgrade to TrackWork Pro for expanded member capacity`
       */
     ["com.affine.payment.member-limit.description.tips-for-free-plan"](): string;
     /**
@@ -4411,11 +4427,11 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.modal.downgrade.cancel"](): string;
     /**
-      * `You can still use MRH ManSys Cloud Pro until the end of this billing period :)`
+      * `You can still use TrackWork Cloud Pro until the end of this billing period :)`
       */
     ["com.affine.payment.modal.downgrade.caption"](): string;
     /**
-      * `Keep MRH ManSys Cloud Pro`
+      * `Keep TrackWork Cloud Pro`
       */
     ["com.affine.payment.modal.downgrade.confirm"](): string;
     /**
@@ -4513,7 +4529,7 @@ export function useAFFiNEI18N(): {
         readonly plan: string;
     }): string;
     /**
-      * `This is the pricing plans of MRH ManSys Cloud. You can sign up or sign in to your account first.`
+      * `This is the pricing plans of TrackWork Cloud. You can sign up or sign in to your account first.`
       */
     ["com.affine.payment.subtitle-not-signed-in"](): string;
     /**
@@ -4547,7 +4563,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.redeem-code"](): string;
     /**
-      * `We'd like to hear more about your use case, so that we can make MRH ManSys better.`
+      * `We'd like to hear more about your use case, so that we can make TrackWork better.`
       */
     ["com.affine.payment.upgrade-success-notify.content"](): string;
     /**
@@ -4567,7 +4583,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.upgrade-success-notify.title"](): string;
     /**
-      * `Congratulations! Your MRH ManSys account has been successfully upgraded to a Pro account.`
+      * `Congratulations! Your TrackWork account has been successfully upgraded to a Pro account.`
       */
     ["com.affine.payment.upgrade-success-page.text"](): string;
     /**
@@ -4583,7 +4599,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.license-success.title"](): string;
     /**
-      * `Thank you for purchasing the MRH ManSys self-hosted license.`
+      * `Thank you for purchasing the TrackWork self-hosted license.`
       */
     ["com.affine.payment.license-success.text-1"](): string;
     /**
@@ -4591,7 +4607,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.payment.license-success.hint"](): string;
     /**
-      * `Open MRH ManSys`
+      * `Open TrackWork`
       */
     ["com.affine.payment.license-success.open-affine"](): string;
     /**
@@ -4663,7 +4679,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.doc.analytics.paywall.open-pricing"](): string;
     /**
-      * `Doc analytics over 7 days require an MRH ManSys Team subscription.`
+      * `Doc analytics over 7 days require an TrackWork Team subscription.`
       */
     ["com.affine.doc.analytics.paywall.toast"](): string;
     /**
@@ -5091,7 +5107,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.setting.account.message"](): string;
     /**
-      * `Sync with MRH ManSys Cloud`
+      * `Sync with TrackWork Cloud`
       */
     ["com.affine.setting.sign.message"](): string;
     /**
@@ -5143,7 +5159,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.setting.appearance.links"](): string;
     /**
-      * `Open MRH ManSys links`
+      * `Open TrackWork links`
       */
     ["com.affine.setting.appearance.open-in-app"](): string;
     /**
@@ -5163,11 +5179,11 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.setting.appearance.open-in-app.open-in-web"](): string;
     /**
-      * `Open MRH ManSys links`
+      * `Open TrackWork links`
       */
     ["com.affine.setting.appearance.open-in-app.title"](): string;
     /**
-      * `Open this doc in MRH ManSys app`
+      * `Open this doc in TrackWork app`
       */
     ["com.affine.open-in-app.card.title"](): string;
     /**
@@ -5451,7 +5467,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.editorSettings.general"](): string;
     /**
-      * `Enable the powerful AI assistant, MRH ManSys AI.`
+      * `Enable the powerful AI assistant, TrackWork AI.`
       */
     ["com.affine.settings.editorSettings.general.ai.description"](): string;
     /**
@@ -5479,7 +5495,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.editorSettings.general.ai.enable.title"](): string;
     /**
-      * `MRH ManSys AI`
+      * `TrackWork AI`
       */
     ["com.affine.settings.editorSettings.general.ai.title"](): string;
     /**
@@ -5691,7 +5707,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.email.action.verify"](): string;
     /**
-      * `Enable MRH ManSys Cloud to collaborate with others`
+      * `Enable TrackWork Cloud to collaborate with others`
       */
     ["com.affine.settings.member-tooltip"](): string;
     /**
@@ -5722,6 +5738,112 @@ export function useAFFiNEI18N(): {
       * `Set a password to sign in to your account`
       */
     ["com.affine.settings.password.message"](): string;
+    /**
+      * `Two-factor authentication (2FA)`
+      */
+    ["com.affine.settings.two-factor.title"](): string;
+    /**
+      * `Add an authenticator app code to protect your account.`
+      */
+    ["com.affine.settings.two-factor.description.enabled"](): string;
+    /**
+      * `Set a password first to enable 2FA for password sign in.`
+      */
+    ["com.affine.settings.two-factor.description.no-password"](): string;
+    /**
+      * `Enabled`
+      */
+    ["com.affine.settings.two-factor.status.enabled"](): string;
+    /**
+      * `Disable 2FA`
+      */
+    ["com.affine.settings.two-factor.disable.title"](): string;
+    /**
+      * `Enter a current code from your authenticator app.`
+      */
+    ["com.affine.settings.two-factor.disable.description"](): string;
+    /**
+      * `Set up authenticator`
+      */
+    ["com.affine.settings.two-factor.setup.title"](): string;
+    /**
+      * `Scan the QR code in your app ({{issuer}}) and confirm with a code.`
+      */
+    ["com.affine.settings.two-factor.setup.description"](options: {
+        readonly issuer: string;
+    }): string;
+    /**
+      * `2FA QR code`
+      */
+    ["com.affine.settings.two-factor.setup.qr.alt"](): string;
+    /**
+      * `QR unavailable`
+      */
+    ["com.affine.settings.two-factor.setup.qr.unavailable"](): string;
+    /**
+      * `Can't scan? Use this secret key`
+      */
+    ["com.affine.settings.two-factor.setup.secret.title"](): string;
+    /**
+      * `123456`
+      */
+    ["com.affine.settings.two-factor.code.placeholder"](): string;
+    /**
+      * `Enable 2FA`
+      */
+    ["com.affine.settings.two-factor.action.enable"](): string;
+    /**
+      * `Disable`
+      */
+    ["com.affine.settings.two-factor.action.disable"](): string;
+    /**
+      * `Copy secret`
+      */
+    ["com.affine.settings.two-factor.action.copy-secret"](): string;
+    /**
+      * `Confirm & Enable`
+      */
+    ["com.affine.settings.two-factor.action.confirm-enable"](): string;
+    /**
+      * `Cancel`
+      */
+    ["com.affine.settings.two-factor.action.cancel"](): string;
+    /**
+      * `Unable to load 2FA status`
+      */
+    ["com.affine.settings.two-factor.notify.load-failed.title"](): string;
+    /**
+      * `Unable to enable 2FA`
+      */
+    ["com.affine.settings.two-factor.notify.enable-failed.title"](): string;
+    /**
+      * `Unable to disable 2FA`
+      */
+    ["com.affine.settings.two-factor.notify.disable-failed.title"](): string;
+    /**
+      * `Two-factor authentication enabled`
+      */
+    ["com.affine.settings.two-factor.notify.enabled.title"](): string;
+    /**
+      * `Two-factor authentication disabled`
+      */
+    ["com.affine.settings.two-factor.notify.disabled.title"](): string;
+    /**
+      * `Secret copied`
+      */
+    ["com.affine.settings.two-factor.notify.secret-copied.title"](): string;
+    /**
+      * `Invalid code`
+      */
+    ["com.affine.settings.two-factor.error.invalid-code.title"](): string;
+    /**
+      * `Enter a 6-digit authenticator code.`
+      */
+    ["com.affine.settings.two-factor.error.invalid-code.message"](): string;
+    /**
+      * `Invalid code. Please try again.`
+      */
+    ["com.affine.settings.two-factor.error.invalid-code.try-again"](): string;
     /**
       * `My profile`
       */
@@ -5880,7 +6002,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.meetings.record.permission-modal.title"](): string;
     /**
-      * `MRH ManSys will generate meeting notes by recording your meetings. Authorization to "Screen & System Audio Recording" is necessary.`
+      * `TrackWork will generate meeting notes by recording your meetings. Authorization to "Screen & System Audio Recording" is necessary.`
       */
     ["com.affine.settings.meetings.record.permission-modal.description"](): string;
     /**
@@ -5916,7 +6038,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.byok.subtitle"](): string;
     /**
-      * `Use workspace provider keys before MRH ManSys AI plan routes.`
+      * `Use workspace provider keys before TrackWork AI plan routes.`
       */
     ["com.affine.settings.workspace.byok.header"](): string;
     /**
@@ -5924,7 +6046,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.byok.locked.title"](): string;
     /**
-      * `Upgrade this workspace to add provider keys and route MRH ManSys AI through your own OpenAI, Anthropic, Gemini, or FAL account.`
+      * `Upgrade this workspace to add provider keys and route TrackWork AI through your own OpenAI, Anthropic, Gemini, or FAL account.`
       */
     ["com.affine.settings.workspace.byok.locked.description"](): string;
     /**
@@ -5932,7 +6054,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.byok.notice.title"](): string;
     /**
-      * `Local keys on this device are tried first. Workspace server keys follow, then MRH ManSys AI plan routes when quota is available.`
+      * `Local keys on this device are tried first. Workspace server keys follow, then TrackWork AI plan routes when quota is available.`
       */
     ["com.affine.settings.workspace.byok.notice.description"](): string;
     /**
@@ -6068,11 +6190,11 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.byok.feature.workspace-indexing.fallback"](): string;
     /**
-      * `Transcript and workspace indexing require a server Gemini BYOK key or MRH ManSys AI plan fallback.`
+      * `Transcript and workspace indexing require a server Gemini BYOK key or TrackWork AI plan fallback.`
       */
     ["com.affine.settings.workspace.byok.warning.transcript"](): string;
     /**
-      * `Workspace indexing requires a server Gemini BYOK key or MRH ManSys AI plan fallback.`
+      * `Workspace indexing requires a server Gemini BYOK key or TrackWork AI plan fallback.`
       */
     ["com.affine.settings.workspace.byok.warning.workspace-indexing"](): string;
     /**
@@ -6470,7 +6592,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.experimental-features.enable-meetings.name"](): string;
     /**
-      * `Meetings allows you to record and transcribe meetings. Don't forget to enable it in MRH ManSys settings.`
+      * `Meetings allows you to record and transcribe meetings. Don't forget to enable it in TrackWork settings.`
       */
     ["com.affine.settings.workspace.experimental-features.enable-meetings.description"](): string;
     /**
@@ -6732,7 +6854,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.state.local"](): string;
     /**
-      * `Sync with MRH ManSys Cloud`
+      * `Sync with TrackWork Cloud`
       */
     ["com.affine.settings.workspace.state.sync-affine-cloud"](): string;
     /**
@@ -6808,7 +6930,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.storage.subtitle"](): string;
     /**
-      * `Enable MRH ManSys Cloud to publish this workspace`
+      * `Enable TrackWork Cloud to publish this workspace`
       */
     ["com.affine.settings.workspace.publish-tooltip"](): string;
     /**
@@ -6832,15 +6954,15 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.sharing.workspace-sharing.title"](): string;
     /**
-      * `MRH ManSys AI`
+      * `TrackWork AI`
       */
     ["com.affine.settings.workspace.affine-ai.title"](): string;
     /**
-      * `Allow MRH ManSys AI Assistant`
+      * `Allow TrackWork AI Assistant`
       */
     ["com.affine.settings.workspace.affine-ai.label"](): string;
     /**
-      * `Allow workspace members to use MRH ManSys AI features. This setting doesn't affect billing. Workspace members use MRH ManSys AI through their personal accounts.`
+      * `Allow workspace members to use TrackWork AI features. This setting doesn't affect billing. Workspace members use TrackWork AI through their personal accounts.`
       */
     ["com.affine.settings.workspace.affine-ai.description"](): string;
     /**
@@ -6891,7 +7013,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.indexer-embedding.title"](): string;
     /**
-      * `Manage MRH ManSys indexing and MRH ManSys AI Embedding for local content processing`
+      * `Manage TrackWork indexing and TrackWork AI Embedding for local content processing`
       */
     ["com.affine.settings.workspace.indexer-embedding.description"](): string;
     /**
@@ -6979,7 +7101,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.workspace.indexer-embedding.embedding.additional-attachments.remove-attachment.tooltip"](): string;
     /**
-      * `Sharing doc requires MRH ManSys Cloud.`
+      * `Sharing doc requires TrackWork Cloud.`
       */
     ["com.affine.share-menu.EnableCloudDescription"](): string;
     /**
@@ -7248,7 +7370,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.share-page.footer.create-with"](): string;
     /**
-      * `Empower your sharing with MRH ManSys Cloud: One-click doc sharing`
+      * `Empower your sharing with TrackWork Cloud: One-click doc sharing`
       */
     ["com.affine.share-page.footer.description"](): string;
     /**
@@ -7332,7 +7454,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.storage.plan"](): string;
     /**
-      * `MRH ManSys Cloud storage`
+      * `TrackWork Cloud storage`
       */
     ["com.affine.storage.title"](): string;
     /**
@@ -7576,7 +7698,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.upgrade.tips.error"](): string;
     /**
-      * `To ensure compatibility with the updated MRH ManSys client, please upgrade your data by clicking the "Upgrade workspace data" button below.`
+      * `To ensure compatibility with the updated TrackWork client, please upgrade your data by clicking the "Upgrade workspace data" button below.`
       */
     ["com.affine.upgrade.tips.normal"](): string;
     /**
@@ -7660,7 +7782,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.workspace.cloud.auth"](): string;
     /**
-      * `Sync with MRH ManSys Cloud`
+      * `Sync with TrackWork Cloud`
       */
     ["com.affine.workspace.cloud.description"](): string;
     /**
@@ -8478,15 +8600,15 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.web-clipper.name"](): string;
     /**
-      * `Import web pages to MRH ManSys`
+      * `Import web pages to TrackWork`
       */
     ["com.affine.integration.web-clipper.desc"](): string;
     /**
-      * `Elevate your MRH ManSys experience with diverse add-ons and seamless integrations.`
+      * `Elevate your TrackWork experience with diverse add-ons and seamless integrations.`
       */
     ["com.affine.integration.setting.description"](): string;
     /**
-      * `Learn how to develop a integration for MRH ManSys`
+      * `Learn how to develop a integration for TrackWork`
       */
     ["com.affine.integration.setting.learn"](): string;
     /**
@@ -8494,7 +8616,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.readwise.name"](): string;
     /**
-      * `Manually import your content to MRH ManSys from Readwise`
+      * `Manually import your content to TrackWork from Readwise`
       */
     ["com.affine.integration.readwise.desc"](): string;
     /**
@@ -8534,7 +8656,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.readwise.disconnect.title"](): string;
     /**
-      * `Once disconnected, content will no longer be imported. Do you want to keep your existing highlights in MRH ManSys?`
+      * `Once disconnected, content will no longer be imported. Do you want to keep your existing highlights in TrackWork?`
       */
     ["com.affine.integration.readwise.disconnect.desc"](): string;
     /**
@@ -8608,11 +8730,11 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.readwise.setting.caption"](): string;
     /**
-      * `New Readwise highlights will be imported to MRH ManSys `
+      * `New Readwise highlights will be imported to TrackWork `
       */
     ["com.affine.integration.readwise.setting.sync-new-name"](): string;
     /**
-      * `New highlights in Readwise will be synced to MRH ManSys `
+      * `New highlights in Readwise will be synced to TrackWork `
       */
     ["com.affine.integration.readwise.setting.sync-new-desc"](): string;
     /**
@@ -8688,7 +8810,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.calendar.name"](): string;
     /**
-      * `New events will be scheduled in MRH ManSys’s journal`
+      * `New events will be scheduled in TrackWork’s journal`
       */
     ["com.affine.integration.calendar.desc"](): string;
     /**
@@ -8832,7 +8954,7 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.calendar.show-events"](): string;
     /**
-      * `Enabling this setting allows you to connect your calendar events to your Journal in MRH ManSys`
+      * `Enabling this setting allows you to connect your calendar events to your Journal in TrackWork`
       */
     ["com.affine.integration.calendar.show-events-desc"](): string;
     /**
@@ -9751,7 +9873,7 @@ function createComponent(i18nKey: string) {
 }
 export const TypedTrans: {
     /**
-      * `Go to <a>{{link}}</a> for learn more details about MRH ManSys AI.`
+      * `Go to <a>{{link}}</a> for learn more details about TrackWork AI.`
       */
     ["com.affine.ai-onboarding.general.5.description"]: ComponentType<TypedTransProps<{
         readonly link: string;
@@ -9765,13 +9887,13 @@ export const TypedTrans: {
         a: JSX.Element;
     }>>;
     /**
-      * `Opening <1>MRH ManSys</1> app now`
+      * `Opening <1>TrackWork</1> app now`
       */
     ["com.affine.auth.open.affine.prompt"]: ComponentType<TypedTransProps<Readonly<{}>, {
         ["1"]: JSX.Element;
     }>>;
     /**
-      * `This doc is now opened in <1>MRH ManSys</1> app`
+      * `This doc is now opened in <1>TrackWork</1> app`
       */
     ["com.affine.auth.open.affine.open-doc-prompt"]: ComponentType<TypedTransProps<Readonly<{}>, {
         ["1"]: JSX.Element;
@@ -9797,14 +9919,14 @@ export const TypedTrans: {
         ["1"]: JSX.Element;
     }>>;
     /**
-      * `By clicking “Continue with Google/Email” above, you acknowledge that you agree to MRH ManSys's <1>Terms of Conditions</1> and <3>Privacy Policy</3>.`
+      * `By clicking “Continue with Google/Email” above, you acknowledge that you agree to TrackWork's <1>Terms of Conditions</1> and <3>Privacy Policy</3>.`
       */
     ["com.affine.auth.sign.message"]: ComponentType<TypedTransProps<Readonly<{}>, {
         ["1"]: JSX.Element;
         ["3"]: JSX.Element;
     }>>;
     /**
-      * `This demo is limited. <1>Download the MRH ManSys Client</1> for the latest features and Performance.`
+      * `This demo is limited. <1>Download the TrackWork Client</1> for the latest features and Performance.`
       */
     ["com.affine.banner.content"]: ComponentType<TypedTransProps<Readonly<{}>, {
         ["1"]: JSX.Element;

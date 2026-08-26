@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "MRH ManSys Application Configuration",
+  "title": "TrackWork Application Configuration",
   "type": "object",
   "properties": {
     "metrics": {
@@ -175,6 +175,11 @@
           "description": "Whether require email verification before accessing restricted resources(not implemented).\n@default true",
           "default": true
         },
+        "mode": {
+          "type": "string",
+          "description": "Active authentication method. Only one method can be active at a time.\n@default \"password\"\n@environment `AFFINE_AUTH_MODE`",
+          "default": "password"
+        },
         "enterprise.enabled": {
           "type": "boolean",
           "description": "Whether enterprise authentication backends are enabled.\n@default false",
@@ -332,8 +337,8 @@
         },
         "SMTP.sender": {
           "type": "string",
-          "description": "Sender of all the emails (e.g. \"MRH ManSys Self Hosted &lt;noreply@example.com&gt;\")\n@default \"MRH ManSys Self Hosted <noreply@example.com>\"\n@environment `MAILER_SENDER`",
-          "default": "MRH ManSys Self Hosted <noreply@example.com>"
+          "description": "Sender of all the emails (e.g. \"TrackWork Self Hosted &lt;noreply@example.com&gt;\")\n@default \"TrackWork Self Hosted <noreply@example.com>\"\n@environment `MAILER_SENDER`",
+          "default": "TrackWork Self Hosted <noreply@example.com>"
         },
         "SMTP.ignoreTLS": {
           "type": "boolean",
@@ -372,7 +377,7 @@
         },
         "fallbackSMTP.sender": {
           "type": "string",
-          "description": "Sender of all the emails (e.g. \"MRH ManSys Self Hosted &lt;noreply@example.com&gt;\")\n@default \"\"",
+          "description": "Sender of all the emails (e.g. \"TrackWork Self Hosted &lt;noreply@example.com&gt;\")\n@default \"\"",
           "default": ""
         },
         "fallbackSMTP.ignoreTLS": {
@@ -837,11 +842,11 @@
       "properties": {
         "name": {
           "type": "string",
-          "description": "A recognizable name for the server. Will be shown when connected with MRH ManSys Desktop.\n@default undefined"
+          "description": "A recognizable name for the server. Will be shown when connected with TrackWork Desktop.\n@default undefined"
         },
         "externalUrl": {
           "type": "string",
-          "description": "Base url of MRH ManSys server, used for generating external urls.\nDefault to be `[server.protocol]://[server.host][:server.port]` if not specified.\n    \n@default \"\"\n@environment `AFFINE_SERVER_EXTERNAL_URL`",
+          "description": "Base url of TrackWork server, used for generating external urls.\nDefault to be `[server.protocol]://[server.host][:server.port]` if not specified.\n    \n@default \"\"\n@environment `AFFINE_SERVER_EXTERNAL_URL`",
           "default": ""
         },
         "https": {

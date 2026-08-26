@@ -7,13 +7,12 @@ import { WorkspaceService } from '@affine/core/modules/workspace';
 import { useI18n } from '@affine/i18n';
 import { useLiveData, useService } from '@toeverything/infra';
 
-import { EnableCloudPanel } from '../preference/enable-cloud';
 import { BlobManagementPanel } from './blob-management';
 import { DesktopExportPanel } from './export';
 import { WorkspaceQuotaPanel } from './workspace-quota';
 
 export const WorkspaceSettingStorage = ({
-  onCloseSetting,
+  onCloseSetting: _onCloseSetting,
 }: {
   onCloseSetting: () => void;
 }) => {
@@ -32,14 +31,11 @@ export const WorkspaceSettingStorage = ({
         subtitle={t['com.affine.settings.workspace.storage.subtitle']()}
       />
       {workspace.flavour === 'local' ? (
-        <>
-          <EnableCloudPanel onCloseSetting={onCloseSetting} />{' '}
-          {canExport && (
-            <SettingWrapper>
-              <DesktopExportPanel workspace={workspace} />
-            </SettingWrapper>
-          )}
-        </>
+        canExport ? (
+          <SettingWrapper>
+            <DesktopExportPanel workspace={workspace} />
+          </SettingWrapper>
+        ) : null
       ) : (
         <>
           {isTeam ? (

@@ -5,7 +5,6 @@ import {
   SettingWrapper,
 } from '@affine/component/setting-components';
 import { Upload } from '@affine/core/components/pure/file-upload';
-import { EnableCloudPanel } from '@affine/core/desktop/dialogs/setting/workspace-setting/preference/enable-cloud';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { UserFriendlyError } from '@affine/error';
 import { ServerFeature } from '@affine/graphql';
@@ -26,7 +25,7 @@ import { IgnoredDocs } from './ignored-docs';
 interface EmbeddingSettingsProps {}
 
 const EmbeddingLocal: React.FC<{}> = () => {
-  return <EnableCloudPanel />;
+  return null;
 };
 
 const EmbeddingCloud: React.FC<{ disabled: boolean }> = ({ disabled }) => {

@@ -58,7 +58,7 @@ export const EnableCloudPanel = ({
         onClick={confirmEnableCloudAndClose}
         style={{ marginTop: '12px' }}
       >
-        {t['Enable MRH ManSys Cloud']()}
+        {t['Enable TrackWork Cloud']()}
       </Button>
     </SettingRow>
   );

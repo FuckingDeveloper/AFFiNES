@@ -24,5 +24,5 @@ public enum PromptName: String, Codable {
   case makeItLonger = "Make it longer"
   case makeItShorter = "Make it shorter"
   case continueWriting = "Continue writing"
-  case chatWithAffineAI = "Chat With MRH ManSys AI"
+  case chatWithAffineAI = "Chat With TrackWork AI"
 }

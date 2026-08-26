@@ -20,6 +20,9 @@ export class UserType implements CurrentUser {
   @Field(() => ID)
   id!: string;
 
+  @Field({ description: 'Unique user login' })
+  username!: string;
+
   @Field({ description: 'User name' })
   name!: string;
 
@@ -134,6 +137,9 @@ export class UpdateUserInput implements Partial<User> {
 
 @InputType()
 export class ManageUserInput {
+  @Field({ description: 'Unique user login', nullable: true })
+  username?: string;
+
   @Field({ description: 'User email', nullable: true })
   email?: string;
 

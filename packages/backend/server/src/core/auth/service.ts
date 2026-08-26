@@ -23,14 +23,23 @@ import { generateTotpSecret, toOtpAuthUrl, verifyTotp } from './totp';
 export function sessionUser(
   user: Pick<
     User,
-    'id' | 'email' | 'avatarUrl' | 'name' | 'emailVerifiedAt' | 'disabled'
+    | 'id'
+    | 'username'
+    | 'email'
+    | 'avatarUrl'
+    | 'name'
+    | 'emailVerifiedAt'
+    | 'disabled'
   > & { password?: string | null }
 ): CurrentUser {
   // use pick to avoid unexpected fields
-  return assign(pick(user, 'id', 'email', 'avatarUrl', 'name', 'disabled'), {
+  return assign(
+    pick(user, 'id', 'username', 'email', 'avatarUrl', 'name', 'disabled'),
+    {
     hasPassword: user.password !== null,
     emailVerified: user.emailVerifiedAt !== null,
-  });
+    }
+  );
 }
 
 function extractTokenFromHeader(authorization: string) {
@@ -94,47 +103,43 @@ export class AuthService implements OnApplicationBootstrap {
       .then(sessionUser);
   }
 
-  async signIn(email: string, password: string): Promise<CurrentUser> {
+  async signIn(login: string, password: string): Promise<CurrentUser> {
     if (this.config.auth.mode !== AuthMode.Password) {
       const externalAuth = await this.enterpriseAuth.authenticate(
-        email,
+        login,
         password
       );
       if (!externalAuth.authenticated) {
-        throw new WrongSignInCredentials();
+        throw new WrongSignInCredentials({ email: login });
       }
 
-      let user = await this.models.user.getUserByEmail(email, {
+      let user = await this.models.user.getUserByEmail(login, {
         withDisabled: true,
       });
       if (!user && !this.enterpriseAuth.canAutoRegister()) {
-        throw new WrongSignInCredentials();
+        throw new WrongSignInCredentials({ email: login });
       }
 
       try {
-        user = await this.models.user.fulfill(email, {
+        user = await this.models.user.fulfill(login, {
           name: externalAuth.displayName,
         });
       } catch {
-        throw new WrongSignInCredentials();
+        throw new WrongSignInCredentials({ email: login });
       }
 
       return sessionUser(user);
     }
 
-    try {
-      return this.models.user.signIn(email, password).then(sessionUser);
-    } catch (error) {
-      throw error;
-    }
+    return this.models.user.signIn(login, password).then(sessionUser);
   }
 
-  async canPasswordSignIn(email: string) {
+  async canPasswordSignIn(login: string) {
     if (this.config.auth.mode !== AuthMode.Password) {
-      return this.enterpriseAuth.canTryPasswordSignIn(email, false, false);
+      return this.enterpriseAuth.canTryPasswordSignIn(login, false, false);
     }
 
-    const user = await this.models.user.getUserByEmail(email);
+    const user = await this.models.user.getUserByLogin(login);
     return !!user?.password;
   }
 
@@ -147,7 +152,7 @@ export class AuthService implements OnApplicationBootstrap {
 
   async createTwoFactorSetup(user: Pick<User, 'email'>) {
     const secret = generateTotpSecret(this.crypto.randomBytes(20));
-    const issuer = this.config.server.name?.trim() || 'MRH ManSys';
+    const issuer = this.config.server.name?.trim() || 'TrackWork';
 
     return {
       secret,

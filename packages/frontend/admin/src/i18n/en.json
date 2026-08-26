@@ -5,7 +5,7 @@
     "workspaces": "Workspaces",
     "queue": "Queue",
     "settings": "Settings",
-    "about": "About MRH ManSys"
+    "about": "About TrackWork"
   },
   "user": {
     "admin": "Admin",
@@ -45,11 +45,11 @@
   },
   "fields": {
     "server.externalUrl": {
-      "desc": "Base URL of MRH ManSys server, used for generating external links.",
+      "desc": "Base URL of TrackWork server, used for generating external links.",
       "example": "https://affine.example.com"
     },
     "server.name": {
-      "desc": "A recognizable name for the server. Shown when connected with MRH ManSys Desktop.",
+      "desc": "A recognizable name for the server. Shown when connected with TrackWork Desktop.",
       "example": "My Company Server"
     },
     "server.hosts": {
@@ -170,7 +170,7 @@
     },
     "mailer.SMTP.sender": {
       "desc": "Sender address for all outgoing emails.",
-      "example": "MRH ManSys <noreply@example.com>"
+      "example": "TrackWork <noreply@example.com>"
     },
     "storages.blob.storage.provider": {
       "desc": "The storage provider for user uploaded blobs (images, videos, etc.).",

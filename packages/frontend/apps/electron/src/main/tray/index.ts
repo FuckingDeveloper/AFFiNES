@@ -92,7 +92,7 @@ class TrayState implements Disposable {
     .resize({ width: 18, height: 18 });
 
   // tray's tooltip
-  tooltip: string = 'MRH ManSys';
+  tooltip: string = 'TrackWork';
 
   constructor() {
     this.icon.setTemplateImage(true);
@@ -254,15 +254,15 @@ class TrayState implements Disposable {
       key: 'secondary',
       getConfig: () => [
         {
-          label: 'Open MRH ManSys',
+          label: 'Open TrackWork',
           click: () => {
-            logger.info('User action: Open MRH ManSys');
+            logger.info('User action: Open TrackWork');
             getMainWindow()
               .then(w => {
                 w.show();
               })
               .catch(err => {
-                logger.error('Failed to open MRH ManSys:', err);
+                logger.error('Failed to open TrackWork:', err);
               });
           },
         },
@@ -287,9 +287,9 @@ class TrayState implements Disposable {
         },
         'separator',
         {
-          label: 'Quit MRH ManSys Completely...',
+          label: 'Quit TrackWork Completely...',
           click: () => {
-            logger.info('User action: Quit MRH ManSys Completely');
+            logger.info('User action: Quit TrackWork Completely');
             app.quit();
           },
         },

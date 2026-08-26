@@ -37,12 +37,7 @@ export type TaskAttachment = {
   createdAt?: number;
 };
 
-export type TaskComplexity =
-  | 'trivial'
-  | 'easy'
-  | 'medium'
-  | 'hard'
-  | 'extreme';
+export type TaskComplexity = 'trivial' | 'easy' | 'medium' | 'hard' | 'extreme';
 
 export type TaskSubtask = {
   id: string;
@@ -241,7 +236,9 @@ export const parseHistoryEntries = (value?: string): TaskHistoryEntry[] => {
         return {
           id: String(next.id ?? ''),
           type:
-            next.type === 'created' || next.type === 'edited' || next.type === 'moved'
+            next.type === 'created' ||
+            next.type === 'edited' ||
+            next.type === 'moved'
               ? next.type
               : 'edited',
           message: String(next.message ?? '').trim(),

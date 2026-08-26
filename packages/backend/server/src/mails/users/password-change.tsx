@@ -7,7 +7,7 @@ export type ChangePasswordProps = {
 export default function ChangePassword(props: ChangePasswordProps) {
   return (
     <Template>
-      <Title>Modify your MRH ManSys password</Title>
+      <Title>Modify your TrackWork password</Title>
       <Content>
         <P>
           Click the button below to reset your password. The magic link will

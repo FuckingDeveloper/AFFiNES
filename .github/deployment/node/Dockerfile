@@ -1,93 +1,68 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:22-bookworm-slim AS assets
+FROM node:22-bookworm AS builder
+WORKDIR /repo
+
+ARG GIT_COMMIT=000000000
+ARG TARGETARCH
+ENV CI=1
+ENV CARGO_HOME=/usr/local/cargo
+ENV CARGO_INCREMENTAL=1
+ENV CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16
+ENV CARGO_PROFILE_RELEASE_LTO=false
+ENV GITHUB_SHA=${GIT_COMMIT}
+ENV PATH=/usr/local/cargo/bin:${PATH}
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    clang \
+    curl \
+    git \
+    libssl-dev \
+    pkg-config \
+    python3 \
+  && rm -rf /var/lib/apt/lists/* \
+  && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+    | sh -s -- -y --profile minimal --default-toolchain 1.94.0
+
+COPY . .
+
+RUN --mount=type=cache,id=trackwork-yarn,target=/root/.yarn/berry/cache,sharing=locked \
+  --mount=type=cache,id=trackwork-cargo-target-${TARGETARCH},target=/repo/target,sharing=locked \
+  --mount=type=cache,id=trackwork-cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
+  corepack enable \
+  && yarn workspaces focus @affine/server @affine/web @affine/admin @affine-tools/cli \
+  && node tools/cli/bin/runner.js affine.ts build -p server --deps \
+  && node tools/cli/bin/runner.js affine.ts build -p web \
+  && node tools/cli/bin/runner.js affine.ts build -p admin \
+  && yarn workspaces focus @affine/server --production
+
+FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 
-COPY ./packages/backend/server /app
-COPY ./packages/frontend/apps/web/dist /app/static
-COPY ./packages/frontend/admin/dist /app/static/admin
-COPY ./packages/frontend/apps/mobile/dist /app/static/mobile
+ENV NODE_ENV=production
+ENV SERVER_FLAVOR=allinone
+ENV AFFINE_SERVER_HOST=0.0.0.0
 
-# Keep server sourcemap for stacktraces, but don't ship frontend/node_modules sourcemaps.
-ARG TARGETARCH
-ARG TARGETVARIANT
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && rm -rf /var/lib/apt/lists/*
 
-RUN AFFINE_DOCKER_CLEAN=1 TARGETARCH="${TARGETARCH}" TARGETVARIANT="${TARGETVARIANT}" node ./scripts/docker-clean.mjs
+COPY --from=builder /repo/node_modules /app/node_modules
+COPY --from=builder /repo/packages/backend/server /app
+COPY --from=builder /repo/packages/frontend/apps/web/dist /app/static
+COPY --from=builder /repo/packages/frontend/admin/dist /app/static/admin
 
-FROM ghcr.io/toeverything/affine:stable AS affine_stable
-
-FROM node:22-bookworm-slim
-WORKDIR /app
-
-COPY --from=assets /app /app
-COPY --from=affine_stable /app/dist /opt/affine-stable-dist
-COPY --from=affine_stable /app/node_modules /app/node_modules
-
-# node:22-bookworm-slim in this environment may not include system OpenSSL
-# libs, while Prisma in /app/node_modules ships linux-*-openssl-3.0.x engines.
-# Copy OpenSSL runtime bits from the known-good affine_stable image instead of
-# relying on apt-get during build.
-RUN --mount=type=bind,from=affine_stable,source=/,target=/mnt/affine-stable,readonly \
-  set -eux; \
-  cp /mnt/affine-stable/usr/bin/openssl /usr/bin/openssl; \
-  if [ -d /mnt/affine-stable/usr/lib/aarch64-linux-gnu ]; then \
-    mkdir -p /usr/lib/aarch64-linux-gnu /lib/aarch64-linux-gnu; \
-    cp /mnt/affine-stable/usr/lib/aarch64-linux-gnu/libssl.so.3 /usr/lib/aarch64-linux-gnu/libssl.so.3; \
-    cp /mnt/affine-stable/usr/lib/aarch64-linux-gnu/libcrypto.so.3 /usr/lib/aarch64-linux-gnu/libcrypto.so.3; \
-    cp /mnt/affine-stable/lib/aarch64-linux-gnu/libssl.so.3 /lib/aarch64-linux-gnu/libssl.so.3; \
-    cp /mnt/affine-stable/lib/aarch64-linux-gnu/libcrypto.so.3 /lib/aarch64-linux-gnu/libcrypto.so.3; \
-  elif [ -d /mnt/affine-stable/usr/lib/x86_64-linux-gnu ]; then \
-    mkdir -p /usr/lib/x86_64-linux-gnu /lib/x86_64-linux-gnu; \
-    cp /mnt/affine-stable/usr/lib/x86_64-linux-gnu/libssl.so.3 /usr/lib/x86_64-linux-gnu/libssl.so.3; \
-    cp /mnt/affine-stable/usr/lib/x86_64-linux-gnu/libcrypto.so.3 /usr/lib/x86_64-linux-gnu/libcrypto.so.3; \
-    cp /mnt/affine-stable/lib/x86_64-linux-gnu/libssl.so.3 /lib/x86_64-linux-gnu/libssl.so.3; \
-    cp /mnt/affine-stable/lib/x86_64-linux-gnu/libcrypto.so.3 /lib/x86_64-linux-gnu/libcrypto.so.3; \
-  else \
-    echo "Unsupported library layout in affine_stable image"; \
-    exit 1; \
-  fi
-
-# The local build may contain a host-native server-native.node (e.g. macOS),
-# which can't run in Linux containers. Reuse the Linux native addon from the
-# official MRH ManSys image for the current target architecture.
-ARG TARGETARCH
-RUN set -eux; \
-  if [ "${TARGETARCH}" = "amd64" ] && [ -f /opt/affine-stable-dist/server-native.x64.node ]; then \
-    cp /opt/affine-stable-dist/server-native.x64.node /app/dist/server-native.node; \
-  elif [ "${TARGETARCH}" = "arm64" ] && [ -f /opt/affine-stable-dist/server-native.arm64.node ]; then \
-    cp /opt/affine-stable-dist/server-native.arm64.node /app/dist/server-native.node; \
-  else \
-    echo "No compatible server-native binary found for TARGETARCH=${TARGETARCH}"; \
-    ls -la /opt/affine-stable-dist; \
-    exit 1; \
-  fi
-
-# Local server bundle currently imports a few packages that are not present in
-# the upstream stable image dependencies. Install those extra runtime packages
-# in an isolated temp project and merge them into /app/node_modules.
-RUN --mount=type=tmpfs,target=/root/.npm \
-  --mount=type=tmpfs,target=/tmp/runtime-deps \
-  set -eux; \
-  mkdir -p /tmp/runtime-deps; \
-  printf '%s\n' \
-    '{' \
-    '  "name": "affine-runtime-deps",' \
-    '  "private": true,' \
-    '  "dependencies": {' \
-    '    "@as-integrations/express5": "^1.1.2",' \
-    '    "@inquirer/prompts": "^7.10.1",' \
-    '    "ldapts": "^7.4.0",' \
-    '    "radius": "^1.1.4"' \
-    '  }' \
-    '}' \
-    > /tmp/runtime-deps/package.json; \
-  cd /tmp/runtime-deps; \
-  npm install --omit=dev --no-audit --no-fund --no-package-lock; \
-  cp -an /tmp/runtime-deps/node_modules/. /app/node_modules/
-
-# jemalloc preload is intentionally disabled in local builds to avoid
-# hard dependency on apt during image build in restricted networks.
+RUN find /app -type f -name '*.map' ! -path '/app/dist/main.js.map' -delete \
+  && test -f /app/dist/server-native.node \
+  && test -f /app/static/selfhost.html \
+  && test -f /app/static/admin/selfhost.html
 
 EXPOSE 3010
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \
+  CMD node -e "fetch('http://127.0.0.1:3010/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 
 CMD ["node", "./dist/main.js"]

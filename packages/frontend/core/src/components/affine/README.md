@@ -1,4 +1,4 @@
-# MRH ManSys Official Workspace Component
+# TrackWork Official Workspace Component
 
 This component need specific configuration to work properly.
 

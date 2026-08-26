@@ -146,7 +146,8 @@ export class AIPanelError extends WithDisposable(LitElement) {
           AIErrorType.Unauthorized,
           () =>
             html` <div class="error-info">
-                You need to login to MRH ManSys Cloud to continue using MRH ManSys AI.
+                You need to login to TrackWork Cloud to continue using TrackWork
+                AI.
               </div>
               <div class="action-button-group">
                 <div @click=${this.config.cancel} class="action-button">
@@ -161,9 +162,9 @@ export class AIPanelError extends WithDisposable(LitElement) {
           AIErrorType.PaymentRequired,
           () =>
             html` <div class="error-info">
-                You've reached the current usage cap for MRH ManSys AI. You can
-                subscribe to MRH ManSys AI(with free 7-day-trial) to continue the AI
-                experience!
+                You've reached the current usage cap for TrackWork AI. You can
+                subscribe to TrackWork AI(with free 7-day-trial) to continue the
+                AI experience!
               </div>
               <div class="action-button-group">
                 <div @click=${this.config.cancel} class="action-button">

@@ -1,6 +1,6 @@
 # @blocksuite/affine-ext-loader
 
-Blocksuite extension loader system for MRH ManSys, providing a structured way to manage and load extensions in different contexts.
+Blocksuite extension loader system for TrackWork, providing a structured way to manage and load extensions in different contexts.
 
 ## Usage
 

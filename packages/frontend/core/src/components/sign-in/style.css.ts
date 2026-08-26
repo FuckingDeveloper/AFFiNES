@@ -31,21 +31,6 @@ export const captchaWrapper = style({
   textAlign: 'center',
 });
 
-export const passwordButtonRow = style({
-  display: 'flex',
-  justifyContent: 'space-between',
-  marginBottom: '30px',
-});
-
-export const linkButton = style({
-  color: cssVar('linkColor'),
-  background: 'transparent',
-  borderColor: 'transparent',
-  fontSize: cssVar('fontXs'),
-  lineHeight: '22px',
-  userSelect: 'none',
-});
-
 export const addSelfhostedButton = style({
   color: cssVarV2('text/link'),
 });

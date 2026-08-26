@@ -160,7 +160,9 @@ const AdminPanel = ({
                   value={group.module}
                   className="h-10 w-auto min-w-max justify-start gap-2 px-3 text-left data-[state=active]:bg-primary data-[state=active]:text-primary-foreground md:w-full"
                 >
-                  <span className="truncate">{getGroupLabel(group.module, group.name)}</span>
+                  <span className="truncate">
+                    {getGroupLabel(group.module, group.name)}
+                  </span>
                   {hasValidationError ? (
                     <span className="ml-auto h-2 w-2 rounded-full bg-destructive" />
                   ) : dirty ? (
@@ -176,11 +178,12 @@ const AdminPanel = ({
               const { name, module, fields, operations } = group;
               const dirty = isGroupDirty(module);
               const saving = isGroupSaving(module);
-              const sourceConfig = patchedAppConfig[module] ?? appConfig[module];
+              const sourceConfig =
+                patchedAppConfig[module] ?? appConfig[module];
               const version = getGroupVersion(module);
               const hasValidationError = Boolean(
                 groupErrors[module] &&
-                  Object.keys(groupErrors[module] ?? {}).length > 0
+                Object.keys(groupErrors[module] ?? {}).length > 0
               );
               const groupLabel = getGroupLabel(module, name);
 
@@ -194,20 +197,29 @@ const AdminPanel = ({
                   <div className="mb-6 flex flex-col gap-1">
                     <h2 className="text-lg font-semibold">{groupLabel}</h2>
                     <p className="text-sm text-muted-foreground">
-                      {t('settings.manageGroup', { group: groupLabel.toLowerCase() })}
+                      {t('settings.manageGroup', {
+                        group: groupLabel.toLowerCase(),
+                      })}
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-8" key={`${module}-${version}`}>
+                  <div
+                    className="flex flex-col gap-8"
+                    key={`${module}-${version}`}
+                  >
                     {fields.map(field => {
                       let props: ConfigInputProps;
                       if (typeof field === 'string') {
-                        const descriptor = ALL_CONFIG_DESCRIPTORS[module][field];
+                        const descriptor =
+                          ALL_CONFIG_DESCRIPTORS[module][field];
                         const fieldKey = `${module}.${field}`;
                         const translatedDesc = t(`fields.${fieldKey}.desc`);
                         props = {
                           field: `${module}/${field}`,
-                          desc: translatedDesc !== `fields.${fieldKey}.desc` ? translatedDesc : (descriptor?.desc ?? field),
+                          desc:
+                            translatedDesc !== `fields.${fieldKey}.desc`
+                              ? translatedDesc
+                              : (descriptor?.desc ?? field),
                           type: descriptor?.type ?? 'String',
                           options: [],
                           defaultValue: get(sourceConfig, field),
@@ -221,7 +233,11 @@ const AdminPanel = ({
                         const translatedDesc = t(`fields.${fieldKey}.desc`);
                         props = {
                           field: `${module}/${field.key}${field.sub ? `/${field.sub}` : ''}`,
-                          desc: field.desc ?? (translatedDesc !== `fields.${fieldKey}.desc` ? translatedDesc : (descriptor?.desc ?? field.key)),
+                          desc:
+                            field.desc ??
+                            (translatedDesc !== `fields.${fieldKey}.desc`
+                              ? translatedDesc
+                              : (descriptor?.desc ?? field.key)),
                           type: field.type ?? descriptor?.type ?? 'String',
                           sensitive: field.sensitive,
                           // @ts-expect-error for enum type

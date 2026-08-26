@@ -67,7 +67,7 @@ if (process.env.BUILD_TYPE === 'internal') {
   const appUpdaterYml = path.join(publicDistDir, 'app-update.yml');
   const appUpdaterYmlContent = await fs.readFile(appUpdaterYml, 'utf-8');
   const newAppUpdaterYmlContent = appUpdaterYmlContent.replace(
-    'MRH ManSys',
+    'TrackWork',
     'AFFiNE-Releases'
   );
   await fs.writeFile(appUpdaterYml, newAppUpdaterYmlContent);

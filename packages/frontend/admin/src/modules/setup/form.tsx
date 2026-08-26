@@ -17,6 +17,7 @@ import { CreateAdmin } from './create-admin';
 
 export enum CarouselSteps {
   Welcome = 0,
+  SystemCheck,
   CreateAdmin,
   SettingsDone,
 }
@@ -28,11 +29,81 @@ const Welcome = () => {
       style={{ minHeight: '300px' }}
     >
       <h1 className="text-5xl font-extrabold max-lg:text-3xl max-lg:font-bold">
-        Добро пожаловать в MRH ManSys
+        Добро пожаловать в MRH TrackWork
       </h1>
       <p className="mt-5 font-semibold text-xl max-lg:px-4 max-lg:text-lg">
-        Настройте Self-Hosted MRH ManSys в несколько простых шагов.
+        Настройте Self-Hosted TrackWork в несколько простых шагов.
       </p>
+    </div>
+  );
+};
+
+const SystemCheck = ({
+  systemReady,
+  onSystemReadyChange,
+}: {
+  systemReady: boolean;
+  onSystemReadyChange: (ready: boolean) => void;
+}) => {
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState('');
+
+  const check = useCallback(async () => {
+    setChecking(true);
+    setError('');
+    try {
+      const response = await affineFetch('/health/ready');
+      if (!response.ok) {
+        throw new Error('Сервер пока не готов');
+      }
+      const result = (await response.json()) as {
+        services?: { postgres?: string; redis?: string };
+      };
+      const ready =
+        result.services?.postgres === 'ok' && result.services?.redis === 'ok';
+      onSystemReadyChange(ready);
+      if (!ready) {
+        throw new Error('PostgreSQL или Redis недоступен');
+      }
+    } catch (err) {
+      onSystemReadyChange(false);
+      setError((err as Error).message);
+    } finally {
+      setChecking(false);
+    }
+  }, [onSystemReadyChange]);
+
+  useEffect(() => {
+    check().catch(() => {});
+  }, [check]);
+
+  return (
+    <div
+      className="flex flex-col h-full w-full mt-44 max-w-2xl max-lg:items-center max-lg:mt-16"
+      style={{ minHeight: '300px' }}
+    >
+      <h1 className="text-4xl font-extrabold max-lg:text-3xl">
+        Проверка сервисов
+      </h1>
+      <p className="mt-5 text-lg">
+        PostgreSQL и Redis должны быть доступны до создания администратора.
+      </p>
+      <div className="mt-6 rounded-md border p-4 w-full">
+        <div>PostgreSQL: {systemReady ? 'доступен' : 'проверяется'}</div>
+        <div>Redis: {systemReady ? 'доступен' : 'проверяется'}</div>
+        {error ? <div className="mt-3 text-destructive">{error}</div> : null}
+      </div>
+      {!systemReady ? (
+        <Button
+          className="mt-4"
+          onClick={() => {
+            check().catch(() => {});
+          }}
+          disabled={checking}
+        >
+          {checking ? 'Проверяем…' : 'Проверить снова'}
+        </Button>
+      ) : null}
     </div>
   );
 };
@@ -47,7 +118,20 @@ const SettingsDone = () => {
         Настройка завершена
       </h1>
       <p className="mt-5 font-semibold text-xl max-lg:px-4 max-lg:text-lg">
-        MRH ManSys готов к использованию.
+        TrackWork готов к использованию.
+      </p>
+      <p className="mt-5 max-w-2xl text-base max-lg:px-4">
+        Сразу после запуска настройте регулярную резервную копию PostgreSQL,
+        каталога загрузок и каталога конфигурации. Инструкция доступна на{' '}
+        <a
+          className="underline"
+          href={BUILD_CONFIG.helpUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          странице помощи
+        </a>
+        .
       </p>
     </div>
   );
@@ -55,6 +139,7 @@ const SettingsDone = () => {
 
 const CarouselItemElements = {
   [CarouselSteps.Welcome]: Welcome,
+  [CarouselSteps.SystemCheck]: SystemCheck,
   [CarouselSteps.CreateAdmin]: CreateAdmin,
   [CarouselSteps.SettingsDone]: SettingsDone,
 };
@@ -71,15 +156,18 @@ export const Form = () => {
   const [passwordValue, setPasswordValue] = useState('');
   const [invalidEmail, setInvalidEmail] = useState(false);
   const [invalidPassword, setInvalidPassword] = useState(false);
+  const [systemReady, setSystemReady] = useState(false);
 
   const serverConfig = useServerConfig();
   const refreshServerConfig = useRevalidateServerConfig();
   const passwordLimits = serverConfig.credentialsRequirement.password;
 
   const isCreateAdminStep = current - 1 === CarouselSteps.CreateAdmin;
+  const isSystemCheckStep = current - 1 === CarouselSteps.SystemCheck;
 
   const disableContinue =
-    (!nameValue || !emailValue || !passwordValue) && isCreateAdminStep;
+    ((!nameValue || !emailValue || !passwordValue) && isCreateAdminStep) ||
+    (isSystemCheckStep && !systemReady);
 
   useEffect(() => {
     if (!api) {
@@ -196,6 +284,8 @@ export const Form = () => {
                 invalidEmail={invalidEmail}
                 invalidPassword={invalidPassword}
                 passwordLimits={passwordLimits}
+                systemReady={systemReady}
+                onSystemReadyChange={setSystemReady}
                 onNameChange={setNameValue}
                 onEmailChange={setEmailValue}
                 onPasswordChange={setPasswordValue}
@@ -211,7 +301,7 @@ export const Form = () => {
           </Button>
         )}
         <Button onClick={onNext} disabled={disableContinue}>
-          {current === count ? 'Открыть MRH ManSys' : 'Продолжить'}
+          {current === count ? 'Открыть TrackWork' : 'Продолжить'}
         </Button>
       </div>
 

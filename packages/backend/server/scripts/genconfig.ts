@@ -41,7 +41,7 @@ function convertDescriptorToSchemaProperty(descriptor: ConfigDescriptor<any>) {
 function generateJsonSchema(outputPath: string) {
   const schema = {
     $schema: 'http://json-schema.org/draft-07/schema#',
-    title: 'MRH ManSys Application Configuration',
+    title: 'TrackWork Application Configuration',
     type: 'object',
     properties: {},
   };

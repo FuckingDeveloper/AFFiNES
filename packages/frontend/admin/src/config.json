@@ -80,8 +80,9 @@
       "desc": "Whether require email verification before accessing restricted resources(not implemented)."
     },
     "mode": {
-      "type": "Enum",
-      "desc": "Active authentication method. Only one method can be active at a time."
+      "type": "String",
+      "desc": "Active authentication method. Only one method can be active at a time.",
+      "env": "AFFINE_AUTH_MODE"
     },
     "enterprise.enabled": {
       "type": "Boolean",
@@ -200,7 +201,7 @@
     },
     "SMTP.sender": {
       "type": "String",
-      "desc": "Sender of all the emails (e.g. \"MRH ManSys Self Hosted &lt;noreply@example.com&gt;\")",
+      "desc": "Sender of all the emails (e.g. \"TrackWork Self Hosted &lt;noreply@example.com&gt;\")",
       "env": "MAILER_SENDER"
     },
     "SMTP.ignoreTLS": {
@@ -234,7 +235,7 @@
     },
     "fallbackSMTP.sender": {
       "type": "String",
-      "desc": "Sender of all the emails (e.g. \"MRH ManSys Self Hosted &lt;noreply@example.com&gt;\")"
+      "desc": "Sender of all the emails (e.g. \"TrackWork Self Hosted &lt;noreply@example.com&gt;\")"
     },
     "fallbackSMTP.ignoreTLS": {
       "type": "Boolean",
@@ -279,11 +280,11 @@
   "server": {
     "name": {
       "type": "String",
-      "desc": "A recognizable name for the server. Will be shown when connected with MRH ManSys Desktop."
+      "desc": "A recognizable name for the server. Will be shown when connected with TrackWork Desktop."
     },
     "externalUrl": {
       "type": "String",
-      "desc": "Base url of MRH ManSys server, used for generating external urls.\nDefault to be `[server.protocol]://[server.host][:server.port]` if not specified.\n    ",
+      "desc": "Base url of TrackWork server, used for generating external urls.\nDefault to be `[server.protocol]://[server.host][:server.port]` if not specified.\n    ",
       "env": "AFFINE_SERVER_EXTERNAL_URL"
     },
     "https": {

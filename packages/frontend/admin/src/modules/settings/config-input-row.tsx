@@ -11,8 +11,8 @@ import { cn } from '@affine/admin/utils';
 import { Eye, EyeOff } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useI18n } from '../../i18n';
 import { Textarea } from '../../components/ui/textarea';
+import { useI18n } from '../../i18n';
 
 export type ConfigInputProps = {
   field: string;
@@ -208,7 +208,10 @@ export const ConfigRow = ({
     };
   }, [field, mergedError, onErrorChange]);
 
-  const exampleValue = example && example !== `fields.${field.replace(/\//g, '.')}.example` ? example : undefined;
+  const exampleValue =
+    example && example !== `fields.${field.replace(/\//g, '.')}.example`
+      ? example
+      : undefined;
 
   return (
     <div
@@ -224,7 +227,10 @@ export const ConfigRow = ({
         />
         {exampleValue ? (
           <div className="mt-1 text-xs text-muted-foreground">
-            {t('settings.example')}: <code className="rounded bg-muted px-1 py-0.5 font-mono">{exampleValue}</code>
+            {t('settings.example')}:{' '}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono">
+              {exampleValue}
+            </code>
           </div>
         ) : null}
       </div>

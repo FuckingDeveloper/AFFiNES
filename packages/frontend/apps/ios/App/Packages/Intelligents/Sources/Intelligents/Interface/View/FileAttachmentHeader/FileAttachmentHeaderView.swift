@@ -25,7 +25,7 @@ final class FileAttachmentHeaderView: UIView {
   }
 
   private lazy var primaryLabel = UILabel().then {
-    $0.text = "" // 3 attachment, 1 MRH ManSys docs
+    $0.text = "" // 3 attachment, 1 TrackWork docs
     $0.font = UIFont.preferredFont(forTextStyle: .footnote).bold
     $0.textColor = .label
     $0.numberOfLines = 1
@@ -132,7 +132,7 @@ final class FileAttachmentHeaderView: UIView {
     }
 
     if docsCount > 0 {
-      components.append("\(docsCount) MRH ManSys doc\(docsCount > 1 ? "s" : "")")
+      components.append("\(docsCount) TrackWork doc\(docsCount > 1 ? "s" : "")")
     }
 
     primaryLabel.text = components.joined(separator: ", ")

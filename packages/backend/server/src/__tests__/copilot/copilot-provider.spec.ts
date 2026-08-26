@@ -301,7 +301,7 @@ test('should validate markdown list', t => {
 const actions = [
   {
     name: 'Should chat with histories',
-    promptName: ['Chat With MRH ManSys AI'],
+    promptName: ['Chat With TrackWork AI'],
     messages: promptMessages(
       userPrompt(
         `
@@ -353,8 +353,8 @@ The term **“CRDT”** was first introduced by Marc Shapiro, Nuno Preguiça, Ca
   },
   {
     name: 'Should not have citation',
-    promptName: ['Chat With MRH ManSys AI'],
-    messages: singleUserPromptMessages('what is MRH ManSys AI?', {
+    promptName: ['Chat With TrackWork AI'],
+    messages: singleUserPromptMessages('what is TrackWork AI?', {
       params: {
         files: [
           {
@@ -384,7 +384,7 @@ The term **“CRDT”** was first introduced by Marc Shapiro, Nuno Preguiça, Ca
   },
   {
     name: 'Should have citation',
-    promptName: ['Chat With MRH ManSys AI'],
+    promptName: ['Chat With TrackWork AI'],
     messages: singleUserPromptMessages('what is ssot', {
       params: {
         docs: [
@@ -405,8 +405,8 @@ The term **“CRDT”** was first introduced by Marc Shapiro, Nuno Preguiça, Ca
   },
   {
     name: 'stream objects',
-    promptName: ['Chat With MRH ManSys AI'],
-    messages: singleUserPromptMessages('what is MRH ManSys AI'),
+    promptName: ['Chat With TrackWork AI'],
+    messages: singleUserPromptMessages('what is TrackWork AI'),
     verifier: (t: ExecutionContext<Tester>, result: string) => {
       t.truthy(checkStreamObjects(result), 'should be valid stream objects');
     },
@@ -414,16 +414,16 @@ The term **“CRDT”** was first introduced by Marc Shapiro, Nuno Preguiça, Ca
   },
   {
     name: 'Gemini native text',
-    promptName: ['Chat With MRH ManSys AI'],
+    promptName: ['Chat With TrackWork AI'],
     messages: singleUserPromptMessages(
-      'In one short sentence, explain what MRH ManSys AI is and mention MRH ManSys by name.'
+      'In one short sentence, explain what TrackWork AI is and mention TrackWork by name.'
     ),
     config: { model: 'gemini-2.5-flash' },
     verifier: (t: ExecutionContext<Tester>, result: string) => {
       assertNotWrappedInCodeBlock(t, result);
       t.assert(
         result.toLowerCase().includes('affine'),
-        'should mention MRH ManSys'
+        'should mention TrackWork'
       );
     },
     prefer: CopilotProviderType.Gemini,
@@ -431,9 +431,9 @@ The term **“CRDT”** was first introduced by Marc Shapiro, Nuno Preguiça, Ca
   },
   {
     name: 'Gemini native stream objects',
-    promptName: ['Chat With MRH ManSys AI'],
+    promptName: ['Chat With TrackWork AI'],
     messages: singleUserPromptMessages(
-      'Respond with one short sentence about MRH ManSys AI and mention MRH ManSys by name.'
+      'Respond with one short sentence about TrackWork AI and mention TrackWork by name.'
     ),
     config: { model: 'gemini-2.5-flash' },
     verifier: (t: ExecutionContext<Tester>, result: string) => {
@@ -441,7 +441,7 @@ The term **“CRDT”** was first introduced by Marc Shapiro, Nuno Preguiça, Ca
       const assembledText = getStreamObjectText(result);
       t.assert(
         assembledText.toLowerCase().includes('affine'),
-        'should mention MRH ManSys'
+        'should mention TrackWork'
       );
     },
     prefer: CopilotProviderType.Gemini,
@@ -489,7 +489,7 @@ The term **“CRDT”** was first introduced by Marc Shapiro, Nuno Preguiça, Ca
       'Make it longer',
       'Make it shorter',
       'Section Edit',
-      'Chat With MRH ManSys AI',
+      'Chat With TrackWork AI',
     ],
     messages: singleUserPromptMessages(TestAssets.SSOT),
     verifier: (t: ExecutionContext<Tester>, result: string) => {

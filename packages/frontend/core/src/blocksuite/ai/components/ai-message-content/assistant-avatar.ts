@@ -28,7 +28,7 @@ export class AssistantAvatar extends ShadowlessElement {
     return html`${this.status === 'transmitting'
       ? AIStarIconWithAnimation
       : AffineAvatarIcon}
-    MRH ManSys AI`;
+    TrackWork AI`;
   }
 }
 

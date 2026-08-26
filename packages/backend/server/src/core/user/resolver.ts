@@ -156,11 +156,11 @@ export class UserResolver {
   ): Promise<UserType> {
     input = omitBy(input, isNil);
 
-    if (Object.keys(input).length === 0) {
-      return user;
+    if (input.name !== undefined) {
+      throw new ActionForbidden();
     }
 
-    return sessionUser(await this.models.user.update(user.id, input));
+    return user;
   }
 
   @Mutation(() => RemoveAvatar, {
@@ -177,10 +177,9 @@ export class UserResolver {
 
   @Mutation(() => DeleteAccount)
   async deleteAccount(
-    @CurrentUser() user: CurrentUser
+    @CurrentUser() _user: CurrentUser
   ): Promise<DeleteAccount> {
-    await this.models.user.delete(user.id);
-    return { success: true };
+    throw new ActionForbidden();
   }
 }
 
@@ -228,6 +227,9 @@ class ListUserInput {
 
 @InputType()
 class CreateUserInput {
+  @Field(() => String, { nullable: true })
+  username?: string;
+
   @Field(() => String)
   email!: string;
 
@@ -403,6 +405,7 @@ export class UserManagementResolver {
 
     return sessionUser(
       await this.models.user.update(user.id, {
+        username: input.username,
         email: input.email,
         name: input.name,
       })

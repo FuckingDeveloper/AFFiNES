@@ -181,9 +181,7 @@ export class QuotaService {
       storageQuota: formatSize(quota.storageQuota),
       usedStorageQuota: formatSize(quota.usedStorageQuota),
       historyPeriod: formatDate(quota.historyPeriod),
-      memberLimit: env.selfhosted
-        ? 'Unlimited'
-        : quota.memberLimit.toString(),
+      memberLimit: env.selfhosted ? 'Unlimited' : quota.memberLimit.toString(),
       copilotActionLimit: quota.copilotActionLimit
         ? `${quota.copilotActionLimit} times`
         : 'Unlimited',
@@ -224,9 +222,7 @@ export class QuotaService {
       storageQuota: formatSize(quota.storageQuota),
       storageQuotaUsed: formatSize(quota.usedStorageQuota),
       historyPeriod: formatDate(quota.historyPeriod),
-      memberLimit: env.selfhosted
-        ? 'Unlimited'
-        : quota.memberLimit.toString(),
+      memberLimit: env.selfhosted ? 'Unlimited' : quota.memberLimit.toString(),
       memberCount: quota.memberCount.toString(),
       overcapacityMemberCount: quota.overcapacityMemberCount.toString(),
     };

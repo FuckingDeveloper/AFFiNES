@@ -76,7 +76,7 @@ export const Component = ({
     if (createOnceRef.current) return;
     createOnceRef.current = true;
     // TODO: support selfhosted
-    buildShowcaseWorkspace(workspacesService, 'affine-cloud', 'MRH ManSys Cloud')
+    buildShowcaseWorkspace(workspacesService, 'affine-cloud', 'TrackWork Cloud')
       .then(({ meta, defaultDocId }) => {
         if (defaultDocId) {
           jumpToPage(meta.id, defaultDocId);
@@ -149,7 +149,12 @@ export const Component = ({
   }, [desktopApi]);
 
   useEffect(() => {
-    if (listIsLoading || list.length > 0 || !enableLocalWorkspace || !loggedIn) {
+    if (
+      listIsLoading ||
+      list.length > 0 ||
+      !enableLocalWorkspace ||
+      !loggedIn
+    ) {
       return;
     }
 

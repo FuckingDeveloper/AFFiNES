@@ -4,6 +4,7 @@ import { type ConnectedAccount, Prisma, type User } from '@prisma/client';
 import { omit } from 'lodash-es';
 
 import {
+  BadRequest,
   CannotDeleteAccountWithOwnedTeamWorkspace,
   CryptoHelper,
   EmailAlreadyUsed,
@@ -21,8 +22,19 @@ import {
 } from './common';
 import type { Workspace } from './workspace';
 
-type CreateUserInput = Omit<Prisma.UserCreateInput, 'name'> & { name?: string };
+type CreateUserInput = Omit<Prisma.UserCreateInput, 'name' | 'username'> & {
+  name?: string;
+  username?: string;
+};
 type UpdateUserInput = Omit<Partial<Prisma.UserCreateInput>, 'id'>;
+
+function normalizeUsername(username: string) {
+  const normalized = username.trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(normalized)) {
+    throw new BadRequest('INVALID_USERNAME');
+  }
+  return normalized;
+}
 
 type CreateConnectedAccountInput = Omit<
   Prisma.ConnectedAccountUncheckedCreateInput,
@@ -119,7 +131,7 @@ export class UserModel extends BaseModel {
     filter: UserFilter = {}
   ): Promise<User | null> {
     const rows = await this.db.$queryRaw<User[]>`
-      SELECT id, name, email, password, registered, email_verified as "emailVerifiedAt", avatar_url as "avatarUrl", registered, created_at as "createdAt", disabled
+      SELECT id, username, name, email, password, registered, email_verified as "emailVerifiedAt", avatar_url as "avatarUrl", registered, created_at as "createdAt", disabled
       FROM "users"
       WHERE lower("email") = lower(${email})
       ${Prisma.raw(filter.withDisabled ? '' : 'AND disabled = false')}
@@ -128,11 +140,31 @@ export class UserModel extends BaseModel {
     return rows[0] ?? null;
   }
 
-  async signIn(email: string, password: string): Promise<User> {
-    const user = await this.getUserByEmail(email);
+  async getUserByUsername(
+    username: string,
+    filter: UserFilter = {}
+  ): Promise<User | null> {
+    const rows = await this.db.$queryRaw<User[]>`
+      SELECT id, username, name, email, password, registered, email_verified as "emailVerifiedAt", avatar_url as "avatarUrl", created_at as "createdAt", disabled
+      FROM "users"
+      WHERE lower("username") = lower(${username})
+      ${Prisma.raw(filter.withDisabled ? '' : 'AND disabled = false')}
+    `;
+
+    return rows[0] ?? null;
+  }
+
+  async getUserByLogin(login: string, filter: UserFilter = {}) {
+    return login.includes('@')
+      ? this.getUserByEmail(login, filter)
+      : this.getUserByUsername(login, filter);
+  }
+
+  async signIn(login: string, password: string): Promise<User> {
+    const user = await this.getUserByLogin(login);
 
     if (!user) {
-      throw new WrongSignInCredentials({ email });
+      throw new WrongSignInCredentials({ email: login });
     }
 
     if (!user.password) {
@@ -145,7 +177,7 @@ export class UserModel extends BaseModel {
     );
 
     if (!passwordMatches) {
-      throw new WrongSignInCredentials({ email });
+      throw new WrongSignInCredentials({ email: login });
     }
 
     return user;
@@ -173,9 +205,20 @@ export class UserModel extends BaseModel {
       data.password = await this.crypto.encryptPassword(data.password);
     }
 
+    const username = data.username
+      ? normalizeUsername(data.username)
+      : await this.createAvailableUsername(data.email);
+    const existingUsername = await this.getUserByUsername(username, {
+      withDisabled: true,
+    });
+    if (existingUsername) {
+      throw new BadRequest('USERNAME_ALREADY_USED');
+    }
+
     user = await this.db.user.create({
       data: {
         ...data,
+        username,
         name: data.name ?? data.email.split('@')[0],
       },
     });
@@ -215,6 +258,16 @@ export class UserModel extends BaseModel {
       }
     }
 
+    if (data.username) {
+      data.username = normalizeUsername(data.username);
+      const user = await this.getUserByUsername(data.username, {
+        withDisabled: true,
+      });
+      if (user && user.id !== id) {
+        throw new BadRequest('USERNAME_ALREADY_USED');
+      }
+    }
+
     const user = await this.db.user.update({
       where: { id },
       data,
@@ -223,6 +276,31 @@ export class UserModel extends BaseModel {
     this.logger.debug(`User [${user.id}] updated`);
     this.event.emit('user.updated', user);
     return user;
+  }
+
+  private async createAvailableUsername(email: string) {
+    const localPart = email
+      .split('@')[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]/g, '')
+      .replace(/^[^a-z0-9]+/, '')
+      .slice(0, 24);
+    const base = /^[a-z0-9][a-z0-9._-]{2,31}$/.test(localPart)
+      ? localPart
+      : 'user';
+
+    if (!(await this.getUserByUsername(base, { withDisabled: true }))) {
+      return base;
+    }
+
+    for (let suffix = 2; suffix < 10000; suffix++) {
+      const candidate = `${base.slice(0, 27)}-${suffix}`;
+      if (!(await this.getUserByUsername(candidate, { withDisabled: true }))) {
+        return candidate;
+      }
+    }
+
+    throw new BadRequest('USERNAME_GENERATION_FAILED');
   }
 
   /**

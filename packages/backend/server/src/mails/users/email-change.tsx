@@ -7,11 +7,11 @@ export type ChangeEmailProps = {
 export default function ChangeEmail(props: ChangeEmailProps) {
   return (
     <Template>
-      <Title>Verify your current email for MRH ManSys</Title>
+      <Title>Verify your current email for TrackWork</Title>
       <Content>
         <P>
           You recently requested to change the email address associated with
-          your MRH ManSys account.
+          your TrackWork account.
           <br />
           To complete this process, please click on the verification link below.
         </P>

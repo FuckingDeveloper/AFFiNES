@@ -165,7 +165,7 @@ class InputBoxFunctionBar: UIView {
     }
 
     let embedDocsAction = UIAction(
-      title: "Add MRH ManSys Docs",
+      title: "Add TrackWork Docs",
       image: UIImage.affinePage
     ) { [weak self] _ in
       guard let self else { return }

@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-frame-title",
-  "description": "MRH ManSys frame title widget.",
+  "description": "TrackWork frame title widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

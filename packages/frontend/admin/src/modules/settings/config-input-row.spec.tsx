@@ -4,6 +4,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 
+import { I18nProvider } from '../../i18n';
 import { ConfigRow } from './config-input-row';
 
 describe('ConfigRow', () => {
@@ -33,14 +34,16 @@ describe('ConfigRow', () => {
     const handleChange = vi.fn();
 
     render(
-      <ConfigRow
-        field="storages/blob.storage/provider"
-        desc="Storage provider"
-        type="Enum"
-        options={['fs', 'aws-s3', 'cloudflare-r2']}
-        defaultValue="fs"
-        onChange={handleChange}
-      />
+      <I18nProvider>
+        <ConfigRow
+          field="storages/blob.storage/provider"
+          desc="Storage provider"
+          type="Enum"
+          options={['fs', 'aws-s3', 'cloudflare-r2']}
+          defaultValue="fs"
+          onChange={handleChange}
+        />
+      </I18nProvider>
     );
 
     fireEvent.keyDown(screen.getByRole('combobox'), { key: 'ArrowDown' });
@@ -56,13 +59,15 @@ describe('ConfigRow', () => {
     const handleChange = vi.fn();
 
     render(
-      <ConfigRow
-        field="server/hosts"
-        desc="Server hosts"
-        type="JSON"
-        defaultValue={[]}
-        onChange={handleChange}
-      />
+      <I18nProvider>
+        <ConfigRow
+          field="server/hosts"
+          desc="Server hosts"
+          type="JSON"
+          defaultValue={[]}
+          onChange={handleChange}
+        />
+      </I18nProvider>
     );
 
     fireEvent.change(screen.getByRole('textbox'), {
@@ -76,13 +81,15 @@ describe('ConfigRow', () => {
     const handleChange = vi.fn();
 
     render(
-      <ConfigRow
-        field="server/hosts"
-        desc="Server hosts"
-        type="JSON"
-        defaultValue={[]}
-        onChange={handleChange}
-      />
+      <I18nProvider>
+        <ConfigRow
+          field="server/hosts"
+          desc="Server hosts"
+          type="JSON"
+          defaultValue={[]}
+          onChange={handleChange}
+        />
+      </I18nProvider>
     );
 
     const textarea = screen.getByRole('textbox');
@@ -91,14 +98,14 @@ describe('ConfigRow', () => {
       target: { value: '[]asdasdasd' },
     });
 
-    expect(screen.queryByText('Invalid JSON format')).not.toBeNull();
+    expect(screen.queryByText('Неверный формат JSON')).not.toBeNull();
     expect(textarea.className).toContain('border-destructive');
 
     fireEvent.change(textarea, {
       target: { value: '["localhost"]' },
     });
 
-    expect(screen.queryByText('Invalid JSON format')).toBeNull();
+    expect(screen.queryByText('Неверный формат JSON')).toBeNull();
     expect(textarea.className).not.toContain('border-destructive');
     expect(handleChange).toHaveBeenLastCalledWith('server/hosts', [
       'localhost',

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional } from '@nestjs-cls/transactional';
+import type { AiWorkspaceByokConfig } from '@prisma/client';
 
 import { BaseModel } from './base';
 
@@ -32,7 +33,7 @@ export class CopilotWorkspaceByokConfigModel extends BaseModel {
     return delegate;
   }
 
-  async list(workspaceId: string) {
+  async list(workspaceId: string): Promise<AiWorkspaceByokConfig[]> {
     const delegate = this.delegate;
     if (!delegate) {
       return [];
@@ -43,7 +44,7 @@ export class CopilotWorkspaceByokConfigModel extends BaseModel {
     });
   }
 
-  async listEnabled(workspaceId: string) {
+  async listEnabled(workspaceId: string): Promise<AiWorkspaceByokConfig[]> {
     const delegate = this.delegate;
     if (!delegate) {
       return [];
@@ -54,7 +55,7 @@ export class CopilotWorkspaceByokConfigModel extends BaseModel {
     });
   }
 
-  async get(id: string) {
+  async get(id: string): Promise<AiWorkspaceByokConfig | null> {
     const delegate = this.delegate;
     if (!delegate) {
       return null;

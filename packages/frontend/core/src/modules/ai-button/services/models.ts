@@ -65,7 +65,7 @@ export class AIModelService extends Service {
   };
 
   private readonly initModels = async (prompt?: string) => {
-    const promptName = prompt || 'Chat With MRH ManSys AI';
+    const promptName = prompt || 'Chat With TrackWork AI';
     const models = await this.getModelsByPrompt(promptName);
     if (models) {
       const { defaultModel, optionalModels, proModels } = models;

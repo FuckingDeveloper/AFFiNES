@@ -1,39 +1,35 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SELFHOST_DIR="$ROOT_DIR/.docker/selfhost"
-SELFHOST_ENV="$SELFHOST_DIR/.env"
-LOCAL_IMAGE_NAME="affine-local:dev"
+SELFHOST_DIR="${ROOT_DIR}/.docker/selfhost"
+SELFHOST_ENV="${SELFHOST_DIR}/.env"
+
+COMPOSE=(
+  docker compose
+  --env-file "${SELFHOST_ENV}"
+  -f "${SELFHOST_DIR}/compose.yml"
+  -f "${SELFHOST_DIR}/compose.local.yml"
+)
 
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/start-docker-selfhost.sh --upstream
-  ./scripts/start-docker-selfhost.sh --local-image
-  ./scripts/start-docker-selfhost.sh --down-upstream
-  ./scripts/start-docker-selfhost.sh --down-local
-  ./scripts/start-docker-selfhost.sh --logs-upstream
-  ./scripts/start-docker-selfhost.sh --logs-local
-  ./scripts/start-docker-selfhost.sh --help
-
-Modes:
-  --upstream      Start selfhost stack from upstream GHCR image
-  --local-image   Build current fork artifacts, build local Docker image, start stack with override
-  --down-upstream Stop upstream compose stack
-  --down-local    Stop local-image compose stack
-  --logs-upstream Show logs for upstream compose stack
-  --logs-local    Show logs for local-image compose stack
+  ./scripts/start-docker-selfhost.sh            Build and start TrackWork
+  ./scripts/start-docker-selfhost.sh --up       Build and start TrackWork
+  ./scripts/start-docker-selfhost.sh --build    Build trackwork-local:dev
+  ./scripts/start-docker-selfhost.sh --down     Stop TrackWork
+  ./scripts/start-docker-selfhost.sh --logs     Follow server and migration logs
+  ./scripts/start-docker-selfhost.sh --status   Show container status
 EOF
 }
 
 log() {
-  printf '[affine-docker] %s\n' "$*"
+  printf '[trackwork-docker] %s\n' "$*"
 }
 
 fail() {
-  printf '[affine-docker] ERROR: %s\n' "$*" >&2
+  printf '[trackwork-docker] ERROR: %s\n' "$*" >&2
   exit 1
 }
 
@@ -42,110 +38,65 @@ require_cmd() {
 }
 
 ensure_env() {
-  mkdir -p "$SELFHOST_DIR"
+  mkdir -p "${SELFHOST_DIR}"
 
-  if [ ! -f "$SELFHOST_ENV" ]; then
-    log 'Creating .docker/selfhost/.env from example'
-    cp "$SELFHOST_DIR/.env.example" "$SELFHOST_ENV"
-  fi
-
-  if ! grep -Eq '^DB_PASSWORD=.+$' "$SELFHOST_ENV"; then
-    log 'Setting default DB_PASSWORD=affine in .docker/selfhost/.env'
-    if grep -Eq '^DB_PASSWORD=' "$SELFHOST_ENV"; then
-      perl -0pi -e 's/^DB_PASSWORD=.*$/DB_PASSWORD=affine/m' "$SELFHOST_ENV"
-    else
-      printf '\nDB_PASSWORD=affine\n' >> "$SELFHOST_ENV"
-    fi
+  if [[ ! -f "${SELFHOST_ENV}" ]]; then
+    cp "${SELFHOST_DIR}/.env.example" "${SELFHOST_ENV}"
+    local password
+    password="$(openssl rand -hex 24)"
+    perl -0pi -e "s/^DB_PASSWORD=.*\$/DB_PASSWORD=${password}/m" "${SELFHOST_ENV}"
+    log "Created ${SELFHOST_ENV} with a random database password"
   fi
 }
 
 check_prereqs() {
   require_cmd docker
-  require_cmd yarn
-  require_cmd node
-  docker compose version >/dev/null 2>&1 || fail 'docker compose is not available'
-}
-
-build_local_image() {
-  log 'Installing dependencies'
-  (cd "$ROOT_DIR" && yarn install)
-
-  log 'Building Docker artifacts from current fork'
-  (cd "$ROOT_DIR" && yarn build:docker)
-
-  log "Building Docker image $LOCAL_IMAGE_NAME"
-  (cd "$ROOT_DIR" && docker build -f .github/deployment/node/Dockerfile -t "$LOCAL_IMAGE_NAME" .)
-}
-
-upstream_up() {
-  check_prereqs
+  require_cmd openssl
+  docker compose version >/dev/null 2>&1 || fail 'docker compose is unavailable'
   ensure_env
-  log 'Starting upstream selfhost stack'
-  (cd "$SELFHOST_DIR" && docker compose up -d)
-  log 'Stack started. Check: curl -fsS http://localhost:3010/info'
 }
 
-local_up() {
-  check_prereqs
-  ensure_env
-  build_local_image
-  log 'Starting selfhost stack with local image override'
-  (cd "$SELFHOST_DIR" && docker compose -f compose.yml -f compose.local.yml up -d)
-  log 'Local-image stack started. Check: curl -fsS http://localhost:3010/info'
+build_image() {
+  log 'Building server, web and admin in a reproducible Linux builder'
+  export GIT_COMMIT="${GIT_COMMIT:-$(git -C "${ROOT_DIR}" rev-parse HEAD 2>/dev/null || printf '000000000')}"
+  "${COMPOSE[@]}" build affine
 }
 
-down_upstream() {
-  check_prereqs
-  ensure_env
-  log 'Stopping upstream selfhost stack'
-  (cd "$SELFHOST_DIR" && docker compose down)
+start_stack() {
+  if ! "${COMPOSE[@]}" up -d; then
+    "${COMPOSE[@]}" logs --tail=120 postgres redis affine_migration >&2 || true
+    fail 'TrackWork did not start; dependency logs are shown above'
+  fi
 }
 
-down_local() {
-  check_prereqs
-  ensure_env
-  log 'Stopping local-image selfhost stack'
-  (cd "$SELFHOST_DIR" && docker compose -f compose.yml -f compose.local.yml down)
-}
-
-logs_upstream() {
-  check_prereqs
-  ensure_env
-  (cd "$SELFHOST_DIR" && docker compose logs --tail=120 affine_migration affine)
-}
-
-logs_local() {
-  check_prereqs
-  ensure_env
-  (cd "$SELFHOST_DIR" && docker compose -f compose.yml -f compose.local.yml logs --tail=120 affine_migration affine)
-}
-
-MODE="${1:-}"
-
-case "$MODE" in
-  --upstream)
-    upstream_up
+case "${1:---up}" in
+  --up)
+    check_prereqs
+    build_image
+    start_stack
+    log 'TrackWork is starting: http://localhost:3010'
     ;;
-  --local-image)
-    local_up
+  --build)
+    check_prereqs
+    build_image
     ;;
-  --down-upstream)
-    down_upstream
+  --down)
+    check_prereqs
+    "${COMPOSE[@]}" down
     ;;
-  --down-local)
-    down_local
+  --logs)
+    check_prereqs
+    "${COMPOSE[@]}" logs -f --tail=120 affine_migration affine
     ;;
-  --logs-upstream)
-    logs_upstream
+  --status)
+    check_prereqs
+    "${COMPOSE[@]}" ps -a
     ;;
-  --logs-local)
-    logs_local
-    ;;
-  --help|-h|'')
+  --help|-h)
     usage
     ;;
   *)
     usage
-    fail "Unknown option: $MODE"
+    fail "Unknown option: ${1}"
     ;;
 esac

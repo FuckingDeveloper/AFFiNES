@@ -1,4 +1,4 @@
-# Building MRH ManSys Web
+# Building TrackWork Web
 
 > **Warning**:
 >
@@ -17,7 +17,7 @@
 
 ## Prerequisites
 
-MRH ManSys client has both **Node.js** & **Rust** toolchains.
+TrackWork client has both **Node.js** & **Rust** toolchains.
 
 ### Install Node.js
 

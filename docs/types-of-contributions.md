@@ -1,6 +1,6 @@
 # Types of contributions :memo:
 
-You can contribute to MRH ManSys in several ways. This repo is a place to discuss and collaborate on MRH ManSys!
+You can contribute to TrackWork in several ways. This repo is a place to discuss and collaborate on TrackWork!
 
 ### :mega: Discussions
 
@@ -26,4 +26,4 @@ You may be able to find additional help and information on our social media plat
 
 ### :earth_asia: Translations
 
-MRH ManSys is internationalized and available in multiple languages. The source content in this repository is written in English. We integrate with an external localization platform to work with the community in localizing the English content. You can find more info on our community page, in our [Discord](https://affine.pro/redirect/discord).
+TrackWork is internationalized and available in multiple languages. The source content in this repository is written in English. We integrate with an external localization platform to work with the community in localizing the English content. You can find more info on our community page, in our [Discord](https://affine.pro/redirect/discord).

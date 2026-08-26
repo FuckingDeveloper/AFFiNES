@@ -120,10 +120,10 @@ const useSyncEngineSyncProgress = (meta: WorkspaceMetadata) => {
     content = 'Sync disconnected due to unexpected issues, reconnecting.';
   } else if (syncing) {
     content =
-      `Syncing with MRH ManSys Cloud` +
+      `Syncing with TrackWork Cloud` +
       (progress ? ` (${Math.floor(progress * 100)}%)` : '');
   } else {
-    content = 'Synced with MRH ManSys Cloud';
+    content = 'Synced with TrackWork Cloud';
   }
 
   const CloudWorkspaceSyncStatus = () => {

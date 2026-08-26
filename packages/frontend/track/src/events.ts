@@ -801,10 +801,10 @@ export type EventArgs = {
       | 'New Edgeless'
       | 'Start recording meeting'
       | 'Stop recording'
-      | 'Open MRH ManSys'
-      | 'About MRH ManSys'
+      | 'Open TrackWork'
+      | 'About TrackWork'
       | 'Meeting Settings'
-      | 'Quit MRH ManSys Completely';
+      | 'Quit TrackWork Completely';
   };
   mentionMember: {
     type: 'member' | 'invite' | 'more';

@@ -186,7 +186,7 @@ export const KNOWN_CONFIG_GROUPS = [
   {
     name: 'OAuth',
     module: 'oauth',
-    fields: ['providers.google', 'providers.github', 'providers.oidc'],
+    fields: ['providers.oidc'],
   } as ConfigGroup<'oauth'>,
   {
     name: 'AI',

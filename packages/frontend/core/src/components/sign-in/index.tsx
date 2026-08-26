@@ -5,14 +5,9 @@ import { useState } from 'react';
 
 import { AddSelfhostedStep } from './add-selfhosted';
 import { SignInStep } from './sign-in';
-import { SignInWithEmailStep } from './sign-in-with-email';
 import { SignInWithPasswordStep } from './sign-in-with-password';
 
-export type SignInStep =
-  | 'signIn'
-  | 'signInWithPassword'
-  | 'signInWithEmail'
-  | 'addSelfhosted';
+export type SignInStep = 'signIn' | 'signInWithPassword' | 'addSelfhosted';
 
 export interface SignInState {
   step: SignInStep;
@@ -58,12 +53,6 @@ export const SignInPanel = ({
           changeState={setState}
           onSkip={onSkip}
           allowSkip={allowSkip}
-          onAuthenticated={onAuthenticated}
-        />
-      ) : step === 'signInWithEmail' ? (
-        <SignInWithEmailStep
-          state={state}
-          changeState={setState}
           onAuthenticated={onAuthenticated}
         />
       ) : step === 'signInWithPassword' ? (

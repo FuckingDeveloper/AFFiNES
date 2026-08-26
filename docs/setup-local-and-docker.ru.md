@@ -1,4 +1,9 @@
-# Запуск AFFiNES локально и через Docker
+# Запуск MRH TrackWork локально и через Docker
+
+> Актуальная production/self-host инструкция для MRH TrackWork находится в
+> [trackwork-selfhost.ru.md](./trackwork-selfhost.ru.md). В ней описаны новая
+> сборка только server/web/admin, password-only вход, healthchecks и
+> backup/restore.
 
 Ниже инструкция именно по этому форку и по текущей структуре репозитория.
 
@@ -12,8 +17,8 @@
    - но для полного стека всё равно нужны внешние сервисы: Postgres, Redis и почтовый сервер для dev-потока
 
 2. **Self-host запуск через Docker Compose**
-   - используется `.docker/selfhost/compose.yml`
-   - можно поднять либо upstream image, либо локально собранный image из вашего форка
+   - одной командой собираются только server, web и admin;
+   - PostgreSQL, Redis, миграции и приложение запускаются через Compose.
 
 ## Проверенные входные точки
 
@@ -22,7 +27,8 @@
 - Web dev: `yarn dev`
 - Server dev: `yarn affine server dev`
 - Инициализация backend: `yarn affine server init`
-- Полная Docker-сборка артефактов: `yarn build:docker`
+- Локальная сборка server/web/admin: `yarn build:trackwork`
+- Сборка и запуск Docker: `./scripts/start-docker-selfhost.sh`
 - Self-host compose: `.docker/selfhost/compose.yml`
 - Dev services compose: `.docker/dev/compose.yml.example`
 
@@ -189,119 +195,83 @@ yarn affine server prisma studio
 
 ---
 
-## Сценарий 2. Docker self-host с upstream image
+## Сценарий 2. Собрать и запустить TrackWork в Docker
 
-Это самый быстрый способ просто поднять self-host окружение.
+Из корня репозитория выполните одну команду:
 
 ```bash
-cd .docker/selfhost
-cp .env.example .env
+./scripts/start-docker-selfhost.sh
 ```
 
-После этого обязательно задайте пароль БД в `.env`, например:
+Скрипт автоматически:
+
+1. создаёт `.docker/selfhost/.env`, если файла ещё нет;
+2. генерирует безопасный пароль PostgreSQL;
+3. собирает Linux Docker image `trackwork-local:dev`;
+4. внутри builder-образа собирает server, web и admin с native-модулем;
+5. запускает PostgreSQL и Redis;
+6. ожидает готовности зависимостей и применяет Prisma migrations;
+7. запускает TrackWork на <http://localhost:3010>.
+
+Node.js, Yarn и Rust на host-машине для этого сценария не нужны. Mobile,
+Electron и native mobile wrappers не собираются.
+
+Первый build может занять несколько минут. Последующие сборки используют Docker
+BuildKit cache и пересобирают только изменившиеся слои.
+
+Строка `Compiling affine_server_native` относится к обязательному native-модулю
+backend, а не к mobile или desktop. Он компилируется под Linux внутри builder и
+нужен server во время запуска. Dockerfile использует incremental Cargo cache,
+параллельную code generation и отключает долгий LTO, поэтому наиболее долгой
+является только первая сборка для выбранной архитектуры.
+
+Проверить результат:
 
 ```bash
-DB_PASSWORD=affine
-```
-
-Запуск:
-
-```bash
-docker compose up -d
-```
-
-Проверка:
-
-```bash
-docker compose ps
-docker compose logs --tail=120 affine_migration affine
-curl -fsS http://localhost:3010/info
-```
-
-Остановка:
-
-```bash
-docker compose down
-```
-
----
-
-## Сценарий 3. Docker self-host именно из вашего форка
-
-Если нужен запуск **вашего кода**, а не `ghcr.io/toeverything/affine:stable`, нужен локальный image.
-
-### 1) Собрать артефакты
-
-```bash
-yarn install
-yarn build:docker
-```
-
-`build:docker` включает:
-
-- `build:server`
-- `build`
-- `build:admin`
-- `build:mobile`
-
-### 2) Собрать image
-
-```bash
-docker build -f .github/deployment/node/Dockerfile -t affine-local:dev .
-```
-
-### 3) Подготовить selfhost env
-
-```bash
-cd .docker/selfhost
-cp .env.example .env
-```
-
-Заполните минимум:
-
-```bash
-DB_PASSWORD=affine
-PORT=3010
-```
-
-### 4) Запустить compose с override
-
-В репозитории уже есть `.docker/selfhost/compose.local.yml`, который подменяет image на `affine-local:dev`.
-
-Запуск:
-
-```bash
-docker compose -f compose.yml -f compose.local.yml up -d
-```
-
-Проверка:
-
-```bash
-docker compose -f compose.yml -f compose.local.yml ps -a
-docker compose -f compose.yml -f compose.local.yml logs --tail=120 affine_migration affine
-curl -fsS http://localhost:3010/info
+./scripts/start-docker-selfhost.sh --status
+curl -fsS http://localhost:3010/health/ready
 ```
 
 Ожидаемое состояние:
 
-- `affine_migration` завершился с кодом `0`
-- `affine_server` находится в `Up`
-- `/info` возвращает JSON с self-host информацией
+- migration-контейнер завершился с кодом `0`;
+- контейнер приложения имеет состояние `Up`/`healthy`;
+- readiness endpoint возвращает успешный ответ.
 
-Остановка:
+### Управление стеком
+
+Только собрать image, не запуская контейнеры:
 
 ```bash
-docker compose -f compose.yml -f compose.local.yml down
+./scripts/start-docker-selfhost.sh --build
 ```
+
+Пересобрать и запустить явно:
+
+```bash
+./scripts/start-docker-selfhost.sh --up
+```
+
+Посмотреть журналы:
+
+```bash
+./scripts/start-docker-selfhost.sh --logs
+```
+
+Остановить контейнеры без удаления данных:
+
+```bash
+./scripts/start-docker-selfhost.sh --down
+```
+
+Не используйте `docker compose down -v`, если хотите сохранить базу и файлы.
 
 ---
 
 ## Готовые скрипты
 
-Я добавил два скрипта:
-
-- `scripts/start-local-no-docker.sh`
-- `scripts/start-docker-selfhost.sh`
+- `scripts/start-local-no-docker.sh` — локальная разработка;
+- `scripts/start-docker-selfhost.sh` — полная Docker-сборка и запуск TrackWork.
 
 ### Локальный сценарий
 
@@ -329,47 +299,10 @@ docker compose -f compose.yml -f compose.local.yml down
 ./scripts/start-local-no-docker.sh --web
 ```
 
-### Docker-сценарий
-
-Быстро поднять upstream image:
-
-```bash
-./scripts/start-docker-selfhost.sh --upstream
-```
-
-Собрать и поднять ваш fork image:
-
-```bash
-./scripts/start-docker-selfhost.sh --local-image
-```
-
-Остановить upstream стек:
-
-```bash
-./scripts/start-docker-selfhost.sh --down-upstream
-```
-
-Остановить стек локального image:
-
-```bash
-./scripts/start-docker-selfhost.sh --down-local
-```
-
-Показать логи:
-
-```bash
-./scripts/start-docker-selfhost.sh --logs-upstream
-./scripts/start-docker-selfhost.sh --logs-local
-```
-
----
-
 ## Практический вывод
 
 Если цель:
 
-- **быстро просто посмотреть продукт** -> используйте Docker upstream
-- **поднимать именно ваш форк в контейнере** -> `--local-image`
-- **разрабатывать web/server и дебажить код** -> локальный сценарий без Docker для app-процессов, но с локально установленными Postgres/Redis/Mailpit
-
-Если хотите, следующим сообщением я могу ещё сделать третий скрипт: `scripts/stop-all-affine.sh`, чтобы одной командой гасить оба сценария.
+- **собрать и поднять ваш форк целиком** — `./scripts/start-docker-selfhost.sh`;
+- **разрабатывать web/server с быстрым hot reload** — локальный сценарий без
+  Docker для app-процессов, но с PostgreSQL и Redis.

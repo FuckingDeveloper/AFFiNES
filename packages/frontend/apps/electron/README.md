@@ -1,8 +1,8 @@
-# MRH ManSys Electron App
+# TrackWork Electron App
 
 ## Development
 
-To run MRH ManSys Desktop Client Application locally, run the following commands:
+To run TrackWork Desktop Client Application locally, run the following commands:
 
 ```sh
 # in repo root

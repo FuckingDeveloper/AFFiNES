@@ -14,7 +14,7 @@ test.describe('AIAction/GenerateOutline', () => {
   }) => {
     const { generateOutline } = await utils.editor.askAIWithText(
       page,
-      'MRH ManSys is a workspace with fully merged docs'
+      'TrackWork is a workspace with fully merged docs'
     );
     const { answer, responses } = await generateOutline();
     await expect(answer).toHaveText(/AFFiNE/, { timeout: 10000 });
@@ -30,7 +30,7 @@ test.describe('AIAction/GenerateOutline', () => {
       async () => {
         await utils.editor.createEdgelessText(
           page,
-          'MRH ManSys is a workspace with fully merged docs'
+          'TrackWork is a workspace with fully merged docs'
         );
       }
     );
@@ -48,7 +48,7 @@ test.describe('AIAction/GenerateOutline', () => {
       async () => {
         await utils.editor.createEdgelessNote(
           page,
-          'MRH ManSys is a workspace with fully merged docs'
+          'TrackWork is a workspace with fully merged docs'
         );
       }
     );
@@ -63,7 +63,7 @@ test.describe('AIAction/GenerateOutline', () => {
   }) => {
     const { generateOutline } = await utils.editor.askAIWithText(
       page,
-      'MRH ManSys is a workspace with fully merged docs'
+      'TrackWork is a workspace with fully merged docs'
     );
     const { answer } = await generateOutline();
     await expect(answer).toHaveText(/AFFiNE/, { timeout: 10000 });

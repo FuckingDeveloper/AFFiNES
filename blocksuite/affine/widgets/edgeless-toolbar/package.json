@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-edgeless-toolbar",
-  "description": "MRH ManSys edgeless toolbar widget.",
+  "description": "TrackWork edgeless toolbar widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

@@ -11,6 +11,8 @@ import {
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
+import { I18nProvider } from '../../i18n';
+
 const useAppConfigMock = vi.fn();
 
 vi.mock('./use-app-config', () => ({
@@ -88,7 +90,7 @@ describe('SettingsPage', () => {
     useAppConfigMock.mockReturnValue({
       appConfig: {
         server: {
-          name: 'MRH ManSys',
+          name: 'TrackWork',
         },
         auth: {
           allowSignup: true,
@@ -96,7 +98,7 @@ describe('SettingsPage', () => {
       },
       patchedAppConfig: {
         server: {
-          name: 'MRH ManSys',
+          name: 'TrackWork',
         },
         auth: {
           allowSignup: true,
@@ -117,11 +119,13 @@ describe('SettingsPage', () => {
 
   test('shows the first settings group by default', () => {
     render(
-      <MemoryRouter initialEntries={['/admin/settings']}>
-        <Routes>
-          <Route path="/admin/settings" element={<SettingsPage />} />
-        </Routes>
-      </MemoryRouter>
+      <I18nProvider>
+        <MemoryRouter initialEntries={['/admin/settings']}>
+          <Routes>
+            <Route path="/admin/settings" element={<SettingsPage />} />
+          </Routes>
+        </MemoryRouter>
+      </I18nProvider>
     );
 
     const serverItem = document.getElementById('config-module-server');
@@ -132,14 +136,16 @@ describe('SettingsPage', () => {
 
   test('switches settings groups from the left navigation', () => {
     render(
-      <MemoryRouter initialEntries={['/admin/settings']}>
-        <Routes>
-          <Route path="/admin/settings" element={<SettingsPage />} />
-        </Routes>
-      </MemoryRouter>
+      <I18nProvider>
+        <MemoryRouter initialEntries={['/admin/settings']}>
+          <Routes>
+            <Route path="/admin/settings" element={<SettingsPage />} />
+          </Routes>
+        </MemoryRouter>
+      </I18nProvider>
     );
 
-    fireEvent.mouseDown(screen.getByRole('tab', { name: /Auth/i }));
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Авторизация' }));
 
     const serverItem = document.getElementById('config-module-server');
     const authItem = document.getElementById('config-module-auth');
@@ -152,7 +158,7 @@ describe('SettingsPage', () => {
     useAppConfigMock.mockReturnValue({
       appConfig: {
         server: {
-          name: 'MRH ManSys',
+          name: 'TrackWork',
         },
         auth: {
           allowSignup: true,
@@ -160,7 +166,7 @@ describe('SettingsPage', () => {
       },
       patchedAppConfig: {
         server: {
-          name: 'MRH ManSys',
+          name: 'TrackWork',
         },
         auth: {
           allowSignup: true,
@@ -177,11 +183,13 @@ describe('SettingsPage', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/admin/settings']}>
-        <Routes>
-          <Route path="/admin/settings" element={<SettingsPage />} />
-        </Routes>
-      </MemoryRouter>
+      <I18nProvider>
+        <MemoryRouter initialEntries={['/admin/settings']}>
+          <Routes>
+            <Route path="/admin/settings" element={<SettingsPage />} />
+          </Routes>
+        </MemoryRouter>
+      </I18nProvider>
     );
 
     const serverItem = document.getElementById('config-module-server');

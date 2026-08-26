@@ -2,7 +2,7 @@
 // TODO(@Peng): automate this
 export const promptKeys = [
   // text actions
-  'Chat With MRH ManSys AI',
+  'Chat With TrackWork AI',
   'Summary',
   'Summary as title',
   'Generate a caption',

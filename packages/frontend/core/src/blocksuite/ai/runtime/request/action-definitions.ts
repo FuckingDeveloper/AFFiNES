@@ -49,7 +49,7 @@ const textAction = (
 export const actionDefinitions = {
   chat: {
     id: 'chat',
-    promptName: 'Chat With MRH ManSys AI',
+    promptName: 'Chat With TrackWork AI',
     responseType: 'text',
     timeout: 5 * 60 * 1000,
     endpoint: Endpoint.StreamObject,

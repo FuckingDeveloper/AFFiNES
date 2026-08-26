@@ -55,8 +55,8 @@
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "MRH ManSys AI Yearly Subscription",
-              "displayName" : "MRH ManSys AI Yearly",
+              "description" : "TrackWork AI Yearly Subscription",
+              "displayName" : "TrackWork AI Yearly",
               "locale" : "en_US"
             }
           ],
@@ -92,8 +92,8 @@
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "MRH ManSys Pro Monthly Subscription",
-              "displayName" : "MRH ManSys Pro Monthly",
+              "description" : "TrackWork Pro Monthly Subscription",
+              "displayName" : "TrackWork Pro Monthly",
               "locale" : "en_US"
             }
           ],
@@ -120,8 +120,8 @@
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "MRH ManSys Pro Yearly Subscription",
-              "displayName" : "MRH ManSys Pro Yearly",
+              "description" : "TrackWork Pro Yearly Subscription",
+              "displayName" : "TrackWork Pro Yearly",
               "locale" : "en_US"
             }
           ],

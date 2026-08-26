@@ -22,7 +22,7 @@ import type {
 } from '../types';
 
 /**
- * Yjs Adapter for MRH ManSys ORM
+ * Yjs Adapter for TrackWork ORM
  *
  * Structure:
  *

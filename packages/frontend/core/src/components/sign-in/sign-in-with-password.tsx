@@ -16,11 +16,11 @@ import {
 import type { AuthSessionStatus } from '@affine/core/modules/cloud/entities/session';
 import { Unreachable } from '@affine/env/constant';
 import { UserFriendlyError } from '@affine/error';
-import { ServerAuthMode, ServerDeploymentType } from '@affine/graphql';
+import { ServerAuthMode } from '@affine/graphql';
 import { useI18n } from '@affine/i18n';
 import { useLiveData, useService } from '@toeverything/infra';
 import type { Dispatch, SetStateAction } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { SignInState } from '.';
 import { Back } from './back';
@@ -54,11 +54,6 @@ export const SignInWithPasswordStep = ({
   const [twoFactorErrorHint, setTwoFactorErrorHint] = useState('');
   const captchaService = useService(CaptchaService);
   const serverService = useService(ServerService);
-  const isSelfhosted = useLiveData(
-    serverService.server.config$.selector(
-      c => c.type === ServerDeploymentType.Selfhosted
-    )
-  );
   const serverName = useLiveData(
     serverService.server.config$.selector(c => c.serverName)
   );
@@ -157,10 +152,6 @@ export const SignInWithPasswordStep = ({
     t,
   ]);
 
-  const sendMagicLink = useCallback(() => {
-    changeState(prev => ({ ...prev, step: 'signInWithEmail' }));
-  }, [changeState]);
-
   const authModeLabel =
     authMode === ServerAuthMode.LDAP
       ? 'LDAP'
@@ -176,9 +167,7 @@ export const SignInWithPasswordStep = ({
       />
 
       <AuthContent>
-        <div className={styles.authModeHint}>
-          Sign in with {authModeLabel}
-        </div>
+        <div className={styles.authModeHint}>Sign in with {authModeLabel}</div>
 
         <AuthInput
           label={t['com.affine.settings.email']()}
@@ -224,17 +213,6 @@ export const SignInWithPasswordStep = ({
             onEnter={onSignIn}
           />
         ) : null}
-        {!isSelfhosted && (
-          <div className={styles.passwordButtonRow}>
-            <a
-              data-testid="send-magic-link-button"
-              className={styles.linkButton}
-              onClick={sendMagicLink}
-            >
-              {t['com.affine.auth.sign.auth.code.send-email.sign-in']()}
-            </a>
-          </div>
-        )}
         {!verifyToken && needCaptcha && <Captcha />}
         <Button
           data-testid="sign-in-button"

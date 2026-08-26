@@ -64,9 +64,12 @@ export class DocRendererController {
     private readonly policy: WorkspacePolicyService
   ) {
     this.webAssets = this.readHtmlAssets(join(env.projectRoot, 'static'));
-    this.mobileAssets = this.readHtmlAssets(
-      join(env.projectRoot, 'static/mobile')
-    );
+    this.mobileAssets = env.namespaces.canary
+      ? this.readHtmlAssets(
+          join(env.projectRoot, 'static/mobile'),
+          this.webAssets
+        )
+      : this.webAssets;
   }
 
   private buildVisitorId(req: Request, workspaceId: string, docId: string) {
@@ -203,8 +206,8 @@ export class DocRendererController {
     }
 
     const title = opts?.title
-      ? htmlSanitize(`${opts.title} | MRH ManSys`)
-      : 'MRH ManSys';
+      ? htmlSanitize(`${opts.title} | TrackWork`)
+      : 'TrackWork';
     const summary = opts ? htmlSanitize(opts.summary) : assets.description;
     const image = opts?.avatar ?? 'https://affine.pro/og.jpeg';
 
@@ -261,7 +264,7 @@ export class DocRendererController {
   /**
    * Should only be called at startup time
    */
-  private readHtmlAssets(path: string): HtmlAssets {
+  private readHtmlAssets(path: string, fallback?: HtmlAssets): HtmlAssets {
     const manifestPath = join(path, 'assets-manifest.json');
 
     try {
@@ -277,6 +280,10 @@ export class DocRendererController {
 
       return assets;
     } catch (e) {
+      if (fallback) {
+        return fallback;
+      }
+
       if (env.prod) {
         throw e;
       } else {

@@ -1,4 +1,4 @@
-name: 'MRH ManSys Rust build'
+name: 'TrackWork Rust build'
 description: 'Rust build setup, including cache configuration'
 inputs:
   target:

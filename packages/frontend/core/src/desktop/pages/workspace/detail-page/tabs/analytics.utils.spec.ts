@@ -34,11 +34,12 @@ describe('analytics.utils', () => {
     ]);
   });
 
-  test('isLockedAnalyticsWindowOption locks windows over 7 days for non-team workspaces', () => {
+  test('isLockedAnalyticsWindowOption locks windows over 90 days for non-team workspaces', () => {
     expect(
       isLockedAnalyticsWindowOption(NON_TEAM_ANALYTICS_WINDOW_DAYS, false)
     ).toBe(false);
-    expect(isLockedAnalyticsWindowOption(14, false)).toBe(true);
+    expect(isLockedAnalyticsWindowOption(14, false)).toBe(false);
+    expect(isLockedAnalyticsWindowOption(91, false)).toBe(true);
     expect(isLockedAnalyticsWindowOption(14, true)).toBe(false);
   });
 

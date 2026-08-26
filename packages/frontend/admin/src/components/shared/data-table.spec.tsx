@@ -65,7 +65,7 @@ describe('SharedDataTable', () => {
       />
     );
 
-    expect(screen.queryByText('Loading...')).not.toBeNull();
+    expect(screen.queryByText('Загрузка...')).not.toBeNull();
     expect(screen.getByTestId('pagination').dataset.disabled).toBe('true');
   });
 
@@ -80,6 +80,6 @@ describe('SharedDataTable', () => {
       />
     );
 
-    expect(screen.queryByText('No results.')).not.toBeNull();
+    expect(screen.queryByText('Нет результатов.')).not.toBeNull();
   });
 });

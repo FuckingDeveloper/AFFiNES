@@ -14,11 +14,11 @@ interface AppConfig {
 
 const config: CapacitorConfig & AppConfig = {
   appId: 'app.affine.pro',
-  appName: 'MRH ManSys',
+  appName: 'TrackWork',
   webDir: 'dist',
   affineVersion: packageJson.version,
   ios: {
-    scheme: 'MRH ManSys',
+    scheme: 'TrackWork',
     path: '.',
     webContentsDebuggingEnabled: true,
   },

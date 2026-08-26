@@ -66,7 +66,7 @@ export const IntegrationSetting = ({
           <>
             {t['com.affine.integration.setting.description']()}
             {/* <br /> */}
-            {/* <a>{t['Learn how to develop a integration for MRH ManSys']()}</a> */}
+            {/* <a>{t['Learn how to develop a integration for TrackWork']()}</a> */}
           </>
         }
       />

@@ -61,7 +61,7 @@ export interface PlanCardProps {
   scrollRef?: React.RefObject<HTMLDivElement>;
 }
 export const CloudPlanLayout = ({
-  title = 'MRH ManSys Cloud',
+  title = 'TrackWork Cloud',
   caption,
   select,
   toggle,

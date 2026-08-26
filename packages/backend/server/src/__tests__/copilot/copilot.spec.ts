@@ -624,7 +624,7 @@ test('should be able to update chat session prompt', async t => {
   // Update the session
   const updatedSessionId = await session.update({
     sessionId,
-    promptName: 'Chat With MRH ManSys AI',
+    promptName: 'Chat With TrackWork AI',
     userId,
   });
   t.is(updatedSessionId, sessionId, 'should update session with same id');
@@ -634,7 +634,7 @@ test('should be able to update chat session prompt', async t => {
   t.truthy(updatedSession, 'should retrieve updated session');
   t.is(
     updatedSession?.config.promptName,
-    'Chat With MRH ManSys AI',
+    'Chat With TrackWork AI',
     'should have updated prompt name'
   );
 });

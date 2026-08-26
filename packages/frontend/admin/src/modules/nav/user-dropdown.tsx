@@ -17,8 +17,8 @@ import { CircleUser } from 'lucide-react';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { useI18n } from '../../i18n';
 import { affineFetch } from '../../fetch-utils';
+import { useI18n } from '../../i18n';
 import { useCurrentUser, useRevalidateCurrentUser } from '../common';
 
 interface UserDropdownProps {
@@ -125,7 +125,9 @@ export function UserDropdown({ isCollapsed }: UserDropdownProps) {
             ) : null}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={handleLogout}>{t('user.logout')}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleLogout}>
+            {t('user.logout')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -165,7 +167,9 @@ export function UserDropdown({ isCollapsed }: UserDropdownProps) {
             ) : null}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={handleLogout}>{t('user.logout')}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleLogout}>
+            {t('user.logout')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

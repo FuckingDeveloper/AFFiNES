@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import ava, { TestFn } from 'ava';
 
-import { Config, ConfigModule } from '../../base';
+import { Config } from '../../base';
+import { ConfigModule } from '../../base/config';
 import { CurrentUser } from '../../core/auth';
 import { AuthMode } from '../../core/auth/config';
 import { EnterpriseAuthService } from '../../core/auth/enterprise-auth';
@@ -46,7 +47,7 @@ test.before(async t => {
 
   const m = await createTestingModule({
     imports: [ConfigModule.override(), QuotaModule, FeatureModule, UserModule],
-    providers: [AuthService],
+    providers: [AuthService, EnterpriseAuthService],
     tapModule(builder) {
       builder.overrideProvider(EnterpriseAuthService).useValue(enterprise);
     },
@@ -70,7 +71,7 @@ test.beforeEach(async t => {
 });
 
 test.after.always(async t => {
-  await t.context.m.close();
+  await t.context.m?.close();
 });
 
 test('should be able to sign in by password', async t => {

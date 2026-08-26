@@ -16,22 +16,21 @@ export interface EnterpriseAuthResult {
 }
 
 function escapeLdapFilterValue(value: string) {
-  return value.replaceAll(/[\\()*\u0000]/g, ch => {
-    switch (ch) {
-      case '\\':
-        return '\\5c';
-      case '*':
-        return '\\2a';
-      case '(':
-        return '\\28';
-      case ')':
-        return '\\29';
-      case '\u0000':
-        return '\\00';
-      default:
-        return ch;
-    }
-  });
+  return value
+    .replaceAll('\\', '\\5c')
+    .replaceAll(/[()*]/g, ch => {
+      switch (ch) {
+        case '*':
+          return '\\2a';
+        case '(':
+          return '\\28';
+        case ')':
+          return '\\29';
+        default:
+          return ch;
+      }
+    })
+    .replaceAll('\0', '\\00');
 }
 
 function normalizeDomainList(domains: string[]) {

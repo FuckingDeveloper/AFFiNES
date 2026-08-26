@@ -10,18 +10,18 @@ import { nanoid } from 'nanoid';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
+  buildDefaultTransitions,
+  buildDefaultTypeTransitions,
   DEFAULT_FLOW,
-  TASK_TYPES,
+  resolveTaskTrackerBoards,
+  sanitizeTransitions,
+  sanitizeTypeTransitions,
   TASK_STATUS_PROPERTY,
+  TASK_TYPES,
   type TaskFlowColumn,
-  type TaskType,
   type TaskTrackerBoard,
   type TaskTrackerPropertyAdditionalData,
-  buildDefaultTypeTransitions,
-  buildDefaultTransitions,
-  resolveTaskTrackerBoards,
-  sanitizeTypeTransitions,
-  sanitizeTransitions,
+  type TaskType,
 } from '../../../../pages/workspace/task-tracker/config';
 import * as styles from './styles.css';
 
@@ -31,6 +31,8 @@ const TASK_TYPE_OPTIONS: Array<{ value: TaskType; label: string }> = [
   { value: 'task', label: 'Task' },
   { value: 'epic', label: 'Epic' },
 ];
+
+const EMPTY_ADDITIONAL_DATA: TaskTrackerPropertyAdditionalData = {};
 
 const createDefaultBoardFlow = (): TaskFlowColumn[] => {
   return DEFAULT_FLOW.map(column => ({
@@ -46,10 +48,13 @@ export const WorkspaceTaskTrackerSetting = () => {
     workspacePropertyService.propertyInfo$(TASK_STATUS_PROPERTY)
   );
 
-  const additionalData =
-    (statusPropertyInfo?.additionalData as
-      | TaskTrackerPropertyAdditionalData
-      | undefined) ?? {};
+  const additionalData = useMemo(
+    () =>
+      (statusPropertyInfo?.additionalData as
+        | TaskTrackerPropertyAdditionalData
+        | undefined) ?? EMPTY_ADDITIONAL_DATA,
+    [statusPropertyInfo?.additionalData]
+  );
 
   const boards = useMemo(
     () => resolveTaskTrackerBoards(additionalData),

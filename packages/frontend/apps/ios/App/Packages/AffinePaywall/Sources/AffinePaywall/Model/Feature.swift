@@ -10,7 +10,7 @@ import Foundation
 struct Feature: Identifiable, Equatable, Hashable {
   var id = UUID()
   var text: String
-  var isHighlighted: Bool // For text like "Everything in MRH ManSys Pro"
+  var isHighlighted: Bool // For text like "Everything in TrackWork Pro"
 
   init(_ text: String, isHighlighted: Bool = false) {
     self.text = text

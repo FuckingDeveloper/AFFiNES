@@ -46,7 +46,8 @@ export const ImportPage = ({
     <div className={importPageBodyStyle}>
       <div className="title">Import</div>
       <span>
-        MRH ManSys will gradually support more and more file types for import.&nbsp;
+        TrackWork will gradually support more and more file types for
+        import.&nbsp;
         <a
           href="https://affine.pro/redirect/discord"
           target="_blank"

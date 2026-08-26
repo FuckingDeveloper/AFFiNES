@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "MRH ManSys Routes Schema",
+  "description": "TrackWork Routes Schema",
   "definitions": {
     "route": {
       "type": "string",

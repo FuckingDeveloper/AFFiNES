@@ -9,7 +9,7 @@ export default function ChangeEmailNotification(
 ) {
   return (
     <Template>
-      <Title>Verify your current email for MRH ManSys</Title>
+      <Title>Verify your current email for TrackWork</Title>
       <Content>
         <P>
           As per your request, we have changed your email. Please make sure

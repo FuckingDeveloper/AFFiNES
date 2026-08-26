@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-keyboard-toolbar",
-  "description": "MRH ManSys keyboard toolbar widget.",
+  "description": "TrackWork keyboard toolbar widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

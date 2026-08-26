@@ -11,6 +11,14 @@ export function getBuildConfig(
   pkg: Package,
   buildFlags: BuildFlags
 ): BUILD_CONFIG_TYPE {
+  const buildDate = new Date();
+  const buildStamp = buildDate
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace('T', '.')
+    .slice(0, 13);
+  const revision = (process.env.GITHUB_SHA ?? 'local').slice(0, 8);
+  const displayVersion = `v${pkg.version} · ${buildStamp} · ${revision}`;
   const distribution = PackageToDistribution.get(pkg.name);
 
   if (!distribution) {
@@ -41,14 +49,20 @@ export function getBuildConfig(
 
         appBuildType: 'stable' as const,
         appVersion: pkg.version,
+        displayVersion,
         // editorVersion: pkg.dependencies['@blocksuite/affine'],
         editorVersion: pkg.version,
+        productName: 'MRH TrackWork',
+        productShortName: 'TrackWork',
+        websiteUrl: 'https://trackwork.mrhsoftware.com',
+        helpUrl: 'https://trackwork.mrhsoftware.com/help',
+        supportEmail: 'trackwork@mrhsoftware.com',
         githubUrl: 'https://github.com/toeverything/AFFiNE',
-        changelogUrl: 'https://affine.pro/what-is-new',
-        downloadUrl: 'https://affine.pro/download',
-        pricingUrl: 'https://affine.pro/pricing',
-        discordUrl: 'https://affine.pro/redirect/discord',
-        requestLicenseUrl: 'https://affine.pro/redirect/license',
+        changelogUrl: 'https://trackwork.mrhsoftware.com/help',
+        downloadUrl: 'https://trackwork.mrhsoftware.com',
+        pricingUrl: 'https://trackwork.mrhsoftware.com',
+        discordUrl: 'https://trackwork.mrhsoftware.com/help',
+        requestLicenseUrl: 'mailto:trackwork@mrhsoftware.com',
         imageProxyUrl: '/api/worker/image-proxy',
         linkPreviewUrl: '/api/worker/link-preview',
         CAPTCHA_SITE_KEY: process.env.CAPTCHA_SITE_KEY ?? '',
@@ -59,14 +73,12 @@ export function getBuildConfig(
       return {
         ...this.stable,
         appBuildType: 'beta' as const,
-        changelogUrl: 'https://github.com/toeverything/AFFiNE/releases',
       };
     },
     get internal() {
       return {
         ...this.stable,
         appBuildType: 'internal' as const,
-        changelogUrl: 'https://github.com/toeverything/AFFiNE/releases',
       };
     },
     // canary will be aggressive and enable all features
@@ -74,7 +86,6 @@ export function getBuildConfig(
       return {
         ...this.stable,
         appBuildType: 'canary' as const,
-        changelogUrl: 'https://github.com/toeverything/AFFiNE/releases',
       };
     },
   };

@@ -212,7 +212,7 @@ export async function cleanupWorkspace(workspaceId: string): Promise<void> {
 export async function switchDefaultChatModel(model: string) {
   await runPrisma(async client => {
     const prompt = await client.aiPrompt.findFirst({
-      where: { name: 'Chat With MRH ManSys AI' },
+      where: { name: 'Chat With TrackWork AI' },
       select: { id: true },
     });
     if (!prompt) return;

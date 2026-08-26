@@ -81,7 +81,7 @@ const UnauthorizedUserProfile = () => {
       onClick={() => globalDialogService.open('sign-in', {})}
       avatar={<Avatar size={48} rounded={4} />}
       title="Sign up / Sign in"
-      caption="Sync with MRH ManSys Cloud"
+      caption="Sync with TrackWork Cloud"
     />
   );
 };

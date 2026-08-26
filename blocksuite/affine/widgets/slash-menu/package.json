@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-slash-menu",
-  "description": "MRH ManSys slash menu widget.",
+  "description": "TrackWork slash menu widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

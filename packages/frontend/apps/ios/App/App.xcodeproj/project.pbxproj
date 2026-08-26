@@ -208,9 +208,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		504EC3031FED79650016851F /* MRH ManSys */ = {
+		504EC3031FED79650016851F /* TrackWork */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "MRH ManSys" */;
+			buildConfigurationList = 504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "TrackWork" */;
 			buildPhases = (
 				6634F4EFEBD30273BCE97C65 /* [CP] Check Pods Manifest.lock */,
 				C4C97C6A2D0300E100BC2AD1 /* Build Rust */,
@@ -227,7 +227,7 @@
 			fileSystemSynchronizedGroups = (
 				9DAE85B72E7BAC3B00DB9F1D /* Plugins */,
 			);
-			name = MRH ManSys;
+			name = TrackWork;
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* AFFiNE.app */;
 			productType = "com.apple.product-type.application";
@@ -261,7 +261,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				504EC3031FED79650016851F /* MRH ManSys */,
+				504EC3031FED79650016851F /* TrackWork */,
 			);
 		};
 /* End PBXProject section */
@@ -581,7 +581,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "MRH ManSys" */ = {
+		504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "TrackWork" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				504EC3171FED79650016851F /* Debug */,

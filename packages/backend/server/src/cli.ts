@@ -33,7 +33,7 @@ function buildProgram(logger: Logger) {
 
   program
     .name(getProgramName())
-    .description('MRH ManSys server CLI')
+    .description('TrackWork server CLI')
     .showHelpAfterError()
     .showSuggestionAfterError();
 

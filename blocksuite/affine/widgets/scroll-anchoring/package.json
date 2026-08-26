@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-scroll-anchoring",
-  "description": "MRH ManSys scroll anchoring widget.",
+  "description": "TrackWork scroll anchoring widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

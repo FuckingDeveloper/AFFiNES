@@ -7,6 +7,7 @@ import {
   InternalServerError,
   Mutex,
   PasswordRequired,
+  Throttle,
   UseNamedGuard,
 } from '../../base';
 import { Models } from '../../models';
@@ -21,6 +22,7 @@ interface CreateUserInput {
 }
 
 @UseNamedGuard('selfhost')
+@Throttle('strict')
 @Controller('/api/setup')
 export class CustomSetupController {
   constructor(
@@ -58,9 +60,16 @@ export class CustomSetupController {
     if (!lock) {
       throw new InternalServerError();
     }
+
+    // Re-check while holding the distributed lock so two concurrent setup
+    // requests cannot create more than one initial administrator.
+    if (await this.server.initialized()) {
+      throw new ActionForbidden('First user already created');
+    }
+
     const user = await this.models.user.create({
-      name: input.name || undefined,
-      email: input.email,
+      name: input.name?.trim() || undefined,
+      email: input.email.trim().toLowerCase(),
       password: input.password,
       registered: true,
     });

@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 
 import { useI18n } from '../../i18n';
-import { NavItem } from './nav-item';
 import { LanguageSwitcher } from './language-switcher';
+import { NavItem } from './nav-item';
 import { ServerVersion } from './server-version';
 import { SettingsItem } from './settings-item';
 import { UserDropdown } from './user-dropdown';

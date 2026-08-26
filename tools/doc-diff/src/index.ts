@@ -11,7 +11,7 @@ import {
 type Mode = 'rootdoc' | 'folder' | 'favorite';
 
 const HELP_TEXT = `
-Diff MRH ManSys Yjs snapshot docs between multiple binaries.
+Diff TrackWork Yjs snapshot docs between multiple binaries.
 
 Usage:
   # Root doc: diff meta.pages

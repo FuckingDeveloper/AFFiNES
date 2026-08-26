@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-toolbar",
-  "description": "MRH ManSys toolbar widget.",
+  "description": "TrackWork toolbar widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

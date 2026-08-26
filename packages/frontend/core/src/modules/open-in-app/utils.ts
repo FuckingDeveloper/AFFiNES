@@ -79,7 +79,7 @@ export function normalizeOpenAppSignInNextParam(
   return normalized;
 }
 
-// return an MRH ManSys app's url to be opened in desktop app
+// return an TrackWork app's url to be opened in desktop app
 export const getOpenUrlInDesktopAppLink = (
   url: string,
   newTab = true,

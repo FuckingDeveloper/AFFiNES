@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch MRH ManSys Cloud",
+      "name": "Launch TrackWork Cloud",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "yarn",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "name": "Lanuch MRH ManSys Web",
+      "name": "Lanuch TrackWork Web",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "yarn",
@@ -28,7 +28,7 @@
     {
       "type": "chrome",
       "request": "launch",
-      "name": "Debug MRH ManSys Web",
+      "name": "Debug TrackWork Web",
       "url": "http://localhost:8080"
     }
   ]

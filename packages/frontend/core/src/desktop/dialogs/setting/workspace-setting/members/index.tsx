@@ -8,13 +8,12 @@ import { useService } from '@toeverything/infra';
 import type { ReactElement } from 'react';
 
 import type { SettingState } from '../../types';
-import { EnableCloudPanel } from '../preference/enable-cloud';
 import { CloudWorkspaceMembersPanel } from './cloud-members-panel';
 import * as styles from './styles.css';
 
 export const MembersPanel = ({
   onChangeSettingState,
-  onCloseSetting,
+  onCloseSetting: _onCloseSetting,
 }: {
   onChangeSettingState: (settingState: SettingState) => void;
   onCloseSetting: () => void;
@@ -22,7 +21,7 @@ export const MembersPanel = ({
   const workspace = useService(WorkspaceService).workspace;
   const isTeam = useWorkspaceInfo(workspace.meta)?.isTeam;
   if (workspace.flavour === 'local') {
-    return <MembersPanelLocal onCloseSetting={onCloseSetting} />;
+    return <MembersPanelLocal />;
   }
   return (
     <AffineErrorBoundary>
@@ -34,11 +33,7 @@ export const MembersPanel = ({
   );
 };
 
-const MembersPanelLocal = ({
-  onCloseSetting,
-}: {
-  onCloseSetting: () => void;
-}) => {
+const MembersPanelLocal = () => {
   const t = useI18n();
   return (
     <div className={styles.localMembersPanel}>
@@ -49,7 +44,6 @@ const MembersPanelLocal = ({
           </SettingRow>
         </div>
       </Tooltip>
-      <EnableCloudPanel onCloseSetting={onCloseSetting} />
     </div>
   );
 };

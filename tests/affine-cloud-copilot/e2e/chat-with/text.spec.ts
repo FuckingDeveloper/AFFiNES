@@ -62,7 +62,7 @@ test.describe('AIChatWith/Text', () => {
   test('should support insert above', async ({ loggedInPage: page, utils }) => {
     const { generateHeadings } = await utils.editor.askAIWithText(
       page,
-      'MRH ManSys'
+      'TrackWork'
     );
     const { answer } = await generateHeadings();
     await answer.locator('h1').isVisible();
@@ -71,7 +71,7 @@ test.describe('AIChatWith/Text', () => {
     const insertAbove = answer.getByTestId('answer-insert-above');
     await insertAbove.click();
     const content = await utils.editor.getEditorContent(page);
-    expect(content).toBe('MRH ManSys\nAFFiNE');
+    expect(content).toBe('TrackWork\nAFFiNE');
   });
 
   test('should support replace selection', async ({

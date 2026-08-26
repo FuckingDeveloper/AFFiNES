@@ -43,6 +43,7 @@ export const credentialsRequirementsFragment = `fragment CredentialsRequirements
 }`;
 export const currentUserProfileFragment = `fragment CurrentUserProfile on UserType {
   id
+  username
   name
   email
   avatarUrl
@@ -449,6 +450,7 @@ export const getUserByEmailQuery = {
   query: `query getUserByEmail($email: String!) {
   userByEmail(email: $email) {
     id
+    username
     name
     email
     features
@@ -468,6 +470,7 @@ export const importUsersMutation = {
     __typename
     ... on UserType {
       id
+      username
       name
       email
     }
@@ -485,6 +488,7 @@ export const listUsersQuery = {
   query: `query listUsers($filter: ListUserInput!) {
   users(filter: $filter) {
     id
+    username
     name
     email
     disabled
@@ -521,6 +525,7 @@ export const updateAccountMutation = {
   query: `mutation updateAccount($id: String!, $input: ManageUserInput!) {
   updateUser(id: $id, input: $input) {
     id
+    username
     name
     email
   }

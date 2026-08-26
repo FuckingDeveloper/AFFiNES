@@ -1,7 +1,7 @@
 {
   "name": "@affine/ios",
   "version": "0.26.3",
-  "description": "MRH ManSys Desktop Web application",
+  "description": "TrackWork Desktop Web application",
   "type": "module",
   "private": true,
   "browser": "src/index.tsx",

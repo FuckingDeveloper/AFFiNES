@@ -1,13 +1,18 @@
 services:
   affine:
-    image: affine-local:dev
+    image: trackwork-local:dev
+    build:
+      context: ../..
+      dockerfile: .github/deployment/node/Dockerfile
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-000000000}
   affine_migration:
-    image: affine-local:dev
+    image: trackwork-local:dev
 
   postgres:
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
 
   redis:
     ports:
-      - '6379:6379'
+      - '127.0.0.1:6379:6379'

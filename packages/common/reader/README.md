@@ -1,4 +1,4 @@
-# MRH ManSys Blocksuite format YDoc reader
+# TrackWork Blocksuite format YDoc reader
 
 ## Usage
 

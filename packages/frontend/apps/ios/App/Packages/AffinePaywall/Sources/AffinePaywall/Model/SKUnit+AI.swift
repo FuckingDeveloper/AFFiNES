@@ -11,7 +11,7 @@ extension SKUnit {
   static let aiUnits: [SKUnit] = [
     SKUnit(
       category: SKUnitCategory.ai,
-      primaryText: "MRH ManSys AI",
+      primaryText: "TrackWork AI",
       secondaryText: "A true multimodal AI copilot.",
       package: [
         SKUnitPackageOption(

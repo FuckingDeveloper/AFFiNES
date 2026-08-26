@@ -8,7 +8,7 @@
     "url": "https://github.com/toeverything/AFFiNE",
     "type": "git"
   },
-  "description": "MRH ManSys Desktop App",
+  "description": "TrackWork Desktop App",
   "homepage": "https://github.com/toeverything/AFFiNE",
   "exports": {
     "./helper/exposed": "./src/helper/exposed.ts",

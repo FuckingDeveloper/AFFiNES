@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine",
-  "description": "BlockSuite for MRH ManSys",
+  "description": "BlockSuite for TrackWork",
   "type": "module",
   "scripts": {
     "build": "tsc --build --verbose"

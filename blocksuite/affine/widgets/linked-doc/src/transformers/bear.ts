@@ -236,7 +236,7 @@ const GFM_CALLOUT_MAP: Record<string, string> = {
 
 /**
  * Convert GFM-style callouts (`> [!NOTE]`, `> [!WARNING]`, etc.) to
- * emoji-based callouts that MRH ManSys's remark-callout plugin understands.
+ * emoji-based callouts that TrackWork's remark-callout plugin understands.
  * Skips content inside fenced code blocks.
  */
 function convertGfmCallouts(markdown: string): string {

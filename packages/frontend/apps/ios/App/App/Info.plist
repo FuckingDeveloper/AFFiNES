@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>MRH ManSys</string>
+	<string>TrackWork</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -38,9 +38,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>MRH ManSys requires access to the camera to capture images and insert them into your documents</string>
+	<string>TrackWork requires access to the camera to capture images and insert them into your documents</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>MRH ManSys requires access to select photos from your photo library and insert them into your documents</string>
+	<string>TrackWork requires access to select photos from your photo library and insert them into your documents</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Rest assured, enabling this permission won't access your private info on other sites. It's only used to identify your device and improve security and product experience.</string>
 	<key>UILaunchScreen</key>

@@ -1,9 +1,7 @@
 import { Button, notify, useDraggable, useDropTarget } from '@affine/component';
-import { DocsService } from '@affine/core/modules/doc';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
+import { DocsService } from '@affine/core/modules/doc';
 import { TagService } from '@affine/core/modules/tag';
-import { WorkspacePropertyService } from '@affine/core/modules/workspace-property';
-import { WorkspaceService } from '@affine/core/modules/workspace';
 import {
   ViewBody,
   ViewHeader,
@@ -11,6 +9,8 @@ import {
   ViewTitle,
   WorkbenchService,
 } from '@affine/core/modules/workbench';
+import { WorkspaceService } from '@affine/core/modules/workspace';
+import { WorkspacePropertyService } from '@affine/core/modules/workspace-property';
 import { DeleteIcon, LinkIcon, PlusIcon } from '@blocksuite/icons/rc';
 import { LiveData, useLiveData, useService } from '@toeverything/infra';
 import clsx from 'clsx';
@@ -26,34 +26,11 @@ import {
 } from 'react';
 
 import {
+  buildDefaultTransitions,
+  buildDefaultTypeTransitions,
   DEFAULT_BOARD_ID,
   DEFAULT_BOARD_TITLE,
   DEFAULT_FLOW,
-  type TaskAttachment,
-  TASK_ASSIGNEE_PROPERTY,
-  TASK_ATTACHMENTS_PROPERTY,
-  TASK_BOARD_PROPERTY,
-  TASK_DESCRIPTION_PROPERTY,
-  TASK_DUE_DATE_PROPERTY,
-  TASK_EXTRA_INFO_PROPERTY,
-  TASK_COMPLEXITY_PROPERTY,
-  TASK_HISTORY_PROPERTY,
-  TASK_ORDER_PROPERTY,
-  TASK_PRIORITY_PROPERTY,
-  TASK_NUMBER_PROPERTY,
-  TASK_STATUS_PROPERTY,
-  TASK_SUBTASKS_PROPERTY,
-  TASK_TRACKER_FLAG_PROPERTY,
-  TASK_TYPE_PROPERTY,
-  type TaskType,
-  type TaskTrackerBoard,
-  type TaskFlowColumn,
-  type TaskTrackerPropertyAdditionalData,
-  type TaskComplexity,
-  type TaskHistoryEntry,
-  type TaskSubtask,
-  buildDefaultTypeTransitions,
-  buildDefaultTransitions,
   parseAttachments,
   parseHistoryEntries,
   parseSubtasks,
@@ -61,6 +38,29 @@ import {
   stringifyAttachments,
   stringifyHistoryEntries,
   stringifySubtasks,
+  TASK_ASSIGNEE_PROPERTY,
+  TASK_ATTACHMENTS_PROPERTY,
+  TASK_BOARD_PROPERTY,
+  TASK_COMPLEXITY_PROPERTY,
+  TASK_DESCRIPTION_PROPERTY,
+  TASK_DUE_DATE_PROPERTY,
+  TASK_EXTRA_INFO_PROPERTY,
+  TASK_HISTORY_PROPERTY,
+  TASK_NUMBER_PROPERTY,
+  TASK_ORDER_PROPERTY,
+  TASK_PRIORITY_PROPERTY,
+  TASK_STATUS_PROPERTY,
+  TASK_SUBTASKS_PROPERTY,
+  TASK_TRACKER_FLAG_PROPERTY,
+  TASK_TYPE_PROPERTY,
+  type TaskAttachment,
+  type TaskComplexity,
+  type TaskFlowColumn,
+  type TaskHistoryEntry,
+  type TaskSubtask,
+  type TaskTrackerBoard,
+  type TaskTrackerPropertyAdditionalData,
+  type TaskType,
 } from './config';
 import * as styles from './task-tracker.css';
 
@@ -101,6 +101,11 @@ type TagMetaItem = {
   id: string;
   name: string;
 };
+
+const EMPTY_DOC_TITLES: DocTitleItem[] = [];
+const EMPTY_DOC_IDS: string[] = [];
+const EMPTY_DOC_TAG_IDS: DocTagItem[] = [];
+const EMPTY_TAG_METAS: TagMetaItem[] = [];
 
 type TaskTrackerDndData = {
   draggable: {
@@ -395,7 +400,11 @@ const AttachmentPreviewStrip = ({
       }
     };
 
-    void load();
+    load().catch(() => {
+      if (!cancelled) {
+        setPreviewUrls({});
+      }
+    });
 
     return () => {
       cancelled = true;
@@ -707,7 +716,7 @@ const TaskCardItem = ({
         taskType: task.type,
       },
     }),
-    [columnId, hasActiveFilters, task.id]
+    [columnId, hasActiveFilters, task.id, task.type]
   );
 
   const labels = task.labelIds
@@ -751,7 +760,9 @@ const TaskCardItem = ({
           <span className={styles.taskComplexityBadge}>{complexity.short}</span>
         </div>
         <div className={styles.taskHeroTitleRow}>
-          <div className={styles.taskTitle}>{task.title || 'Untitled task'}</div>
+          <div className={styles.taskTitle}>
+            {task.title || 'Untitled task'}
+          </div>
           <div className={styles.taskHeaderActionsInline}>
             <button
               type="button"
@@ -806,7 +817,9 @@ const TaskCardItem = ({
           </div>
           <div className={styles.taskSummaryMetric}>
             <span className={styles.taskSummaryLabel}>Files</span>
-            <span className={styles.taskSummaryValue}>{task.attachments.length}</span>
+            <span className={styles.taskSummaryValue}>
+              {task.attachments.length}
+            </span>
           </div>
         </div>
       </div>
@@ -879,7 +892,9 @@ const TaskCardItem = ({
                         [styles.subtaskIndicatorDone]: subtask.done,
                       })}
                     />
-                    <span className={styles.subtaskDetailTitle}>{subtask.title}</span>
+                    <span className={styles.subtaskDetailTitle}>
+                      {subtask.title}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -1090,7 +1105,10 @@ const TaskDetailPanel = ({
             className={styles.fieldInput}
             value={task.complexity}
             onChange={event => {
-              onComplexityChange(task.id, sanitizeComplexity(event.target.value));
+              onComplexityChange(
+                task.id,
+                sanitizeComplexity(event.target.value)
+              );
             }}
           >
             {COMPLEXITY_OPTIONS.map(option => (
@@ -1148,7 +1166,8 @@ const TaskDetailPanel = ({
         <div className={styles.editorSectionHeader}>
           <span className={styles.sectionTitle}>Subtasks</span>
           <span className={styles.expandedSectionMeta}>
-            {task.subtasks.filter(item => item.done).length}/{task.subtasks.length} completed
+            {task.subtasks.filter(item => item.done).length}/
+            {task.subtasks.length} completed
           </span>
         </div>
         <div className={styles.detailSubtasksEditor}>
@@ -1178,7 +1197,9 @@ const TaskDetailPanel = ({
                       [styles.subtaskIndicatorDone]: subtask.done,
                     })}
                   />
-                  <span className={styles.subtaskDetailTitle}>{subtask.title}</span>
+                  <span className={styles.subtaskDetailTitle}>
+                    {subtask.title}
+                  </span>
                 </button>
               ))}
             </div>
@@ -1217,9 +1238,7 @@ const TaskDetailPanel = ({
         <div className={styles.editorSectionHeader}>
           <span className={styles.sectionTitle}>Linked tasks</span>
         </div>
-        <div className={styles.editorEmptyState}>
-          No linked tasks yet
-        </div>
+        <div className={styles.editorEmptyState}>No linked tasks yet</div>
       </section>
 
       <section className={styles.editorSection}>
@@ -1425,24 +1444,24 @@ const TaskTrackerPage = () => {
 
   const docTitles = (useLiveData(
     useMemo(() => LiveData.from(docsService.allDocTitle$(), []), [docsService])
-  ) ?? []) as DocTitleItem[];
+  ) ?? EMPTY_DOC_TITLES) as DocTitleItem[];
 
   const nonTrashDocIds = (useLiveData(
     useMemo(
       () => LiveData.from(docsService.allNonTrashDocIds$(), []),
       [docsService]
     )
-  ) ?? []) as string[];
+  ) ?? EMPTY_DOC_IDS) as string[];
 
   const docTagIds = (useLiveData(
     useMemo(
       () => LiveData.from(docsService.allDocsTagIds$(), []),
       [docsService]
     )
-  ) ?? []) as DocTagItem[];
+  ) ?? EMPTY_DOC_TAG_IDS) as DocTagItem[];
 
   const tagMetas = (useLiveData(tagService.tagList.tagMetas$) ??
-    []) as TagMetaItem[];
+    EMPTY_TAG_METAS) as TagMetaItem[];
 
   const statusPropertyInfo = useLiveData(
     workspacePropertyService.propertyInfo$(TASK_STATUS_PROPERTY)
@@ -1957,7 +1976,6 @@ const TaskTrackerPage = () => {
     });
   }, [
     assigneeFilter,
-    dueFilter,
     isDueInFilter,
     labelFilter,
     priorityFilter,
@@ -2175,7 +2193,9 @@ const TaskTrackerPage = () => {
       ])
     );
 
-    void docsService.changeDocTitle(doc.id, 'New task');
+    docsService.changeDocTitle(doc.id, 'New task').catch(() => {
+      notify.error({ title: 'Failed to set task title' });
+    });
     setSelectedTaskId(doc.id);
   }, [
     allTasksByColumn,
@@ -2194,7 +2214,9 @@ const TaskTrackerPage = () => {
         return;
       }
 
-      void docsService.changeDocTitle(taskId, nextTitle);
+      docsService.changeDocTitle(taskId, nextTitle).catch(() => {
+        notify.error({ title: 'Failed to rename task' });
+      });
       appendTaskHistory(
         taskId,
         buildHistoryEntry('edited', `Renamed task to “${nextTitle}”`),
@@ -2262,9 +2284,7 @@ const TaskTrackerPage = () => {
         taskId,
         buildHistoryEntry(
           'edited',
-          nextAssignee
-            ? `Assigned to ${nextAssignee}`
-            : 'Cleared assignee'
+          nextAssignee ? `Assigned to ${nextAssignee}` : 'Cleared assignee'
         ),
         task.history
       );
@@ -2999,9 +3019,11 @@ const TaskTrackerPage = () => {
                                   onOpenEditor={setSelectedTaskId}
                                   onOpenTaskDoc={handleOpenTaskDoc}
                                   onDeleteTask={handleDeleteTask}
-                                  onDownloadAttachment={
-                                    handleDownloadAttachment
-                                  }
+                                  onDownloadAttachment={attachment => {
+                                    handleDownloadAttachment(attachment).catch(
+                                      () => {}
+                                    );
+                                  }}
                                   onDraggingChange={handleDraggingChange}
                                 />
                               </TaskCardDropTarget>
@@ -3046,8 +3068,12 @@ const TaskTrackerPage = () => {
                 onComplexityChange={handleComplexityChange}
                 onSubtasksChange={handleSubtasksChange}
                 onToggleSubtask={handleToggleSubtask}
-                onUploadAttachments={handleUploadAttachments}
-                onDownloadAttachment={handleDownloadAttachment}
+                onUploadAttachments={(taskId, files) => {
+                  handleUploadAttachments(taskId, files).catch(() => {});
+                }}
+                onDownloadAttachment={attachment => {
+                  handleDownloadAttachment(attachment).catch(() => {});
+                }}
               />
             ) : null}
           </div>

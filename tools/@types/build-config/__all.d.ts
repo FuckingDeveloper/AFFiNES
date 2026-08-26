@@ -22,8 +22,15 @@ declare interface BUILD_CONFIG_TYPE {
   isAdmin: boolean;
 
   appVersion: string;
+  displayVersion: string;
   editorVersion: string;
   appBuildType: 'stable' | 'beta' | 'internal' | 'canary';
+
+  productName: string;
+  productShortName: string;
+  websiteUrl: string;
+  helpUrl: string;
+  supportEmail: string;
 
   githubUrl: string;
   changelogUrl: string;

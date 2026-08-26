@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-edgeless-selected-rect",
-  "description": "MRH ManSys edgeless selected-rect widget.",
+  "description": "TrackWork edgeless selected-rect widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

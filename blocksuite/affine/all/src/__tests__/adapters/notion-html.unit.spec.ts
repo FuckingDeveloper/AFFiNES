@@ -1270,7 +1270,7 @@ describe('notion html to snapshot', () => {
       <figure id="ed3d2ae9-62f5-433a-9049-9ddbd1c81ac5"><a href="https://affine.pro/" class="bookmark source">
           <div class="bookmark-info">
             <div class="bookmark-text">
-              <div class="bookmark-title">MRH ManSys - All In One KnowledgeOS</div>
+              <div class="bookmark-title">TrackWork - All In One KnowledgeOS</div>
               <div class="bookmark-description">The universal editor that lets you work, play, present or
                 create just about anything.</div>
             </div>
@@ -1299,7 +1299,7 @@ describe('notion html to snapshot', () => {
           props: {
             type: 'card',
             url: 'https://affine.pro/',
-            title: 'MRH ManSys - All In One KnowledgeOS',
+            title: 'TrackWork - All In One KnowledgeOS',
             description:
               'The universal editor that lets you work, play, present or create just about anything.',
             icon: 'https://affine.pro/favicon-96.png',

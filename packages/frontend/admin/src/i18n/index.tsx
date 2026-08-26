@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 
 import en from './en.json';
 import ru from './ru.json';
@@ -58,11 +65,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     [locale]
   );
 
-  return (
-    <I18nContext.Provider value={{ t, locale, setLocale }}>
-      {children}
-    </I18nContext.Provider>
+  const value = useMemo(
+    () => ({ t, locale, setLocale }),
+    [locale, setLocale, t]
   );
+
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
 export function useI18n() {

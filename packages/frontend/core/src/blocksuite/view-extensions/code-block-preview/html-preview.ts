@@ -136,7 +136,7 @@ export class HTMLPreview extends SignalWatcher(
             () =>
               html`<div class="html-preview-fallback">
                 This feature is not supported in your browser. Please download
-                the MRH ManSys Desktop App to use it.
+                the TrackWork Desktop App to use it.
               </div>`,
           ],
         ])}

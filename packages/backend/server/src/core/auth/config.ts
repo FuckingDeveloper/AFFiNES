@@ -21,7 +21,7 @@ export interface AuthConfig {
   enterprise: {
     enabled: boolean;
     autoRegister: boolean;
-    allowedEmailDomains: string[];
+    allowedEmailDomains: ConfigItem<string[]>;
     ldap: {
       enabled: boolean;
       url: string;

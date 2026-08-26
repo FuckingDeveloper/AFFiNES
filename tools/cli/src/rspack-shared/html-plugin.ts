@@ -59,7 +59,7 @@ export const getPublicPath = (BUILD_CONFIG: BUILD_CONFIG_TYPE) => {
   }
 };
 
-const DESCRIPTION = `There can be more than Notion and Miro. MRH ManSys is a next-gen knowledge base that brings planning, sorting and creating all together.`;
+const DESCRIPTION = `There can be more than Notion and Miro. TrackWork is a next-gen knowledge base that brings planning, sorting and creating all together.`;
 
 const gitShortHash = once(() => {
   const { GITHUB_SHA } = process.env;
