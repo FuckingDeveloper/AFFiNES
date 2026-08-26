@@ -12,6 +12,7 @@ import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { FeatureFlagService } from '@affine/core/modules/feature-flag';
 import { CMDKQuickSearchService } from '@affine/core/modules/quicksearch/services/cmdk';
 import type { Workspace } from '@affine/core/modules/workspace';
+import { useTaskTrackerI18n } from '@affine/core/utils/task-tracker-i18n';
 import { useI18n } from '@affine/i18n';
 import { track } from '@affine/track';
 import type { Store } from '@blocksuite/affine/store';
@@ -114,6 +115,7 @@ const AIChatButton = () => {
 };
 
 const TaskTrackerButton = () => {
+  const { t } = useTaskTrackerI18n();
   const { workbenchService } = useServices({
     WorkbenchService,
   });
@@ -130,7 +132,7 @@ const TaskTrackerButton = () => {
       active={taskTrackerActive}
       to={'/task-tracker'}
     >
-      <span data-testid="task-tracker">Task Tracker</span>
+      <span data-testid="task-tracker">{t('title')}</span>
     </MenuLinkItem>
   );
 };
