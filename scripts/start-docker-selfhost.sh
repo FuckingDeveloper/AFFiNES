@@ -37,15 +37,36 @@ require_cmd() {
   command -v "$1" >/dev/null 2>&1 || fail "Missing required command: $1"
 }
 
+env_value() {
+  sed -n "s/^$1=//p" "${SELFHOST_ENV}" | tail -n 1
+}
+
+generate_db_password() {
+  local password
+  password="$(openssl rand -hex 24)"
+
+  if grep -q '^DB_PASSWORD=' "${SELFHOST_ENV}"; then
+    DB_PASSWORD="${password}" perl -0pi -e 's/^DB_PASSWORD=.*$/DB_PASSWORD=$ENV{DB_PASSWORD}/m' "${SELFHOST_ENV}"
+  else
+    printf '\nDB_PASSWORD=%s\n' "${password}" >> "${SELFHOST_ENV}"
+  fi
+}
+
 ensure_env() {
   mkdir -p "${SELFHOST_DIR}"
 
   if [[ ! -f "${SELFHOST_ENV}" ]]; then
     cp "${SELFHOST_DIR}/.env.example" "${SELFHOST_ENV}"
-    local password
-    password="$(openssl rand -hex 24)"
-    perl -0pi -e "s/^DB_PASSWORD=.*\$/DB_PASSWORD=${password}/m" "${SELFHOST_ENV}"
+    generate_db_password
     log "Created ${SELFHOST_ENV} with a random database password"
+    return
+  fi
+
+  local password
+  password="$(env_value DB_PASSWORD)"
+  if [[ ${#password} -lt 24 || "${password}" == 'change-this-to-a-long-random-password' ]]; then
+    generate_db_password
+    log "Replaced missing, short, or example DB_PASSWORD in ${SELFHOST_ENV} with a random database password"
   fi
 }
 
@@ -55,10 +76,6 @@ check_prereqs() {
   docker compose version >/dev/null 2>&1 || fail 'docker compose is unavailable'
   ensure_env
   validate_env
-}
-
-env_value() {
-  sed -n "s/^$1=//p" "${SELFHOST_ENV}" | tail -n 1
 }
 
 validate_env() {
