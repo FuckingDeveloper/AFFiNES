@@ -17,11 +17,8 @@ test('verifyTotp rejects non-digit codes', t => {
 });
 
 test('verifyTotp rejects malicious digits values without throwing', t => {
-  // @ts-expect-error deliberate misuse
-  t.false(verifyTotp(SECRET, '123456', { digits: '6' }));
-  // @ts-expect-error deliberate misuse
-  t.false(verifyTotp(SECRET, '123456', { digits: '6{2,}' }));
-  // @ts-expect-error deliberate misuse
+  t.false(verifyTotp(SECRET, '123456', { digits: '6' as unknown as number }));
+  t.false(verifyTotp(SECRET, '123456', { digits: '6{2,}' as unknown as number }));
   t.false(verifyTotp(SECRET, '123456', { digits: NaN }));
   t.false(verifyTotp(SECRET, '123456', { digits: 0 }));
   t.false(verifyTotp(SECRET, '123456', { digits: -6 }));
