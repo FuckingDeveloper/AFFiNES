@@ -1,3 +1,4 @@
+import { DashboardErrorBoundary } from '@affine/admin/components/dashboard-error-boundary';
 import { Toaster } from '@affine/admin/components/ui/sonner';
 import { lazy, ROUTES } from '@affine/routes';
 import { withSentryReactRouterV7Routing } from '@sentry/react';
@@ -105,7 +106,11 @@ export const App = () => {
                   <Route element={<AuthenticatedRoutes />}>
                     <Route
                       path={ROUTES.admin.dashboard}
-                      element={<Dashboard />}
+                      element={
+                        <DashboardErrorBoundary>
+                          <Dashboard />
+                        </DashboardErrorBoundary>
+                      }
                     />
                     <Route
                       path={ROUTES.admin.accounts}
