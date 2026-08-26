@@ -1,0 +1,8 @@
+mutation updateDevelopmentIntegration($input: UpdateDevelopmentIntegrationInput!) {
+  updateDevelopmentIntegration(input: $input) {
+    id
+    name
+    enabled
+    updatedAt
+  }
+}

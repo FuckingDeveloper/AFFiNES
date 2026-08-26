@@ -182,6 +182,22 @@ export const adminAllSharedLinksQuery = {
 }`,
 };
 
+export const adminAuditLogsQuery = {
+  id: 'adminAuditLogsQuery' as const,
+  op: 'adminAuditLogs',
+  query: `query adminAuditLogs($first: Int, $skip: Int) {
+  adminAuditLogs(first: $first, skip: $skip) {
+    id
+    actorId
+    actorEmail
+    action
+    targetType
+    targetId
+    createdAt
+  }
+}`,
+};
+
 export const adminDashboardQuery = {
   id: 'adminDashboardQuery' as const,
   op: 'adminDashboard',
@@ -2497,6 +2513,137 @@ export const indexerSearchQuery = {
         nextCursor
       }
     }
+  }
+}`,
+};
+
+export const createDevelopmentIntegrationMutation = {
+  id: 'createDevelopmentIntegrationMutation' as const,
+  op: 'createDevelopmentIntegration',
+  query: `mutation createDevelopmentIntegration($input: CreateDevelopmentIntegrationInput!) {
+  createDevelopmentIntegration(input: $input) {
+    id
+    workspaceId
+    provider
+    name
+    baseUrl
+    enabled
+    hasToken
+    hasWebhookSecret
+    webhookUrl
+    createdAt
+    updatedAt
+  }
+}`,
+};
+
+export const deleteDevelopmentIntegrationMutation = {
+  id: 'deleteDevelopmentIntegrationMutation' as const,
+  op: 'deleteDevelopmentIntegration',
+  query: `mutation deleteDevelopmentIntegration($connectionId: String!) {
+  deleteDevelopmentIntegration(connectionId: $connectionId)
+}`,
+};
+
+export const developmentIntegrationsQuery = {
+  id: 'developmentIntegrationsQuery' as const,
+  op: 'developmentIntegrations',
+  query: `query developmentIntegrations($workspaceId: String!) {
+  workspace(id: $workspaceId) {
+    developmentIntegrations {
+      id
+      workspaceId
+      provider
+      name
+      baseUrl
+      enabled
+      hasToken
+      hasWebhookSecret
+      webhookUrl
+      createdAt
+      updatedAt
+    }
+  }
+}`,
+};
+
+export const developmentRepositoriesMutation = {
+  id: 'developmentRepositoriesMutation' as const,
+  op: 'developmentRepositories',
+  query: `mutation developmentRepositories($connectionId: String!) {
+  developmentRepositories(connectionId: $connectionId) {
+    externalId
+    name
+    fullName
+    webUrl
+    defaultBranch
+    imported
+    enabled
+  }
+}`,
+};
+
+export const importDevelopmentRepositoryMutation = {
+  id: 'importDevelopmentRepositoryMutation' as const,
+  op: 'importDevelopmentRepository',
+  query: `mutation importDevelopmentRepository($input: ImportDevelopmentRepositoryInput!) {
+  importDevelopmentRepository(input: $input) {
+    id
+    connectionId
+    externalId
+    name
+    fullName
+    webUrl
+    defaultBranch
+    enabled
+  }
+}`,
+};
+
+export const rotateDevelopmentIntegrationCredentialsMutation = {
+  id: 'rotateDevelopmentIntegrationCredentialsMutation' as const,
+  op: 'rotateDevelopmentIntegrationCredentials',
+  query: `mutation rotateDevelopmentIntegrationCredentials($input: RotateDevelopmentCredentialsInput!) {
+  rotateDevelopmentIntegrationCredentials(input: $input) {
+    id
+    hasToken
+    hasWebhookSecret
+    updatedAt
+  }
+}`,
+};
+
+export const setDevelopmentRepositoryEnabledMutation = {
+  id: 'setDevelopmentRepositoryEnabledMutation' as const,
+  op: 'setDevelopmentRepositoryEnabled',
+  query: `mutation setDevelopmentRepositoryEnabled($repositoryId: String!, $enabled: Boolean!) {
+  setDevelopmentRepositoryEnabled(repositoryId: $repositoryId, enabled: $enabled) {
+    id
+    enabled
+  }
+}`,
+};
+
+export const testDevelopmentIntegrationMutation = {
+  id: 'testDevelopmentIntegrationMutation' as const,
+  op: 'testDevelopmentIntegration',
+  query: `mutation testDevelopmentIntegration($connectionId: String!) {
+  testDevelopmentIntegration(connectionId: $connectionId) {
+    ok
+    message
+  }
+}`,
+};
+
+export const updateDevelopmentIntegrationMutation = {
+  id: 'updateDevelopmentIntegrationMutation' as const,
+  op: 'updateDevelopmentIntegration',
+  query: `mutation updateDevelopmentIntegration($input: UpdateDevelopmentIntegrationInput!) {
+  updateDevelopmentIntegration(input: $input) {
+    id
+    name
+    enabled
+    updatedAt
   }
 }`,
 };

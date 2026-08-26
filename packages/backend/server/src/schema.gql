@@ -767,6 +767,15 @@ input CreateCheckoutSessionInput {
   variant: SubscriptionVariant
 }
 
+input CreateDevelopmentIntegrationInput {
+  baseUrl: String!
+  name: String!
+  provider: String!
+  token: String!
+  webhookSecret: String
+  workspaceId: String!
+}
+
 input CreateUserInput {
   email: String!
   name: String
@@ -811,6 +820,47 @@ input DeleteSessionInput {
   docId: String
   sessionIds: [String!]!
   workspaceId: String!
+}
+
+type DevelopmentConnectionTestResult {
+  message: String
+  ok: Boolean!
+}
+
+type DevelopmentIntegrationConnection {
+  baseUrl: String!
+  createdAt: DateTime!
+  enabled: Boolean!
+  hasToken: Boolean!
+  hasWebhookSecret: Boolean!
+  id: String!
+  name: String!
+  provider: String!
+  updatedAt: DateTime!
+  webhookUrl: String!
+  workspaceId: String!
+}
+
+type DevelopmentRepository {
+  connectionId: String!
+  createdAt: DateTime!
+  defaultBranch: String
+  enabled: Boolean!
+  externalId: String!
+  fullName: String!
+  id: String!
+  name: String!
+  webUrl: String!
+}
+
+type DevelopmentRepositoryInfo {
+  defaultBranch: String
+  enabled: Boolean!
+  externalId: String!
+  fullName: String!
+  imported: Boolean!
+  name: String!
+  webUrl: String!
 }
 
 type DocActionDeniedDataType {
@@ -1182,6 +1232,15 @@ type ImageFormatNotSupportedDataType {
   format: String!
 }
 
+input ImportDevelopmentRepositoryInput {
+  connectionId: String!
+  defaultBranch: String
+  externalId: String!
+  fullName: String!
+  name: String!
+  webUrl: String!
+}
+
 input ImportUsersInput {
   users: [CreateUserInput!]!
 }
@@ -1390,6 +1449,9 @@ type InviteUserType {
 
   """Member invite status in workspace"""
   status: WorkspaceMemberStatus!
+
+  """Unique user login"""
+  username: String
 }
 
 enum InvoiceStatus {
@@ -1487,7 +1549,7 @@ input ManageUserInput {
   """User name"""
   name: String
 
-  """Unique login used for password authentication"""
+  """Unique user login"""
   username: String
 }
 
@@ -1615,6 +1677,7 @@ type Mutation {
 
   """Create a stripe customer portal to manage payment methods"""
   createCustomerPortal: String!
+  createDevelopmentIntegration(input: CreateDevelopmentIntegrationInput!): DevelopmentIntegrationConnection!
   createInviteLink(expireTime: WorkspaceInviteLinkExpireTime!, workspaceId: String!): InviteLink!
   createReply(input: ReplyCreateInput!): ReplyObjectType!
   createSelfhostWorkspaceCustomerPortal(workspaceId: String!): String!
@@ -1631,6 +1694,7 @@ type Mutation {
 
   """Delete a comment"""
   deleteComment(id: String!): Boolean!
+  deleteDevelopmentIntegration(connectionId: String!): Boolean!
 
   """Delete a reply"""
   deleteReply(id: String!): Boolean!
@@ -1639,6 +1703,7 @@ type Mutation {
   deleteUser(id: String!): DeleteAccount!
   deleteWorkspace(id: String!): Boolean!
   deleteWorkspaceByokConfig(id: ID!, workspaceId: String!): Boolean!
+  developmentRepositories(connectionId: String!): [DevelopmentRepositoryInfo!]!
 
   """Reenable an banned user"""
   enableUser(id: String!): UserType!
@@ -1649,6 +1714,7 @@ type Mutation {
   generateUserAccessToken(input: GenerateAccessTokenInput!): RevealedAccessToken!
   grantDocUserRoles(input: GrantDocUserRolesInput!): Boolean!
   grantMember(permission: Permission!, userId: String!, workspaceId: String!): Boolean!
+  importDevelopmentRepository(input: ImportDevelopmentRepositoryInput!): DevelopmentRepository!
 
   """import users"""
   importUsers(input: ImportUsersInput!): [UserImportResultType!]!
@@ -1709,6 +1775,7 @@ type Mutation {
   revokeMember(userId: String!, workspaceId: String!): Boolean!
   revokePublicDoc(docId: String!, workspaceId: String!): DocType!
   revokeUserAccessToken(id: String!): Boolean!
+  rotateDevelopmentIntegrationCredentials(input: RotateDevelopmentCredentialsInput!): DevelopmentIntegrationConnection!
   sendChangeEmail(callbackUrl: String!, email: String): Boolean!
   sendChangePasswordEmail(callbackUrl: String!, email: String @deprecated(reason: "fetched from signed in user")): Boolean!
   sendSetPasswordEmail(callbackUrl: String!, email: String @deprecated(reason: "fetched from signed in user")): Boolean!
@@ -1716,8 +1783,10 @@ type Mutation {
   sendVerifyChangeEmail(callbackUrl: String!, email: String!, token: String!): Boolean!
   sendVerifyEmail(callbackUrl: String!): Boolean!
   setBlob(blob: Upload!, workspaceId: String!): String!
+  setDevelopmentRepositoryEnabled(enabled: Boolean!, repositoryId: String!): DevelopmentRepository!
   settleTranscriptTask(taskId: String!, workspaceId: String!): TranscriptionResultType
   submitTranscriptTask(blob: Upload, blobId: String!, blobs: [Upload!], input: SubmitAudioTranscriptionInput, workspaceId: String!): TranscriptionResultType
+  testDevelopmentIntegration(connectionId: String!): DevelopmentConnectionTestResult!
   testWorkspaceByokConfig(input: TestWorkspaceByokConfigInput!): TestWorkspaceByokConfigResultType!
   unlinkCalendarAccount(accountId: String!): Boolean!
 
@@ -1730,6 +1799,7 @@ type Mutation {
 
   """Update a chat session"""
   updateCopilotSession(options: UpdateChatSessionInput!): String!
+  updateDevelopmentIntegration(input: UpdateDevelopmentIntegrationInput!): DevelopmentIntegrationConnection!
   updateDocDefaultRole(input: UpdateDocDefaultRoleInput!): Boolean!
   updateDocUserRole(input: UpdateDocUserRoleInput!): Boolean!
   updateProfile(input: UpdateUserInput!): UserType!
@@ -1959,11 +2029,11 @@ type PublicUserType {
 }
 
 type Query {
-  """List recent administrative actions"""
-  adminAuditLogs(first: Int! = 50, skip: Int! = 0): [AdminAuditLogType!]!
-
   """List all shared links across workspaces for admin panel"""
   adminAllSharedLinks(filter: AdminAllSharedLinksFilterInput, pagination: PaginationInput!): PaginatedAdminAllSharedLink!
+
+  """List recent administrative actions"""
+  adminAuditLogs(first: Int! = 50, skip: Int! = 0): [AdminAuditLogType!]!
 
   """Get aggregated dashboard metrics for admin panel"""
   adminDashboard(input: AdminDashboardInput): AdminDashboard!
@@ -2140,6 +2210,12 @@ input RevokeDocUserRoleInput {
   docId: String!
   userId: String!
   workspaceId: String!
+}
+
+input RotateDevelopmentCredentialsInput {
+  id: String!
+  token: String
+  webhookSecret: String
 }
 
 type RuntimeConfigNotFoundDataType {
@@ -2546,6 +2622,12 @@ input UpdateChatSessionInput {
   sessionId: String!
 }
 
+input UpdateDevelopmentIntegrationInput {
+  enabled: Boolean
+  id: String!
+  name: String
+}
+
 input UpdateDocDefaultRoleInput {
   docId: String!
   role: DocRole!
@@ -2693,9 +2775,6 @@ type UserType {
   """User name"""
   name: String!
 
-  """Unique login used for password authentication"""
-  username: String!
-
   """Get user notification count"""
   notificationCount: Int! @deprecated(reason: "Use realtime subscription \"notification.count.changed\" instead.")
 
@@ -2709,6 +2788,9 @@ type UserType {
   settings: UserSettingsType!
   subscriptions: [SubscriptionType!]!
   token: tokenType! @deprecated(reason: "use [/api/auth/sign-in?native=true] instead")
+
+  """Unique user login"""
+  username: String!
 }
 
 type ValidationErrorDataType {
@@ -2897,6 +2979,7 @@ type WorkspaceType {
 
   """Workspace created date"""
   createdAt: DateTime!
+  developmentIntegrations: [DevelopmentIntegrationConnection!]!
 
   """Get get with given id"""
   doc(docId: String!): DocType!

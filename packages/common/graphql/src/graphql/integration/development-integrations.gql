@@ -1,0 +1,17 @@
+query developmentIntegrations($workspaceId: String!) {
+  workspace(id: $workspaceId) {
+    developmentIntegrations {
+      id
+      workspaceId
+      provider
+      name
+      baseUrl
+      enabled
+      hasToken
+      hasWebhookSecret
+      webhookUrl
+      createdAt
+      updatedAt
+    }
+  }
+}

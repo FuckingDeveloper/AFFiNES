@@ -1,0 +1,12 @@
+mutation importDevelopmentRepository($input: ImportDevelopmentRepositoryInput!) {
+  importDevelopmentRepository(input: $input) {
+    id
+    connectionId
+    externalId
+    name
+    fullName
+    webUrl
+    defaultBranch
+    enabled
+  }
+}
