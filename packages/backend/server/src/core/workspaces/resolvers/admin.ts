@@ -179,6 +179,96 @@ class AdminDashboardInput {
   sharedLinkWindowDays?: number;
 }
 
+function clampDashboardSize(
+  value: number | undefined,
+  min: number,
+  max: number,
+  fallback: number
+) {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, Math.trunc(value as number)));
+}
+
+function startOfUtcDay(value: Date) {
+  return new Date(
+    Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate())
+  );
+}
+
+function buildSelfHostedAdminDashboard(input?: AdminDashboardInput) {
+  const timezone = input?.timezone?.trim() || 'UTC';
+  const storageHistoryDays = clampDashboardSize(
+    input?.storageHistoryDays,
+    1,
+    90,
+    30
+  );
+  const syncHistoryHours = clampDashboardSize(
+    input?.syncHistoryHours,
+    1,
+    72,
+    48
+  );
+  const sharedLinkWindowDays = clampDashboardSize(
+    input?.sharedLinkWindowDays,
+    1,
+    90,
+    28
+  );
+
+  const generatedAt = new Date();
+  const syncTo = new Date(generatedAt);
+  syncTo.setSeconds(0, 0);
+  const syncFrom = new Date(
+    syncTo.getTime() - (syncHistoryHours - 1) * 60 * 60 * 1000
+  );
+  const currentDay = startOfUtcDay(generatedAt);
+  const storageFrom = new Date(
+    currentDay.getTime() - (storageHistoryDays - 1) * 24 * 60 * 60 * 1000
+  );
+  const sharedFrom = new Date(
+    currentDay.getTime() - (sharedLinkWindowDays - 1) * 24 * 60 * 60 * 1000
+  );
+
+  return {
+    syncActiveUsers: 0,
+    syncActiveUsersTimeline: [],
+    syncWindow: {
+      from: syncFrom,
+      to: syncTo,
+      timezone,
+      bucket: 'Minute' as const,
+      requestedSize: syncHistoryHours,
+      effectiveSize: syncHistoryHours,
+    },
+    copilotConversations: 0,
+    workspaceStorageBytes: 0,
+    blobStorageBytes: 0,
+    workspaceStorageHistory: [],
+    blobStorageHistory: [],
+    storageWindow: {
+      from: storageFrom,
+      to: currentDay,
+      timezone,
+      bucket: 'Day' as const,
+      requestedSize: storageHistoryDays,
+      effectiveSize: storageHistoryDays,
+    },
+    topSharedLinks: [],
+    topSharedLinksWindow: {
+      from: sharedFrom,
+      to: currentDay,
+      timezone,
+      bucket: 'Day' as const,
+      requestedSize: sharedLinkWindowDays,
+      effectiveSize: sharedLinkWindowDays,
+    },
+    generatedAt,
+  };
+}
+
 @ObjectType()
 class AdminDashboardMinutePoint {
   @Field(() => Date)
@@ -519,7 +609,10 @@ export class AdminWorkspaceResolver {
     input?: AdminDashboardInput,
     @Info() info?: GraphQLResolveInfo
   ) {
-    this.assertCloudOnly();
+    if (env.selfhosted) {
+      return buildSelfHostedAdminDashboard(input);
+    }
+
     const includeTopSharedLinks = Boolean(
       info?.fieldNodes.some(
         node =>

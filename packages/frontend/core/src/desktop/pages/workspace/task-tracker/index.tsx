@@ -11,6 +11,12 @@ import {
 } from '@affine/core/modules/workbench';
 import { WorkspaceService } from '@affine/core/modules/workspace';
 import { WorkspacePropertyService } from '@affine/core/modules/workspace-property';
+import {
+  localizeTaskTrackerBoardTitle,
+  localizeTaskTrackerHistory,
+  localizeTaskTrackerStageTitle,
+  useTaskTrackerI18n,
+} from '@affine/core/utils/task-tracker-i18n';
 import { DeleteIcon, LinkIcon, PlusIcon } from '@blocksuite/icons/rc';
 import { LiveData, useLiveData, useService } from '@toeverything/infra';
 import clsx from 'clsx';
@@ -221,17 +227,30 @@ const toIsoDate = (date: Date): string => {
   return date.toISOString().slice(0, 10);
 };
 
-const formatDueDateLabel = (date: string): string => {
+const formatDueDateLabel = (
+  date: string,
+  locale: string,
+  emptyLabel: string
+): string => {
   if (!date) {
-    return 'No due date';
+    return emptyLabel;
   }
 
-  return date;
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(`${date}T00:00:00Z`));
+  } catch {
+    return date;
+  }
 };
 
-const formatHistoryTime = (timestamp: number): string => {
+const formatHistoryTime = (timestamp: number, locale: string): string => {
   try {
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat(locale, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -323,10 +342,7 @@ const getPriorityTone = (
 ): 'low' | 'medium' | 'high' | 'urgent' => priority;
 
 const createDefaultBoardFlow = (): TaskFlowColumn[] => {
-  return DEFAULT_FLOW.map(column => ({
-    id: nanoid(),
-    title: column.title,
-  }));
+  return DEFAULT_FLOW.map(column => ({ ...column }));
 };
 
 const AssigneeAvatar = ({
@@ -336,14 +352,16 @@ const AssigneeAvatar = ({
   assignee: string;
   size?: 'xs' | 'sm';
 }) => {
+  const { t } = useTaskTrackerI18n();
+  const fallback = t('unassigned');
   return (
     <span
       className={clsx(styles.assigneeAvatar, {
         [styles.assigneeAvatarXs]: size === 'xs',
       })}
-      title={assignee || 'Unassigned'}
+      title={assignee || fallback}
     >
-      {getInitials(assignee || 'Unassigned')}
+      {getInitials(assignee || fallback)}
     </span>
   );
 };
@@ -706,6 +724,7 @@ const TaskCardItem = ({
   onDownloadAttachment: (attachment: TaskAttachment) => void;
   onDraggingChange: (dragTask: ActiveDragTask | null) => void;
 }) => {
+  const { t, locale } = useTaskTrackerI18n();
   const { dragRef, dragging } = useDraggable<TaskTrackerDndData>(
     () => ({
       canDrag: !hasActiveFilters,
@@ -761,7 +780,7 @@ const TaskCardItem = ({
         </div>
         <div className={styles.taskHeroTitleRow}>
           <div className={styles.taskTitle}>
-            {task.title || 'Untitled task'}
+            {task.title || t('untitledTask')}
           </div>
           <div className={styles.taskHeaderActionsInline}>
             <button
@@ -771,9 +790,9 @@ const TaskCardItem = ({
                 event.stopPropagation();
                 onOpenEditor(task.id);
               }}
-              aria-label="Open task editor"
+              aria-label={t('openTaskEditor')}
             >
-              Open editor
+              {t('openEditor')}
             </button>
 
             <button
@@ -783,7 +802,7 @@ const TaskCardItem = ({
                 event.stopPropagation();
                 onOpenTaskDoc(task.id);
               }}
-              aria-label="Open task document"
+              aria-label={t('openTaskDocument')}
             >
               <LinkIcon />
             </button>
@@ -795,7 +814,7 @@ const TaskCardItem = ({
                 event.stopPropagation();
                 onDeleteTask(task.id);
               }}
-              aria-label="Delete task"
+              aria-label={t('deleteTask')}
             >
               <DeleteIcon />
             </button>
@@ -806,17 +825,17 @@ const TaskCardItem = ({
       <div className={styles.taskHeader}>
         <div className={styles.taskHeroSummary}>
           <div className={styles.taskSummaryMetric}>
-            <span className={styles.taskSummaryLabel}>Complexity</span>
-            <span className={styles.taskSummaryValue}>{complexity.label}</span>
+            <span className={styles.taskSummaryLabel}>{t('complexity')}</span>
+            <span className={styles.taskSummaryValue}>{t(complexity.value)}</span>
           </div>
           <div className={styles.taskSummaryMetric}>
-            <span className={styles.taskSummaryLabel}>Subtasks</span>
+            <span className={styles.taskSummaryLabel}>{t('subtasks')}</span>
             <span className={styles.taskSummaryValue}>
               {subtaskDoneCount}/{task.subtasks.length}
             </span>
           </div>
           <div className={styles.taskSummaryMetric}>
-            <span className={styles.taskSummaryLabel}>Files</span>
+            <span className={styles.taskSummaryLabel}>{t('files')}</span>
             <span className={styles.taskSummaryValue}>
               {task.attachments.length}
             </span>
@@ -827,7 +846,7 @@ const TaskCardItem = ({
       <div className={styles.taskMetaRow}>
         <span className={styles.taskMetaBadge}>
           <AssigneeAvatar assignee={task.assignee} size="xs" />
-          {task.assignee || 'Unassigned'}
+          {task.assignee || t('unassigned')}
         </span>
         <span
           className={clsx(styles.taskMetaBadge, styles.taskTypeBadge, {
@@ -837,7 +856,7 @@ const TaskCardItem = ({
             [styles.taskTypeEpic]: task.type === 'epic',
           })}
         >
-          {TASK_TYPE_OPTIONS.find(option => option.value === task.type)?.label}
+          {t(task.type)}
         </span>
         <span
           className={clsx(styles.taskMetaBadge, styles.priorityBadge, {
@@ -847,10 +866,10 @@ const TaskCardItem = ({
             [styles.priorityUrgent]: priorityTone === 'urgent',
           })}
         >
-          {task.priority.toUpperCase()}
+          {t(task.priority)}
         </span>
         <span className={styles.taskMetaBadge}>
-          {formatDueDateLabel(task.dueDate)}
+          {formatDueDateLabel(task.dueDate, locale, t('noDueDate'))}
         </span>
       </div>
 
@@ -865,17 +884,20 @@ const TaskCardItem = ({
       {expanded ? (
         <div className={styles.expandedCardSurface}>
           <div className={styles.expandedDescriptionBlock}>
-            <span className={styles.sectionTitle}>Description</span>
+            <span className={styles.sectionTitle}>{t('description')}</span>
             <div className={styles.expandedReadOnlyText}>
-              {task.description || 'No description yet'}
+              {task.description || t('noDescription')}
             </div>
           </div>
 
           <div className={styles.expandedSectionCard}>
             <div className={styles.expandedSectionHeader}>
-              <span className={styles.sectionTitle}>Subtasks</span>
+              <span className={styles.sectionTitle}>{t('subtasks')}</span>
               <span className={styles.expandedSectionMeta}>
-                {subtaskDoneCount}/{task.subtasks.length} completed
+                {t('completedCount', {
+                  done: subtaskDoneCount,
+                  total: task.subtasks.length,
+                })}
               </span>
             </div>
             {task.subtasks.length > 0 ? (
@@ -899,15 +921,15 @@ const TaskCardItem = ({
                 ))}
               </div>
             ) : (
-              <div className={styles.expandedEmptyState}>No subtasks yet</div>
+              <div className={styles.expandedEmptyState}>{t('noSubtasks')}</div>
             )}
           </div>
 
           <div className={styles.expandedSectionCard}>
             <div className={styles.expandedSectionHeader}>
-              <span className={styles.sectionTitle}>Files</span>
+              <span className={styles.sectionTitle}>{t('files')}</span>
               <span className={styles.expandedSectionMeta}>
-                {task.attachments.length} attached
+                {t('attachedCount', { count: task.attachments.length })}
               </span>
             </div>
             <AttachmentPreviewStrip
@@ -918,7 +940,7 @@ const TaskCardItem = ({
               onOpenAttachment={onDownloadAttachment}
             />
             {task.attachments.length === 0 ? (
-              <div className={styles.expandedEmptyState}>No files attached</div>
+              <div className={styles.expandedEmptyState}>{t('noFiles')}</div>
             ) : null}
           </div>
         </div>
@@ -936,6 +958,7 @@ const InlineAttachmentUploader = ({
   uploading: boolean;
   onUploadAttachments: (taskId: string, files: FileList | null) => void;
 }) => {
+  const { t } = useTaskTrackerI18n();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFilesChange = useCallback(
@@ -964,7 +987,7 @@ const InlineAttachmentUploader = ({
         }}
       >
         <PlusIcon />
-        {uploading ? 'Uploading...' : 'Attach file'}
+        {uploading ? t('uploading') : t('attachFile')}
       </Button>
     </>
   );
@@ -1013,6 +1036,7 @@ const TaskDetailPanel = ({
   onUploadAttachments: (taskId: string, files: FileList | null) => void;
   onDownloadAttachment: (attachment: TaskAttachment) => void;
 }) => {
+  const { t, locale } = useTaskTrackerI18n();
   const labelsText = task.labelIds
     .map(labelId => tagNameMap.get(labelId) ?? '')
     .filter(Boolean)
@@ -1034,6 +1058,7 @@ const TaskDetailPanel = ({
           <button
             type="button"
             className={styles.iconButton}
+            aria-label={t('openTaskDocument')}
             onClick={() => {
               onOpenTaskDoc(task.id);
             }}
@@ -1043,6 +1068,7 @@ const TaskDetailPanel = ({
           <button
             type="button"
             className={styles.iconButton}
+            aria-label={t('deleteTask')}
             onClick={() => {
               onDeleteTask(task.id);
             }}
@@ -1050,27 +1076,27 @@ const TaskDetailPanel = ({
             <DeleteIcon />
           </button>
           <button type="button" className={styles.textButton} onClick={onClose}>
-            Close
+            {t('close')}
           </button>
         </div>
       </div>
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
-          <span className={styles.sectionTitle}>Parameters</span>
+          <span className={styles.sectionTitle}>{t('parameters')}</span>
         </div>
         <div className={styles.editorFieldGrid}>
-          <div className={styles.editorFieldLabel}>Assignee</div>
+          <div className={styles.editorFieldLabel}>{t('assignee')}</div>
           <input
             className={styles.fieldInput}
             defaultValue={task.assignee}
-            placeholder="Name or @handle"
+            placeholder={t('assigneePlaceholder')}
             onBlur={event => {
               onAssigneeChange(task.id, event.target.value);
             }}
           />
 
-          <div className={styles.editorFieldLabel}>Type</div>
+          <div className={styles.editorFieldLabel}>{t('type')}</div>
           <select
             className={styles.fieldInput}
             value={task.type}
@@ -1080,12 +1106,12 @@ const TaskDetailPanel = ({
           >
             {TASK_TYPE_OPTIONS.map(option => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {t(option.value)}
               </option>
             ))}
           </select>
 
-          <div className={styles.editorFieldLabel}>Priority</div>
+          <div className={styles.editorFieldLabel}>{t('priority')}</div>
           <select
             className={styles.fieldInput}
             value={task.priority}
@@ -1095,12 +1121,12 @@ const TaskDetailPanel = ({
           >
             {PRIORITY_OPTIONS.map(option => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {t(option.value)}
               </option>
             ))}
           </select>
 
-          <div className={styles.editorFieldLabel}>Complexity</div>
+          <div className={styles.editorFieldLabel}>{t('complexity')}</div>
           <select
             className={styles.fieldInput}
             value={task.complexity}
@@ -1113,12 +1139,12 @@ const TaskDetailPanel = ({
           >
             {COMPLEXITY_OPTIONS.map(option => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {t(option.value)}
               </option>
             ))}
           </select>
 
-          <div className={styles.editorFieldLabel}>Due date</div>
+          <div className={styles.editorFieldLabel}>{t('dueDate')}</div>
           <input
             className={styles.fieldInput}
             type="date"
@@ -1128,11 +1154,11 @@ const TaskDetailPanel = ({
             }}
           />
 
-          <div className={styles.editorFieldLabel}>Labels</div>
+          <div className={styles.editorFieldLabel}>{t('labels')}</div>
           <input
             className={styles.fieldInput}
             defaultValue={labelsText}
-            placeholder="frontend, bug, api"
+            placeholder={t('labelsPlaceholder')}
             onBlur={event => {
               onLabelsChange(task.id, event.target.value);
             }}
@@ -1142,12 +1168,12 @@ const TaskDetailPanel = ({
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
-          <span className={styles.sectionTitle}>Description</span>
+          <span className={styles.sectionTitle}>{t('description')}</span>
         </div>
         <textarea
           className={styles.editorTextAreaLarge}
           defaultValue={task.description}
-          placeholder="Task summary and expected result"
+          placeholder={t('descriptionPlaceholder')}
           onBlur={event => {
             onDescriptionChange(task.id, event.target.value);
           }}
@@ -1155,7 +1181,7 @@ const TaskDetailPanel = ({
         <textarea
           className={styles.editorTextArea}
           defaultValue={task.extraInfo}
-          placeholder="Links, acceptance criteria, notes"
+          placeholder={t('extraInfoPlaceholder')}
           onBlur={event => {
             onExtraInfoChange(task.id, event.target.value);
           }}
@@ -1164,17 +1190,19 @@ const TaskDetailPanel = ({
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
-          <span className={styles.sectionTitle}>Subtasks</span>
+          <span className={styles.sectionTitle}>{t('subtasks')}</span>
           <span className={styles.expandedSectionMeta}>
-            {task.subtasks.filter(item => item.done).length}/
-            {task.subtasks.length} completed
+            {t('completedCount', {
+              done: task.subtasks.filter(item => item.done).length,
+              total: task.subtasks.length,
+            })}
           </span>
         </div>
         <div className={styles.detailSubtasksEditor}>
           <textarea
             className={styles.editorTextArea}
             defaultValue={subtasksText}
-            placeholder="One subtask per line"
+            placeholder={t('subtasksPlaceholder')}
             onBlur={event => {
               onSubtasksChange(task.id, event.target.value);
             }}
@@ -1210,7 +1238,7 @@ const TaskDetailPanel = ({
       <section className={styles.editorSection}>
         <div className={styles.attachmentsHeader}>
           <span className={styles.attachmentsTitle}>
-            Files ({task.attachments.length})
+            {t('files')} ({task.attachments.length})
           </span>
           <div className={styles.attachmentsActions}>
             <InlineAttachmentUploader
@@ -1230,20 +1258,20 @@ const TaskDetailPanel = ({
         />
 
         {task.attachments.length === 0 ? (
-          <div className={styles.emptyAttachments}>No files attached</div>
+          <div className={styles.emptyAttachments}>{t('noFiles')}</div>
         ) : null}
       </section>
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
-          <span className={styles.sectionTitle}>Linked tasks</span>
+          <span className={styles.sectionTitle}>{t('linkedTasks')}</span>
         </div>
-        <div className={styles.editorEmptyState}>No linked tasks yet</div>
+        <div className={styles.editorEmptyState}>{t('noLinkedTasks')}</div>
       </section>
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
-          <span className={styles.sectionTitle}>History</span>
+          <span className={styles.sectionTitle}>{t('history')}</span>
         </div>
         {task.history.length > 0 ? (
           <div className={styles.historyListDetail}>
@@ -1251,16 +1279,18 @@ const TaskDetailPanel = ({
               <div key={entry.id} className={styles.historyItemDetail}>
                 <span className={styles.historyDot} />
                 <div className={styles.historyContentDetail}>
-                  <div className={styles.historyMessage}>{entry.message}</div>
+                  <div className={styles.historyMessage}>
+                    {localizeTaskTrackerHistory(entry.message, t)}
+                  </div>
                   <div className={styles.historyTime}>
-                    {formatHistoryTime(entry.createdAt)}
+                    {formatHistoryTime(entry.createdAt, locale)}
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className={styles.editorEmptyState}>No history yet</div>
+          <div className={styles.editorEmptyState}>{t('noHistory')}</div>
         )}
       </section>
     </aside>
@@ -1268,6 +1298,7 @@ const TaskDetailPanel = ({
 };
 
 const TaskTrackerPage = () => {
+  const { t, locale } = useTaskTrackerI18n();
   const docsService = useService(DocsService);
   const tagService = useService(TagService);
   const workbench = useService(WorkbenchService).workbench;
@@ -1875,10 +1906,10 @@ const TaskTrackerPage = () => {
         selectedBoardTasks
           .map(task => task.assignee)
           .filter(value => value.length > 0)
-          .sort((a, b) => a.localeCompare(b))
+          .sort((a, b) => a.localeCompare(b, locale))
       )
     );
-  }, [selectedBoardTasks]);
+  }, [locale, selectedBoardTasks]);
 
   const usedLabelIds = useMemo(() => {
     return Array.from(
@@ -1922,7 +1953,7 @@ const TaskTrackerPage = () => {
   );
 
   const filteredTasks = useMemo(() => {
-    const search = searchQuery.trim().toLowerCase();
+    const search = searchQuery.trim().toLocaleLowerCase(locale);
 
     return selectedBoardTasks.filter(task => {
       if (priorityFilter !== 'all' && task.priority !== priorityFilter) {
@@ -1952,24 +1983,21 @@ const TaskTrackerPage = () => {
       const labelText = task.labelIds
         .map(labelId => tagNameMap.get(labelId) ?? '')
         .join(' ')
-        .toLowerCase();
+        .toLocaleLowerCase(locale);
 
       const attachmentText = task.attachments
         .map(attachment => attachment.name)
         .join(' ')
-        .toLowerCase();
-      const typeText =
-        TASK_TYPE_OPTIONS.find(
-          option => option.value === task.type
-        )?.label.toLowerCase() ?? '';
+        .toLocaleLowerCase(locale);
+      const typeText = `${TASK_TYPE_OPTIONS.find(option => option.value === task.type)?.label ?? ''} ${t(task.type)}`.toLocaleLowerCase(locale);
 
       return (
-        task.number.toLowerCase().includes(search) ||
-        task.title.toLowerCase().includes(search) ||
-        task.assignee.toLowerCase().includes(search) ||
+        task.number.toLocaleLowerCase(locale).includes(search) ||
+        task.title.toLocaleLowerCase(locale).includes(search) ||
+        task.assignee.toLocaleLowerCase(locale).includes(search) ||
         labelText.includes(search) ||
-        task.description.toLowerCase().includes(search) ||
-        task.extraInfo.toLowerCase().includes(search) ||
+        task.description.toLocaleLowerCase(locale).includes(search) ||
+        task.extraInfo.toLocaleLowerCase(locale).includes(search) ||
         attachmentText.includes(search) ||
         typeText.includes(search)
       );
@@ -1978,10 +2006,12 @@ const TaskTrackerPage = () => {
     assigneeFilter,
     isDueInFilter,
     labelFilter,
+    locale,
     priorityFilter,
     searchQuery,
     tagNameMap,
     selectedBoardTasks,
+    t,
     typeFilter,
   ]);
 
@@ -2023,12 +2053,12 @@ const TaskTrackerPage = () => {
         if (a.priority !== b.priority) {
           return PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority];
         }
-        return a.title.localeCompare(b.title);
+        return a.title.localeCompare(b.title, locale);
       });
     });
 
     return grouped;
-  }, [filteredTasks, flow]);
+  }, [filteredTasks, flow, locale]);
 
   const allTasksByColumn = useMemo(() => {
     const grouped = new Map<string, TaskCard[]>();
@@ -2193,8 +2223,8 @@ const TaskTrackerPage = () => {
       ])
     );
 
-    docsService.changeDocTitle(doc.id, 'New task').catch(() => {
-      notify.error({ title: 'Failed to set task title' });
+    docsService.changeDocTitle(doc.id, t('newTask')).catch(() => {
+      notify.error({ title: t('setTitleFailed') });
     });
     setSelectedTaskId(doc.id);
   }, [
@@ -2202,6 +2232,7 @@ const TaskTrackerPage = () => {
     docsService,
     flow,
     selectedBoard,
+    t,
     tasks,
     workspaceTaskKey,
   ]);
@@ -2215,7 +2246,7 @@ const TaskTrackerPage = () => {
       }
 
       docsService.changeDocTitle(taskId, nextTitle).catch(() => {
-        notify.error({ title: 'Failed to rename task' });
+        notify.error({ title: t('renameFailed') });
       });
       appendTaskHistory(
         taskId,
@@ -2223,7 +2254,7 @@ const TaskTrackerPage = () => {
         task.history
       );
     },
-    [appendTaskHistory, docsService, tasks]
+    [appendTaskHistory, docsService, t, tasks]
   );
 
   const handleDeleteTask = useCallback(
@@ -2507,7 +2538,7 @@ const TaskTrackerPage = () => {
       if (
         !isTransitionAllowed(resolvedFromColumnId, toColumnId, draggedTaskType)
       ) {
-        notify.error({ title: 'Transition is blocked by workflow rules.' });
+        notify.error({ title: t('transitionBlocked') });
         return;
       }
 
@@ -2558,6 +2589,7 @@ const TaskTrackerPage = () => {
       isTransitionAllowed,
       selectedBoardTasks,
       setTaskStatusAndOrder,
+      t,
     ]
   );
 
@@ -2602,12 +2634,12 @@ const TaskTrackerPage = () => {
           stringifyAttachments(nextAttachments)
         );
       } catch {
-        notify.error({ title: 'Failed to upload attachments' });
+        notify.error({ title: t('uploadFailed') });
       } finally {
         setUploadingTaskId(current => (current === taskId ? null : current));
       }
     },
-    [docsService.list, tasks, workspace]
+    [docsService.list, t, tasks, workspace]
   );
 
   const handleDownloadAttachment = useCallback(
@@ -2619,7 +2651,7 @@ const TaskTrackerPage = () => {
       try {
         const record = await workspace.engine.blob.get(attachment.id);
         if (!record) {
-          notify.error({ title: 'Attachment not found' });
+          notify.error({ title: t('attachmentNotFound') });
           return;
         }
 
@@ -2636,10 +2668,10 @@ const TaskTrackerPage = () => {
         anchor.remove();
         URL.revokeObjectURL(url);
       } catch {
-        notify.error({ title: 'Failed to download attachment' });
+        notify.error({ title: t('downloadFailed') });
       }
     },
-    [workspace]
+    [t, workspace]
   );
 
   const handleOpenTaskDoc = useCallback(
@@ -2693,7 +2725,7 @@ const TaskTrackerPage = () => {
     const boardFlow = createDefaultBoardFlow();
     const board: TaskTrackerBoard = {
       id: nanoid(),
-      title: `Board ${boards.length + 1}`,
+      title: t('boardNumber', { number: boards.length + 1 }),
       flow: boardFlow,
       transitions: buildDefaultTransitions(boardFlow),
       typeTransitions: buildDefaultTypeTransitions(boardFlow),
@@ -2702,7 +2734,7 @@ const TaskTrackerPage = () => {
     const nextBoards = [...boards, board];
     saveBoardsConfig(nextBoards);
     setSelectedBoardId(board.id);
-  }, [boards, saveBoardsConfig]);
+  }, [boards, saveBoardsConfig, t]);
 
   const handleDeleteBoard = useCallback(() => {
     if (!selectedBoard || boards.length <= 1) {
@@ -2736,8 +2768,16 @@ const TaskTrackerPage = () => {
 
   const handleRenameBoard = useCallback(
     (boardId: string, title: string) => {
+      const board = boards.find(item => item.id === boardId);
       const nextTitle = title.trim();
-      if (!nextTitle) {
+      if (!board || !nextTitle) {
+        return;
+      }
+      if (
+        board.id === DEFAULT_BOARD_ID &&
+        board.title === DEFAULT_BOARD_TITLE &&
+        nextTitle === t('defaultBoard')
+      ) {
         return;
       }
 
@@ -2746,17 +2786,17 @@ const TaskTrackerPage = () => {
       );
       saveBoardsConfig(nextBoards);
     },
-    [boards, saveBoardsConfig]
+    [boards, saveBoardsConfig, t]
   );
 
   return (
     <>
-      <ViewTitle title="Task Tracker" />
+      <ViewTitle title={t('title')} />
       <ViewIcon icon="collection" />
       <ViewHeader>
         <div className={styles.header}>
           <div className={styles.headerMain}>
-            <div className={styles.headerTitle}>Task Tracker</div>
+            <div className={styles.headerTitle}>{t('title')}</div>
           </div>
           <div className={styles.headerActions}>
             <Button
@@ -2767,11 +2807,11 @@ const TaskTrackerPage = () => {
                 });
               }}
             >
-              Board settings
+              {t('boardSettings')}
             </Button>
             <Button onClick={() => handleCreateTask()}>
               <PlusIcon />
-              New task
+              {t('newTask')}
             </Button>
           </div>
         </div>
@@ -2780,8 +2820,11 @@ const TaskTrackerPage = () => {
       <ViewBody>
         <div className={styles.page}>
           <div className={styles.pageMeta}>
-            {selectedBoardTasks.length} tasks in board • {flow.length} stages •{' '}
-            {boards.length} boards
+            {t('boardMeta', {
+              tasks: selectedBoardTasks.length,
+              stages: flow.length,
+              boards: boards.length,
+            })}
           </div>
 
           <div className={styles.boardToolbar}>
@@ -2794,7 +2837,7 @@ const TaskTrackerPage = () => {
             >
               {boards.map(board => (
                 <option key={board.id} value={board.id}>
-                  {board.title}
+                  {localizeTaskTrackerBoardTitle(board, t)}
                 </option>
               ))}
             </select>
@@ -2802,8 +2845,8 @@ const TaskTrackerPage = () => {
             {selectedBoard ? (
               <input
                 className={styles.boardNameInput}
-                defaultValue={selectedBoard.title}
-                key={selectedBoard.id}
+                defaultValue={localizeTaskTrackerBoardTitle(selectedBoard, t)}
+                key={`${selectedBoard.id}:${locale}`}
                 onBlur={event => {
                   handleRenameBoard(selectedBoard.id, event.target.value);
                 }}
@@ -2812,7 +2855,7 @@ const TaskTrackerPage = () => {
 
             <Button variant="plain" onClick={handleCreateBoard}>
               <PlusIcon />
-              New board
+              {t('newBoard')}
             </Button>
 
             <Button
@@ -2821,7 +2864,7 @@ const TaskTrackerPage = () => {
               onClick={handleDeleteBoard}
             >
               <DeleteIcon />
-              Delete board
+              {t('deleteBoard')}
             </Button>
           </div>
 
@@ -2832,7 +2875,7 @@ const TaskTrackerPage = () => {
               onChange={event => {
                 setSearchQuery(event.target.value);
               }}
-              placeholder="Search tasks, assignee, labels, description"
+              placeholder={t('searchPlaceholder')}
             />
 
             <select
@@ -2847,10 +2890,10 @@ const TaskTrackerPage = () => {
                 setPriorityFilter(sanitizePriority(value));
               }}
             >
-              <option value="all">All priorities</option>
+              <option value="all">{t('allPriorities')}</option>
               {PRIORITY_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.value)}
                 </option>
               ))}
             </select>
@@ -2867,10 +2910,10 @@ const TaskTrackerPage = () => {
                 setTypeFilter(sanitizeTaskType(value));
               }}
             >
-              <option value="all">All types</option>
+              <option value="all">{t('allTypes')}</option>
               {TASK_TYPE_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.value)}
                 </option>
               ))}
             </select>
@@ -2882,7 +2925,7 @@ const TaskTrackerPage = () => {
                 setAssigneeFilter(event.target.value);
               }}
             >
-              <option value="all">All assignees</option>
+              <option value="all">{t('allAssignees')}</option>
               {assigneeOptions.map(assignee => (
                 <option key={assignee} value={assignee}>
                   {assignee}
@@ -2897,7 +2940,7 @@ const TaskTrackerPage = () => {
                 setLabelFilter(event.target.value);
               }}
             >
-              <option value="all">All labels</option>
+              <option value="all">{t('allLabels')}</option>
               {usedLabelIds.map(labelId => (
                 <option key={labelId} value={labelId}>
                   {tagNameMap.get(labelId)}
@@ -2912,18 +2955,16 @@ const TaskTrackerPage = () => {
                 setDueFilter(event.target.value as DueFilter);
               }}
             >
-              <option value="all">Any due date</option>
-              <option value="overdue">Overdue</option>
-              <option value="today">Today</option>
-              <option value="next-7-days">Next 7 days</option>
-              <option value="no-date">No due date</option>
+              <option value="all">{t('anyDueDate')}</option>
+              <option value="overdue">{t('overdue')}</option>
+              <option value="today">{t('today')}</option>
+              <option value="next-7-days">{t('next7Days')}</option>
+              <option value="no-date">{t('noDueDate')}</option>
             </select>
           </div>
 
           {hasActiveFilters ? (
-            <div className={styles.filterHint}>
-              Drag-and-drop is disabled while filters/search are active.
-            </div>
+            <div className={styles.filterHint}>{t('filtersDisableDrag')}</div>
           ) : null}
 
           <div
@@ -2971,7 +3012,7 @@ const TaskTrackerPage = () => {
                             [styles.statusDone]: tone === 'done',
                           })}
                         >
-                          {column.title.toUpperCase()}
+                          {localizeTaskTrackerStageTitle(column, t).toLocaleUpperCase(locale)}
                         </span>
                         <span className={styles.columnCount}>
                           {columnTasks.length}

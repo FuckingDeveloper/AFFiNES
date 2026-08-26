@@ -1,5 +1,6 @@
 import type { SettingTab } from '@affine/core/modules/dialogs/constant';
 import { EmbeddingSettings } from '@affine/core/modules/workspace-indexer-embedding';
+import { useTaskTrackerI18n } from '@affine/core/utils/task-tracker-i18n';
 import { useI18n } from '@affine/i18n';
 import {
   AiEmbeddingIcon,
@@ -58,6 +59,7 @@ export const WorkspaceSetting = ({
 
 export const useWorkspaceSettingList = (): SettingSidebarItem[] => {
   const t = useI18n();
+  const { t: taskTrackerT } = useTaskTrackerI18n();
 
   const items = useMemo<SettingSidebarItem[]>(() => {
     return [
@@ -102,12 +104,12 @@ export const useWorkspaceSettingList = (): SettingSidebarItem[] => {
       },
       {
         key: 'workspace:task-tracker',
-        title: 'Task Tracker',
+        title: taskTrackerT('title'),
         icon: <ViewLayersIcon />,
         testId: 'workspace-setting:task-tracker',
       },
     ].filter((item): item is SettingSidebarItem => !!item);
-  }, [t]);
+  }, [t, taskTrackerT]);
 
   return items;
 };
