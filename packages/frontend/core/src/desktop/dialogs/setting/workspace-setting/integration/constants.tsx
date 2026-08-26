@@ -1,9 +1,10 @@
 import { IntegrationTypeIcon } from '@affine/core/modules/integration';
 import type { I18nString } from '@affine/i18n';
-import { Logo1Icon, TodayIcon } from '@blocksuite/icons/rc';
+import { GithubIcon, Logo1Icon, TodayIcon } from '@blocksuite/icons/rc';
 import type { ReactNode } from 'react';
 
 import { CalendarSettingPanel } from './calendar/setting-panel';
+import { GitLabSettingPanel } from './gitlab/setting-panel';
 import MCPIcon from './mcp-server/MCP.inline.svg';
 import { McpServerSettingPanel } from './mcp-server/setting-panel';
 import { ReadwiseSettingPanel } from './readwise/setting-panel';
@@ -32,6 +33,13 @@ const INTEGRATION_LIST = [
     icon: <TodayIcon />,
     setting: <CalendarSettingPanel />,
     cloud: true,
+  },
+  {
+    id: 'gitlab' as const,
+    name: 'com.affine.integration.gitlab.name',
+    desc: 'com.affine.integration.gitlab.desc',
+    icon: <GithubIcon />,
+    setting: <GitLabSettingPanel />,
   },
   {
     id: 'mcp-server' as const,
