@@ -17,6 +17,11 @@ import {
   localizeTaskTrackerStageTitle,
   useTaskTrackerI18n,
 } from '@affine/core/utils/task-tracker-i18n';
+import {
+  formatTaskKey,
+  nextTaskNumber,
+  parseTaskNumber,
+} from '@affine/trackwork';
 import { DeleteIcon, LinkIcon, PlusIcon } from '@blocksuite/icons/rc';
 import { LiveData, useLiveData, useService } from '@toeverything/infra';
 import clsx from 'clsx';
@@ -216,11 +221,6 @@ const parseOrder = (value: string | undefined): number => {
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
-};
-
-const parseTaskNumber = (value: string | undefined): number => {
-  const parsed = Number(value?.split('-').at(-1));
-  return Number.isFinite(parsed) ? parsed : 0;
 };
 
 const toIsoDate = (date: Date): string => {
@@ -826,7 +826,9 @@ const TaskCardItem = ({
         <div className={styles.taskHeroSummary}>
           <div className={styles.taskSummaryMetric}>
             <span className={styles.taskSummaryLabel}>{t('complexity')}</span>
-            <span className={styles.taskSummaryValue}>{t(complexity.value)}</span>
+            <span className={styles.taskSummaryValue}>
+              {t(complexity.value)}
+            </span>
           </div>
           <div className={styles.taskSummaryMetric}>
             <span className={styles.taskSummaryLabel}>{t('subtasks')}</span>
@@ -1850,7 +1852,10 @@ const TaskTrackerPage = () => {
       .map((docId: string) => {
         return {
           id: docId,
-          number: numberValues.get(docId) || `${workspaceTaskKey}-0`,
+          number: formatTaskKey(
+            workspaceTaskKey,
+            parseTaskNumber(numberValues.get(docId))
+          ),
           title: titleMap.get(docId) ?? '',
           boardId: boardValues.get(docId) || DEFAULT_BOARD_ID,
           status: statusValues.get(docId) || fallbackStatus,
@@ -1890,6 +1895,36 @@ const TaskTrackerPage = () => {
     historyValues,
     workspaceTaskKey,
   ]);
+
+  useEffect(() => {
+    const sorted = [...tasks].sort((a, b) => a.id.localeCompare(b.id));
+    const seen = new Set<number>();
+    const toFix: TaskCard[] = [];
+
+    for (const task of sorted) {
+      const number = parseTaskNumber(task.number);
+      if (number > 0 && !seen.has(number)) {
+        seen.add(number);
+      } else {
+        toFix.push(task);
+      }
+    }
+
+    if (toFix.length === 0) {
+      return;
+    }
+
+    let next = Math.max(0, ...seen) + 1;
+    for (const task of toFix) {
+      const doc = docsService.list.doc$(task.id).value;
+      if (!doc) {
+        continue;
+      }
+      doc.setCustomProperty(TASK_NUMBER_PROPERTY, String(next));
+      seen.add(next);
+      next += 1;
+    }
+  }, [docsService.list, tasks]);
 
   const selectedBoardTasks = useMemo(() => {
     const currentBoardId = selectedBoard?.id;
@@ -1989,7 +2024,10 @@ const TaskTrackerPage = () => {
         .map(attachment => attachment.name)
         .join(' ')
         .toLocaleLowerCase(locale);
-      const typeText = `${TASK_TYPE_OPTIONS.find(option => option.value === task.type)?.label ?? ''} ${t(task.type)}`.toLocaleLowerCase(locale);
+      const typeText =
+        `${TASK_TYPE_OPTIONS.find(option => option.value === task.type)?.label ?? ''} ${t(task.type)}`.toLocaleLowerCase(
+          locale
+        );
 
       return (
         task.number.toLocaleLowerCase(locale).includes(search) ||
@@ -2191,9 +2229,7 @@ const TaskTrackerPage = () => {
 
     const nextOrder =
       (allTasksByColumn.get(targetColumn.id)?.length ?? 0) * 1000 + 1000;
-    const nextNumber =
-      Math.max(0, ...tasks.map(task => parseTaskNumber(task.number))) + 1;
-    const taskNumber = `${workspaceTaskKey}-${nextNumber}`;
+    const nextNumber = nextTaskNumber(tasks.map(task => task.number));
 
     const doc = docsService.createDoc({
       primaryMode: 'page',
@@ -2210,7 +2246,7 @@ const TaskTrackerPage = () => {
     doc.setCustomProperty(TASK_ASSIGNEE_PROPERTY, '');
     doc.setCustomProperty(TASK_DUE_DATE_PROPERTY, '');
     doc.setCustomProperty(TASK_ORDER_PROPERTY, String(nextOrder));
-    doc.setCustomProperty(TASK_NUMBER_PROPERTY, taskNumber);
+    doc.setCustomProperty(TASK_NUMBER_PROPERTY, String(nextNumber));
     doc.setCustomProperty(TASK_DESCRIPTION_PROPERTY, '');
     doc.setCustomProperty(TASK_EXTRA_INFO_PROPERTY, '');
     doc.setCustomProperty(TASK_ATTACHMENTS_PROPERTY, '[]');
@@ -2227,15 +2263,7 @@ const TaskTrackerPage = () => {
       notify.error({ title: t('setTitleFailed') });
     });
     setSelectedTaskId(doc.id);
-  }, [
-    allTasksByColumn,
-    docsService,
-    flow,
-    selectedBoard,
-    t,
-    tasks,
-    workspaceTaskKey,
-  ]);
+  }, [allTasksByColumn, docsService, flow, selectedBoard, t, tasks]);
 
   const handleRenameTask = useCallback(
     (taskId: string, title: string) => {
@@ -3012,7 +3040,10 @@ const TaskTrackerPage = () => {
                             [styles.statusDone]: tone === 'done',
                           })}
                         >
-                          {localizeTaskTrackerStageTitle(column, t).toLocaleUpperCase(locale)}
+                          {localizeTaskTrackerStageTitle(
+                            column,
+                            t
+                          ).toLocaleUpperCase(locale)}
                         </span>
                         <span className={styles.columnCount}>
                           {columnTasks.length}

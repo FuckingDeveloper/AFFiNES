@@ -1,0 +1,6 @@
+mutation testDevelopmentIntegration($connectionId: String!) {
+  testDevelopmentIntegration(connectionId: $connectionId) {
+    ok
+    message
+  }
+}

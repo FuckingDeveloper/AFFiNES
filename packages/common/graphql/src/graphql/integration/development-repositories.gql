@@ -1,0 +1,11 @@
+mutation developmentRepositories($connectionId: String!) {
+  developmentRepositories(connectionId: $connectionId) {
+    externalId
+    name
+    fullName
+    webUrl
+    defaultBranch
+    imported
+    enabled
+  }
+}

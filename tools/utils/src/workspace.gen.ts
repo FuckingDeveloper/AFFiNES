@@ -1172,6 +1172,11 @@ export const PackageList = [
     workspaceDependencies: [],
   },
   {
+    location: 'packages/common/trackwork',
+    name: '@affine/trackwork',
+    workspaceDependencies: [],
+  },
+  {
     location: 'packages/frontend/admin',
     name: '@affine/admin',
     workspaceDependencies: [
@@ -1293,6 +1298,7 @@ export const PackageList = [
       'packages/common/error',
       'packages/common/graphql',
       'packages/frontend/i18n',
+      'packages/common/trackwork',
       'packages/common/nbstore',
       'packages/common/reader',
       'packages/frontend/templates',
@@ -1533,6 +1539,7 @@ export type PackageName =
   | '@affine/reader'
   | '@affine/realtime'
   | '@affine/s3-compat'
+  | '@affine/trackwork'
   | '@affine/admin'
   | '@affine/android'
   | '@affine/electron'

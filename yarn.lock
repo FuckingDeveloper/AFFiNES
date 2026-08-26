@@ -385,6 +385,7 @@ __metadata:
     "@affine/reader": "workspace:*"
     "@affine/templates": "workspace:*"
     "@affine/track": "workspace:*"
+    "@affine/trackwork": "workspace:*"
     "@atlaskit/pragmatic-drag-and-drop": "npm:^1.7.7"
     "@blocksuite/affine": "workspace:*"
     "@blocksuite/affine-block-root": "workspace:*"
@@ -1066,6 +1067,14 @@ __metadata:
     "@types/react": "npm:^19.0.1"
     nanoid: "npm:^5.1.6"
     react-router-dom: "npm:^6.30.3"
+    vitest: "npm:^4.0.18"
+  languageName: unknown
+  linkType: soft
+
+"@affine/trackwork@workspace:*, @affine/trackwork@workspace:packages/common/trackwork":
+  version: 0.0.0-use.local
+  resolution: "@affine/trackwork@workspace:packages/common/trackwork"
+  dependencies:
     vitest: "npm:^4.0.18"
   languageName: unknown
   linkType: soft

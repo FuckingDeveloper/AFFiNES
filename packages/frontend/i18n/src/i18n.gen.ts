@@ -9004,6 +9004,118 @@ export function useAFFiNEI18N(): {
         readonly date: string;
     }): string;
     /**
+      * `GitLab`
+      */
+    ["com.affine.integration.gitlab.name"](): string;
+    /**
+      * `Link GitLab repositories, commits, merge requests and pipelines to TrackWork tasks.`
+      */
+    ["com.affine.integration.gitlab.desc"](): string;
+    /**
+      * `Name`
+      */
+    ["com.affine.integration.gitlab.connection.name"](): string;
+    /**
+      * `GitLab URL`
+      */
+    ["com.affine.integration.gitlab.connection.base-url"](): string;
+    /**
+      * `Access token`
+      */
+    ["com.affine.integration.gitlab.connection.token"](): string;
+    /**
+      * `Webhook secret`
+      */
+    ["com.affine.integration.gitlab.connection.webhook-secret"](): string;
+    /**
+      * `Connect GitLab`
+      */
+    ["com.affine.integration.gitlab.connection.create"](): string;
+    /**
+      * `Test connection`
+      */
+    ["com.affine.integration.gitlab.connection.test"](): string;
+    /**
+      * `Rotate credentials`
+      */
+    ["com.affine.integration.gitlab.connection.rotate"](): string;
+    /**
+      * `Delete connection`
+      */
+    ["com.affine.integration.gitlab.connection.delete"](): string;
+    /**
+      * `Copy`
+      */
+    ["com.affine.integration.gitlab.connection.copy"](): string;
+    /**
+      * `Webhook URL copied to clipboard`
+      */
+    ["com.affine.integration.gitlab.connection.copied"](): string;
+    /**
+      * `Enabled`
+      */
+    ["com.affine.integration.gitlab.connection.enabled"](): string;
+    /**
+      * `Token stored securely`
+      */
+    ["com.affine.integration.gitlab.connection.token-masked"](): string;
+    /**
+      * `Webhook secret configured`
+      */
+    ["com.affine.integration.gitlab.connection.secret-masked"](): string;
+    /**
+      * `No webhook secret set`
+      */
+    ["com.affine.integration.gitlab.connection.no-secret"](): string;
+    /**
+      * `GitLab connection created`
+      */
+    ["com.affine.integration.gitlab.connection.created"](): string;
+    /**
+      * `GitLab connection deleted`
+      */
+    ["com.affine.integration.gitlab.connection.deleted"](): string;
+    /**
+      * `GitLab credentials rotated`
+      */
+    ["com.affine.integration.gitlab.connection.rotated"](): string;
+    /**
+      * `Failed to create GitLab connection`
+      */
+    ["com.affine.integration.gitlab.connection.create-failed"](): string;
+    /**
+      * `Failed to update GitLab connection`
+      */
+    ["com.affine.integration.gitlab.connection.update-failed"](): string;
+    /**
+      * `Failed to delete GitLab connection`
+      */
+    ["com.affine.integration.gitlab.connection.delete-failed"](): string;
+    /**
+      * `Connection test failed`
+      */
+    ["com.affine.integration.gitlab.connection.test-failed"](): string;
+    /**
+      * `Load repositories`
+      */
+    ["com.affine.integration.gitlab.repositories.load"](): string;
+    /**
+      * `Failed to load repositories`
+      */
+    ["com.affine.integration.gitlab.repositories.load-failed"](): string;
+    /**
+      * `Import`
+      */
+    ["com.affine.integration.gitlab.repositories.import"](): string;
+    /**
+      * `Tracked`
+      */
+    ["com.affine.integration.gitlab.repositories.enabled"](): string;
+    /**
+      * `No repositories found`
+      */
+    ["com.affine.integration.gitlab.repositories.empty"](): string;
+    /**
       * `No subscribed calendars yet.`
       */
     ["com.affine.integration.calendar.no-calendar"](): string;

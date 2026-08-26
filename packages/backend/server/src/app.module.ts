@@ -54,6 +54,7 @@ import { WorkspaceModule } from './core/workspaces';
 import { Env } from './env';
 import { ModelsModule } from './models';
 import { CalendarModule } from './plugins/calendar';
+import { IntegrationModule } from './plugins/integration';
 import { CaptchaModule } from './plugins/captcha';
 import { CopilotModule, CopilotRealtimeModule } from './plugins/copilot';
 import { CustomerIoModule } from './plugins/customerio';
@@ -202,6 +203,7 @@ export function buildAppModule(env: Env) {
       CaptchaModule,
       OAuthModule,
       CalendarModule,
+      IntegrationModule,
       CustomerIoModule,
       TelemetryModule,
       CommentModule,

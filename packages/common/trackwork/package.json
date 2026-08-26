@@ -1,0 +1,12 @@
+{
+  "name": "@affine/trackwork",
+  "version": "0.26.3",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
+  }
+}
