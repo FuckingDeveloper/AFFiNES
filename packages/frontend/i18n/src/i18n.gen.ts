@@ -9032,6 +9032,14 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.jenkins.refresh-failed"](): string;
     /**
+      * `Development links migrated to the new task key prefix`
+      */
+    ["com.affine.integration.task-key-migrated"](): string;
+    /**
+      * `Failed to migrate development links`
+      */
+    ["com.affine.integration.task-key-migrate-failed"](): string;
+    /**
       * `Link GitLab repositories, commits, merge requests and pipelines to TrackWork tasks.`
       */
     ["com.affine.integration.gitlab.desc"](): string;

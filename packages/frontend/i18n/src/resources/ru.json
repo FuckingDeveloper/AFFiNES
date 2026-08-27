@@ -2439,6 +2439,8 @@
   "com.affine.integration.jenkins.refresh": "Обновить пайплайны",
   "com.affine.integration.jenkins.refreshed": "Пайплайны обновлены",
   "com.affine.integration.jenkins.refresh-failed": "Не удалось обновить пайплайны",
+  "com.affine.integration.task-key-migrated": "Связи разработки перенесены на новый префикс ключей задач",
+  "com.affine.integration.task-key-migrate-failed": "Не удалось перенести связи разработки",
   "com.affine.integration.gitlab.desc": "Свяжите репозитории, коммиты, merge request'ы и пайплайны GitLab с задачами TrackWork.",
   "com.affine.integration.gitlab.connection.name": "Название",
   "com.affine.integration.gitlab.connection.base-url": "URL GitLab",

@@ -2260,6 +2260,8 @@
   "com.affine.integration.jenkins.refresh": "Refresh pipelines",
   "com.affine.integration.jenkins.refreshed": "Pipelines refreshed",
   "com.affine.integration.jenkins.refresh-failed": "Failed to refresh pipelines",
+  "com.affine.integration.task-key-migrated": "Development links migrated to the new task key prefix",
+  "com.affine.integration.task-key-migrate-failed": "Failed to migrate development links",
   "com.affine.integration.gitlab.desc": "Link GitLab repositories, commits, merge requests and pipelines to TrackWork tasks.",
   "com.affine.integration.gitlab.connection.name": "Name",
   "com.affine.integration.gitlab.connection.base-url": "GitLab URL",
