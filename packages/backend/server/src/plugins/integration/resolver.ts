@@ -15,6 +15,7 @@ import { DevelopmentLinkService } from './link-service';
 import { IntegrationConnectionService } from './service';
 import {
   CreateDevelopmentIntegrationInput,
+  DevelopmentActivityConnectionType,
   DevelopmentConnectionTestResultType,
   DevelopmentIntegrationConnectionType,
   DevelopmentPipelineType,
@@ -162,6 +163,45 @@ export class DevelopmentInfoResolver {
       }));
 
     return { commits, branches, mergeRequests, pipelines };
+  }
+
+  @Query(() => DevelopmentActivityConnectionType)
+  async trackWorkActivity(
+    @CurrentUser() user: CurrentUser | null,
+    @Args('workspaceId') workspaceId: string,
+    @Args('taskKey', { nullable: true }) taskKey?: string,
+    @Args('first', { nullable: true, defaultValue: 20 }) first?: number,
+    @Args('after', { nullable: true }) after?: string
+  ) {
+    if (!user) {
+      throw new AuthenticationRequired();
+    }
+
+    await this.access
+      .user(user.id)
+      .workspace(workspaceId)
+      .assert('Workspace.Read');
+
+    const { nodes, nextCursor, hasNextPage } = await this.links.listActivity({
+      workspaceId,
+      taskKey,
+      first: Math.min(first ?? 20, 50),
+      after,
+    });
+
+    return {
+      items: nodes.map(node => ({
+        id: node.id,
+        eventType: node.eventType,
+        title: node.title,
+        url: node.url,
+        authorName: node.authorName,
+        repositoryName: node.repositoryName,
+        createdAt: node.createdAt,
+      })),
+      nextCursor,
+      hasNextPage,
+    };
   }
 }
 

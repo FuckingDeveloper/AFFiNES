@@ -445,3 +445,39 @@ export class DevelopmentPipelineType {
   @Field({ nullable: true })
   finishedAt?: Date;
 }
+
+@ObjectType('DevelopmentActivity')
+export class DevelopmentActivityType {
+  @Field()
+  id!: string;
+
+  @Field()
+  eventType!: string;
+
+  @Field()
+  title!: string;
+
+  @Field()
+  url!: string;
+
+  @Field({ nullable: true })
+  authorName?: string;
+
+  @Field({ nullable: true })
+  repositoryName?: string;
+
+  @Field(() => Date)
+  createdAt!: Date;
+}
+
+@ObjectType('DevelopmentActivityConnection')
+export class DevelopmentActivityConnectionType {
+  @Field(() => [DevelopmentActivityType])
+  items!: DevelopmentActivityType[];
+
+  @Field({ nullable: true })
+  nextCursor?: string;
+
+  @Field()
+  hasNextPage!: boolean;
+}

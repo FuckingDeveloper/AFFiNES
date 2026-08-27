@@ -1508,3 +1508,21 @@ model DevelopmentPipeline {
   @@index([connectionId, status])
   @@map("development_pipelines")
 }
+
+model DevelopmentActivity {
+  id             String   @id @default(uuid()) @db.VarChar
+  workspaceId    String   @map("workspace_id") @db.VarChar
+  connectionId   String   @map("connection_id") @db.VarChar
+  taskKey        String   @map("task_key") @db.VarChar
+  eventType      String   @map("event_type") @db.VarChar
+  title          String   @db.VarChar
+  url            String   @db.VarChar
+  authorName     String?  @map("author_name") @db.VarChar
+  repositoryName String?  @map("repository_name") @db.VarChar
+  metadata       Json     @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([workspaceId, taskKey, createdAt])
+  @@index([workspaceId, createdAt])
+  @@map("development_activity")
+}

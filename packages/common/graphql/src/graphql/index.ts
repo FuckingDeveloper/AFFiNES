@@ -2651,6 +2651,31 @@ export const testDevelopmentIntegrationMutation = {
 }`,
 };
 
+export const trackWorkActivityQuery = {
+  id: 'trackWorkActivityQuery' as const,
+  op: 'trackWorkActivity',
+  query: `query trackWorkActivity($workspaceId: String!, $taskKey: String, $first: Int = 20, $after: String) {
+  trackWorkActivity(
+    workspaceId: $workspaceId
+    taskKey: $taskKey
+    first: $first
+    after: $after
+  ) {
+    items {
+      id
+      eventType
+      title
+      url
+      authorName
+      repositoryName
+      createdAt
+    }
+    nextCursor
+    hasNextPage
+  }
+}`,
+};
+
 export const trackWorkTaskDevelopmentQuery = {
   id: 'trackWorkTaskDevelopmentQuery' as const,
   op: 'trackWorkTaskDevelopment',

@@ -69,6 +69,12 @@ export class IntegrationJob {
       repositoryId: repository.id,
     });
 
+    await this.recordEventActivity(event, {
+      workspaceId: connection.workspaceId,
+      connectionId,
+      repositoryName: repository.fullName,
+    });
+
     await this.links.markEventProcessed(
       connectionId,
       event.idempotencyKey,
@@ -78,5 +84,55 @@ export class IntegrationJob {
     this.logger.log(
       `Linked webhook event [${event.type}] for keys [${event.taskKeys.join(', ')}]`
     );
+  }
+
+  private async recordEventActivity(
+    event: DevelopmentEvent,
+    context: {
+      workspaceId: string;
+      connectionId: string;
+      repositoryName: string;
+    }
+  ) {
+    for (const taskKey of event.taskKeys) {
+      switch (event.type) {
+        case 'commit.pushed':
+          await this.links.recordActivity({
+            ...context,
+            taskKey,
+            eventType: 'commit.pushed',
+            title: event.commit.message.split('\n')[0]!,
+            url: event.commit.url ?? event.repository.url,
+            authorName: event.commit.authorName,
+            metadata: { shortSha: event.commit.shortSha },
+          });
+          break;
+
+        case 'branch.updated':
+          await this.links.recordActivity({
+            ...context,
+            taskKey,
+            eventType: 'branch.updated',
+            title: event.branch.name,
+            url: event.branch.url ?? event.repository.url,
+            metadata: {},
+          });
+          break;
+
+        case 'merge_request.opened':
+        case 'merge_request.updated':
+        case 'merge_request.merged':
+          await this.links.recordActivity({
+            ...context,
+            taskKey,
+            eventType: event.type,
+            title: event.mergeRequest.title,
+            url: event.mergeRequest.url,
+            authorName: event.mergeRequest.authorName,
+            metadata: { iid: event.mergeRequest.iid },
+          });
+          break;
+      }
+    }
   }
 }

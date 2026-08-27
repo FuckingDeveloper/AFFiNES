@@ -4,6 +4,18 @@ import { PrismaClient } from '@prisma/client';
 import { normalizeTaskKey } from '@affine/trackwork';
 import type { DevelopmentEvent } from './types';
 
+export type DevelopmentActivityRecord = {
+  workspaceId: string;
+  connectionId: string;
+  taskKey: string;
+  eventType: string;
+  title: string;
+  url: string;
+  authorName?: string;
+  repositoryName?: string;
+  metadata: Record<string, unknown>;
+};
+
 export type DevelopmentLinkEntity = {
   workspaceId: string;
   connectionId: string;
@@ -100,6 +112,74 @@ export class DevelopmentLinkService {
     } catch {
       return false;
     }
+  }
+
+  async recordActivity(activity: DevelopmentActivityRecord) {
+    await this.prisma.developmentActivity.create({
+      data: {
+        workspaceId: activity.workspaceId,
+        connectionId: activity.connectionId,
+        taskKey: normalizeTaskKey(activity.taskKey),
+        eventType: activity.eventType,
+        title: activity.title,
+        url: activity.url,
+        authorName: activity.authorName ?? null,
+        repositoryName: activity.repositoryName ?? null,
+        metadata: activity.metadata as object,
+      },
+    });
+  }
+
+  async listActivity(input: {
+    workspaceId: string;
+    taskKey?: string;
+    first: number;
+    after?: string;
+  }) {
+    const { first } = input;
+
+    let cursor: { createdAt: Date; id: string } | undefined;
+
+    if (input.after) {
+      const [time, id] = Buffer.from(input.after, 'base64url')
+        .toString('utf8')
+        .split('|');
+      if (time && id) {
+        cursor = { createdAt: new Date(time), id };
+      }
+    }
+
+    const items = await this.prisma.developmentActivity.findMany({
+      where: {
+        workspaceId: input.workspaceId,
+        ...(input.taskKey ? { taskKey: normalizeTaskKey(input.taskKey) } : {}),
+        ...(cursor
+          ? {
+              OR: [
+                { createdAt: { lt: cursor.createdAt } },
+                {
+                  createdAt: cursor.createdAt,
+                  id: { lt: cursor.id },
+                },
+              ],
+            }
+          : {}),
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: first + 1,
+    });
+
+    const hasNextPage = items.length > first;
+    const nodes = hasNextPage ? items.slice(0, first) : items;
+    const last = nodes[nodes.length - 1];
+    const nextCursor =
+      hasNextPage && last
+        ? Buffer.from(`${last.createdAt.toISOString()}|${last.id}`).toString(
+            'base64url'
+          )
+        : null;
+
+    return { nodes, nextCursor, hasNextPage };
   }
 
   async upsertEventLinks(

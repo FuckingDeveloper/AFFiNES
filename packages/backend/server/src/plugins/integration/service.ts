@@ -168,6 +168,17 @@ export class IntegrationConnectionService {
     });
 
     for (const pipeline of pipelines) {
+      const existing = await this.prisma.developmentPipeline.findUnique({
+        where: {
+          connectionId_externalId: {
+            connectionId,
+            externalId: pipeline.externalId,
+          },
+        },
+      });
+
+      const statusChanged = existing?.status !== pipeline.status;
+
       await this.prisma.developmentPipeline.upsert({
         where: {
           connectionId_externalId: {
@@ -200,6 +211,24 @@ export class IntegrationConnectionService {
       const taskKeys = extractTrackWorkKeys(
         [pipeline.name, pipeline.description].filter(Boolean).join(' ')
       );
+
+      if (statusChanged && taskKeys.length > 0) {
+        await this.prisma.developmentActivity.createMany({
+          data: taskKeys.map(taskKey => ({
+            workspaceId: connection.workspaceId,
+            connectionId,
+            taskKey,
+            eventType: `pipeline.${pipeline.status}`,
+            title: `${pipeline.name ?? pipeline.externalId} #${pipeline.number ?? ''}`,
+            url: pipeline.url ?? connection.baseUrl,
+            repositoryName: null,
+            metadata: {
+              startedAt: pipeline.startedAt?.toISOString() ?? null,
+              finishedAt: pipeline.finishedAt?.toISOString() ?? null,
+            },
+          })),
+        });
+      }
 
       for (const taskKey of taskKeys) {
         await this.prisma.developmentTaskLink.upsert({

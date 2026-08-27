@@ -961,6 +961,24 @@ export interface DeleteSessionInput {
   workspaceId: Scalars['String']['input'];
 }
 
+export interface DevelopmentActivity {
+  __typename?: 'DevelopmentActivity';
+  authorName: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  eventType: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  repositoryName: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+}
+
+export interface DevelopmentActivityConnection {
+  __typename?: 'DevelopmentActivityConnection';
+  hasNextPage: Scalars['Boolean']['output'];
+  items: Array<DevelopmentActivity>;
+  nextCursor: Maybe<Scalars['String']['output']>;
+}
+
 export interface DevelopmentBranch {
   __typename?: 'DevelopmentBranch';
   name: Scalars['String']['output'];
@@ -2812,6 +2830,7 @@ export interface Query {
   revealedAccessTokens: Array<RevealedAccessToken>;
   /** server config */
   serverConfig: ServerConfigType;
+  trackWorkActivity: DevelopmentActivityConnection;
   trackWorkTaskDevelopment: TrackWorkDevelopmentInfo;
   /** Get user by email */
   user: Maybe<UserOrLimitedUser>;
@@ -2875,6 +2894,13 @@ export interface QueryPublicUserByIdArgs {
 }
 
 export interface QueryQueryWorkspaceEmbeddingStatusArgs {
+  workspaceId: Scalars['String']['input'];
+}
+
+export interface QueryTrackWorkActivityArgs {
+  after?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  taskKey?: InputMaybe<Scalars['String']['input']>;
   workspaceId: Scalars['String']['input'];
 }
 
@@ -7464,6 +7490,32 @@ export type TestDevelopmentIntegrationMutation = {
   };
 };
 
+export type TrackWorkActivityQueryVariables = Exact<{
+  workspaceId: Scalars['String']['input'];
+  taskKey?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type TrackWorkActivityQuery = {
+  __typename?: 'Query';
+  trackWorkActivity: {
+    __typename?: 'DevelopmentActivityConnection';
+    nextCursor: string | null;
+    hasNextPage: boolean;
+    items: Array<{
+      __typename?: 'DevelopmentActivity';
+      id: string;
+      eventType: string;
+      title: string;
+      url: string;
+      authorName: string | null;
+      repositoryName: string | null;
+      createdAt: string;
+    }>;
+  };
+};
+
 export type TrackWorkTaskDevelopmentQueryVariables = Exact<{
   workspaceId: Scalars['String']['input'];
   taskKey: Scalars['String']['input'];
@@ -8822,6 +8874,11 @@ export type Queries =
       name: 'developmentIntegrationsQuery';
       variables: DevelopmentIntegrationsQueryVariables;
       response: DevelopmentIntegrationsQuery;
+    }
+  | {
+      name: 'trackWorkActivityQuery';
+      variables: TrackWorkActivityQueryVariables;
+      response: TrackWorkActivityQuery;
     }
   | {
       name: 'trackWorkTaskDevelopmentQuery';

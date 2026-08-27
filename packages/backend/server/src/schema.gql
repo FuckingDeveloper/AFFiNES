@@ -823,6 +823,22 @@ input DeleteSessionInput {
   workspaceId: String!
 }
 
+type DevelopmentActivity {
+  authorName: String
+  createdAt: DateTime!
+  eventType: String!
+  id: String!
+  repositoryName: String
+  title: String!
+  url: String!
+}
+
+type DevelopmentActivityConnection {
+  hasNextPage: Boolean!
+  items: [DevelopmentActivity!]!
+  nextCursor: String
+}
+
 type DevelopmentBranch {
   name: String!
   url: String!
@@ -2104,6 +2120,7 @@ type Query {
 
   """server config"""
   serverConfig: ServerConfigType!
+  trackWorkActivity(after: String, first: Int = 20, taskKey: String, workspaceId: String!): DevelopmentActivityConnection!
   trackWorkTaskDevelopment(taskKey: String!, workspaceId: String!): TrackWorkDevelopmentInfo!
 
   """Get user by email"""
