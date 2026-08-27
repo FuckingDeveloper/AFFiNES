@@ -7,6 +7,7 @@ import {
   Post,
 } from '@nestjs/common';
 
+import { Throttle } from '../../base/throttler';
 import { IntegrationConnectionService } from './service';
 import type { ScmProviderType } from './types';
 
@@ -16,6 +17,7 @@ export class IntegrationController {
 
   @Post('/gitlab/webhook/:connectionId')
   @HttpCode(200)
+  @Throttle('default', { limit: 60, ttl: 60_000 })
   async gitlabWebhook(
     @Param('connectionId') connectionId: string,
     @Headers() headers: Record<string, unknown>,

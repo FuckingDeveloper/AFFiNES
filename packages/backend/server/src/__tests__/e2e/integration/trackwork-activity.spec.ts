@@ -7,7 +7,15 @@ import {
   refreshDevelopmentPipelinesMutation,
   trackWorkActivityQuery,
 } from '@affine/graphql';
+import { IntegrationConnectionService } from '../../../plugins/integration/service';
 import { app, e2e, Mockers } from '../test';
+
+const clearRefreshRateLimit = () => {
+  const service = app.get(IntegrationConnectionService) as unknown as {
+    pipelineRefreshAt: Map<string, number>;
+  };
+  service.pipelineRefreshAt.clear();
+};
 
 const WEBHOOK_SECRET = 'super-secret';
 
@@ -188,6 +196,7 @@ e2e('records activity only on pipeline status change', async t => {
   } finally {
     stub.restore();
   }
+  clearRefreshRateLimit();
 
   const running = await db.developmentActivity.count({
     where: { workspaceId: workspace.id, taskKey: 'TW-142' },
@@ -205,6 +214,7 @@ e2e('records activity only on pipeline status change', async t => {
   } finally {
     stub2.restore();
   }
+  clearRefreshRateLimit();
 
   const succeeded = await db.developmentActivity.count({
     where: { workspaceId: workspace.id, taskKey: 'TW-142' },
@@ -222,6 +232,7 @@ e2e('records activity only on pipeline status change', async t => {
   } finally {
     stub3.restore();
   }
+  clearRefreshRateLimit();
 
   const unchanged = await db.developmentActivity.count({
     where: { workspaceId: workspace.id, taskKey: 'TW-142' },

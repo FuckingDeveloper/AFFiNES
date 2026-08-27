@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 import { normalizeTaskKey } from '@affine/trackwork';
 import type { DevelopmentEvent } from './types';
+
+const MAX_LINKS_PER_TASK = 2000;
+const MAX_ACTIVITY_PER_TASK = 2000;
 
 export type DevelopmentActivityRecord = {
   workspaceId: string;
@@ -32,6 +35,8 @@ export type DevelopmentLinkEntity = {
 
 @Injectable()
 export class DevelopmentLinkService {
+  private readonly logger = new Logger(DevelopmentLinkService.name);
+
   constructor(private readonly prisma: PrismaClient) {}
 
   async listByTaskKey(workspaceId: string, taskKey: string) {
@@ -115,11 +120,24 @@ export class DevelopmentLinkService {
   }
 
   async recordActivity(activity: DevelopmentActivityRecord) {
+    const taskKey = normalizeTaskKey(activity.taskKey);
+
+    const count = await this.prisma.developmentActivity.count({
+      where: { workspaceId: activity.workspaceId, taskKey },
+    });
+
+    if (count >= MAX_ACTIVITY_PER_TASK) {
+      this.logger.warn(
+        `Skipping activity for ${taskKey}: limit of ${MAX_ACTIVITY_PER_TASK} reached`
+      );
+      return;
+    }
+
     await this.prisma.developmentActivity.create({
       data: {
         workspaceId: activity.workspaceId,
         connectionId: activity.connectionId,
-        taskKey: normalizeTaskKey(activity.taskKey),
+        taskKey,
         eventType: activity.eventType,
         title: activity.title,
         url: activity.url,
@@ -190,60 +208,98 @@ export class DevelopmentLinkService {
       repositoryId: string;
     }
   ) {
-    for (const taskKey of event.taskKeys) {
-      const base = {
-        ...context,
-        taskKey,
-      };
+    const taskKeys = event.taskKeys.map(normalizeTaskKey);
 
-      switch (event.type) {
-        case 'commit.pushed':
-          await this.upsertLink({
-            ...base,
-            entityType: 'commit',
-            externalId: event.commit.sha,
-            url: event.commit.url ?? event.repository.url,
-            title: event.commit.message.split('\n')[0]!,
-            metadata: {
-              shortSha: event.commit.shortSha,
-              authorName: event.commit.authorName,
-              committedAt: event.commit.committedAt?.toISOString() ?? null,
-              branch: event.commit.branch ?? null,
-            },
-          });
-          break;
+    if (taskKeys.length === 0) {
+      return;
+    }
 
-        case 'branch.updated':
-          await this.upsertLink({
-            ...base,
-            entityType: 'branch',
-            externalId: event.branch.name,
-            url: event.branch.url ?? event.repository.url,
-            title: event.branch.name,
-            metadata: {},
-          });
-          break;
+    const counts = await this.prisma.developmentTaskLink.groupBy({
+      by: ['taskKey'],
+      where: {
+        workspaceId: context.workspaceId,
+        taskKey: { in: taskKeys },
+      },
+      _count: { _all: true },
+    });
 
-        case 'merge_request.opened':
-        case 'merge_request.updated':
-        case 'merge_request.merged':
-          await this.upsertLink({
-            ...base,
-            entityType: 'merge_request',
-            externalId: event.mergeRequest.externalId,
-            iid: event.mergeRequest.iid,
-            url: event.mergeRequest.url,
-            title: event.mergeRequest.title,
-            status: event.mergeRequest.status,
-            metadata: {
-              sourceBranch: event.mergeRequest.sourceBranch,
-              targetBranch: event.mergeRequest.targetBranch,
-              authorName: event.mergeRequest.authorName ?? null,
-              mergedAt: event.mergeRequest.mergedAt?.toISOString() ?? null,
-            },
-          });
-          break;
+    const countByKey = new Map(
+      counts.map(item => [item.taskKey, item._count._all])
+    );
+
+    for (const taskKey of taskKeys) {
+      const count = countByKey.get(taskKey) ?? 0;
+      if (count >= MAX_LINKS_PER_TASK) {
+        this.logger.warn(
+          `Skipping links for ${taskKey}: limit of ${MAX_LINKS_PER_TASK} reached`
+        );
+        continue;
       }
+
+      await this.upsertEventLinksForKey(event, { ...context, taskKey });
+    }
+  }
+
+  private async upsertEventLinksForKey(
+    event: DevelopmentEvent,
+    context: {
+      workspaceId: string;
+      connectionId: string;
+      repositoryId: string;
+      taskKey: string;
+    }
+  ) {
+    const base = {
+      ...context,
+    };
+
+    switch (event.type) {
+      case 'commit.pushed':
+        await this.upsertLink({
+          ...base,
+          entityType: 'commit',
+          externalId: event.commit.sha,
+          url: event.commit.url ?? event.repository.url,
+          title: event.commit.message.split('\n')[0]!,
+          metadata: {
+            shortSha: event.commit.shortSha,
+            authorName: event.commit.authorName,
+            committedAt: event.commit.committedAt?.toISOString() ?? null,
+            branch: event.commit.branch ?? null,
+          },
+        });
+        break;
+
+      case 'branch.updated':
+        await this.upsertLink({
+          ...base,
+          entityType: 'branch',
+          externalId: event.branch.name,
+          url: event.branch.url ?? event.repository.url,
+          title: event.branch.name,
+          metadata: {},
+        });
+        break;
+
+      case 'merge_request.opened':
+      case 'merge_request.updated':
+      case 'merge_request.merged':
+        await this.upsertLink({
+          ...base,
+          entityType: 'merge_request',
+          externalId: event.mergeRequest.externalId,
+          iid: event.mergeRequest.iid,
+          url: event.mergeRequest.url,
+          title: event.mergeRequest.title,
+          status: event.mergeRequest.status,
+          metadata: {
+            sourceBranch: event.mergeRequest.sourceBranch,
+            targetBranch: event.mergeRequest.targetBranch,
+            authorName: event.mergeRequest.authorName ?? null,
+            mergedAt: event.mergeRequest.mergedAt?.toISOString() ?? null,
+          },
+        });
+        break;
     }
   }
 }

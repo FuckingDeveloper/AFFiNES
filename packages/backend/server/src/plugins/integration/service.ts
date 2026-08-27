@@ -1,8 +1,9 @@
+import { PayloadTooLargeException } from '@nestjs/common';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { extractTrackWorkKeys } from '@affine/trackwork';
 
-import { BadRequest, AuthenticationRequired, CryptoHelper, NotFound } from '../../base';
+import { BadRequest, CryptoHelper, NotFound } from '../../base';
 import { JobQueue } from '../../base/job/queue';
 import type { ScmProviderType } from './types';
 import { CiProviderRegistry } from './providers/ci';
@@ -42,6 +43,7 @@ export type RotateCredentialsInput = {
 @Injectable()
 export class IntegrationConnectionService {
   private readonly logger = new Logger(IntegrationConnectionService.name);
+  private readonly pipelineRefreshAt = new Map<string, number>();
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -156,6 +158,12 @@ export class IntegrationConnectionService {
     if (!this.ciProviders.has(connection.provider)) {
       throw new NotFound('Development integration connection not found');
     }
+
+    const lastRefreshAt = this.pipelineRefreshAt.get(connectionId) ?? 0;
+    if (Date.now() - lastRefreshAt < 30_000) {
+      throw new BadRequest('PIPELINE_REFRESH_RATE_LIMITED');
+    }
+    this.pipelineRefreshAt.set(connectionId, Date.now());
 
     const provider = this.ciProviders.get(connection.provider);
     const token = await this.decrypt(connection.tokenCipher);
@@ -276,7 +284,11 @@ export class IntegrationConnectionService {
     });
   }
 
-  async migrateTaskKeys(workspaceId: string, fromPrefix: string, toPrefix: string) {
+  async migrateTaskKeys(
+    workspaceId: string,
+    fromPrefix: string,
+    toPrefix: string
+  ) {
     const from = fromPrefix.toUpperCase();
     const to = toPrefix.toUpperCase();
 
@@ -300,7 +312,9 @@ export class IntegrationConnectionService {
     });
 
     const occupied = new Set(
-      targets.map(target => `${target.taskKey}:${target.entityType}:${target.externalId}`)
+      targets.map(
+        target => `${target.taskKey}:${target.entityType}:${target.externalId}`
+      )
     );
 
     let migrated = 0;
@@ -430,6 +444,12 @@ export class IntegrationConnectionService {
     headers: Record<string, unknown>;
     body: unknown;
   }): Promise<{ accepted: true }> {
+    const serialized = JSON.stringify(input.body);
+
+    if (serialized.length > 256 * 1024) {
+      throw new PayloadTooLargeException('Webhook payload too large');
+    }
+
     const connection = await this.getScmConnection(input.connectionId);
 
     if (connection.provider !== input.provider) {
@@ -452,7 +472,8 @@ export class IntegrationConnectionService {
       this.logger.warn(
         `Webhook rejected for connection ${input.connectionId}: invalid secret`
       );
-      throw new AuthenticationRequired();
+      // uniform 404: do not reveal whether the connection exists
+      throw new NotFound('Development integration connection not found');
     }
 
     const payload: ScmWebhookJobData = {

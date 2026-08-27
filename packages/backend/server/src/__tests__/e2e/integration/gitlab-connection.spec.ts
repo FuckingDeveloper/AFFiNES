@@ -171,9 +171,9 @@ e2e('webhook accepts a valid secret and rejects invalid ones', async t => {
     .POST(url)
     .set('X-Gitlab-Token', 'wrong-secret')
     .send({ object_kind: 'push' })
-    .expect(401);
+    .expect(404);
 
-  await app.POST(url).send({ object_kind: 'push' }).expect(401);
+  await app.POST(url).send({ object_kind: 'push' }).expect(404);
 
   await app
     .POST('/api/integrations/gitlab/webhook/unknown-connection')
