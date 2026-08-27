@@ -1063,6 +1063,12 @@ export interface DevelopmentRepositoryInfo {
   webUrl: Scalars['String']['output'];
 }
 
+export interface DevelopmentTaskKeyMigrationResult {
+  __typename?: 'DevelopmentTaskKeyMigrationResult';
+  migrated: Scalars['Int']['output'];
+  skipped: Scalars['Int']['output'];
+}
+
 export interface DocActionDeniedDataType {
   __typename?: 'DocActionDeniedDataType';
   action: Scalars['String']['output'];
@@ -1988,6 +1994,7 @@ export interface Mutation {
   linkCalendarAccount: Scalars['String']['output'];
   /** mention user in a doc */
   mentionUser: Scalars['ID']['output'];
+  migrateDevelopmentTaskKeys: DevelopmentTaskKeyMigrationResult;
   previewLicense: AdminLicensePreview;
   publishDoc: DocType;
   /** queue workspace doc embedding */
@@ -2329,6 +2336,12 @@ export interface MutationLinkCalendarAccountArgs {
 
 export interface MutationMentionUserArgs {
   input: MentionInput;
+}
+
+export interface MutationMigrateDevelopmentTaskKeysArgs {
+  fromPrefix: Scalars['String']['input'];
+  toPrefix: Scalars['String']['input'];
+  workspaceId: Scalars['String']['input'];
 }
 
 export interface MutationPreviewLicenseArgs {
@@ -7430,6 +7443,21 @@ export type ImportDevelopmentRepositoryMutation = {
   };
 };
 
+export type MigrateDevelopmentTaskKeysMutationVariables = Exact<{
+  workspaceId: Scalars['String']['input'];
+  fromPrefix: Scalars['String']['input'];
+  toPrefix: Scalars['String']['input'];
+}>;
+
+export type MigrateDevelopmentTaskKeysMutation = {
+  __typename?: 'Mutation';
+  migrateDevelopmentTaskKeys: {
+    __typename?: 'DevelopmentTaskKeyMigrationResult';
+    migrated: number;
+    skipped: number;
+  };
+};
+
 export type RefreshDevelopmentPipelinesMutationVariables = Exact<{
   connectionId: Scalars['String']['input'];
 }>;
@@ -9316,6 +9344,11 @@ export type Mutations =
       name: 'importDevelopmentRepositoryMutation';
       variables: ImportDevelopmentRepositoryMutationVariables;
       response: ImportDevelopmentRepositoryMutation;
+    }
+  | {
+      name: 'migrateDevelopmentTaskKeysMutation';
+      variables: MigrateDevelopmentTaskKeysMutationVariables;
+      response: MigrateDevelopmentTaskKeysMutation;
     }
   | {
       name: 'refreshDevelopmentPipelinesMutation';

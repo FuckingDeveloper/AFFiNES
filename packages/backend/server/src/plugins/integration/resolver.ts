@@ -21,6 +21,7 @@ import {
   DevelopmentPipelineType,
   DevelopmentRepositoryInfoType,
   DevelopmentRepositoryType,
+  DevelopmentTaskKeyMigrationResultType,
   ImportDevelopmentRepositoryInput,
   RotateDevelopmentCredentialsInput,
   TrackWorkDevelopmentInfoType,
@@ -320,6 +321,22 @@ export class IntegrationMutationResolver {
     await this.assertCanManage(user.id, connection.workspaceId);
 
     return this.connections.testConnection(connectionId);
+  }
+
+  @Mutation(() => DevelopmentTaskKeyMigrationResultType)
+  async migrateDevelopmentTaskKeys(
+    @CurrentUser() user: CurrentUser | null,
+    @Args('workspaceId') workspaceId: string,
+    @Args('fromPrefix') fromPrefix: string,
+    @Args('toPrefix') toPrefix: string
+  ) {
+    if (!user) {
+      throw new AuthenticationRequired();
+    }
+
+    await this.assertCanManage(user.id, workspaceId);
+
+    return this.connections.migrateTaskKeys(workspaceId, fromPrefix, toPrefix);
   }
 
   @Mutation(() => [DevelopmentPipelineType])

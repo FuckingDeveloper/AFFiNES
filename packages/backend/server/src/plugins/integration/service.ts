@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { extractTrackWorkKeys } from '@affine/trackwork';
 
-import { AuthenticationRequired, CryptoHelper, NotFound } from '../../base';
+import { BadRequest, AuthenticationRequired, CryptoHelper, NotFound } from '../../base';
 import { JobQueue } from '../../base/job/queue';
 import type { ScmProviderType } from './types';
 import { CiProviderRegistry } from './providers/ci';
@@ -274,6 +274,64 @@ export class IntegrationConnectionService {
       orderBy: { updatedAt: 'desc' },
       take: 50,
     });
+  }
+
+  async migrateTaskKeys(workspaceId: string, fromPrefix: string, toPrefix: string) {
+    const from = fromPrefix.toUpperCase();
+    const to = toPrefix.toUpperCase();
+
+    if (!/^[A-Z]{4}$/.test(from) || !/^[A-Z]{4}$/.test(to) || from === to) {
+      throw new BadRequest('INVALID_TASK_KEY_PREFIX');
+    }
+
+    const links = await this.prisma.developmentTaskLink.findMany({
+      where: {
+        workspaceId,
+        taskKey: { startsWith: `${from}-` },
+      },
+    });
+
+    const targets = await this.prisma.developmentTaskLink.findMany({
+      where: {
+        workspaceId,
+        taskKey: { startsWith: `${to}-` },
+      },
+      select: { taskKey: true, entityType: true, externalId: true },
+    });
+
+    const occupied = new Set(
+      targets.map(target => `${target.taskKey}:${target.entityType}:${target.externalId}`)
+    );
+
+    let migrated = 0;
+    let skipped = 0;
+
+    await this.prisma.$transaction(async tx => {
+      for (const link of links) {
+        const suffix = link.taskKey.slice(from.length + 1);
+        const target = `${to}-${suffix}`;
+
+        if (occupied.has(`${target}:${link.entityType}:${link.externalId}`)) {
+          skipped += 1;
+          continue;
+        }
+
+        await tx.developmentTaskLink.update({
+          where: { id: link.id },
+          data: { taskKey: target },
+        });
+        migrated += 1;
+      }
+
+      await tx.$executeRaw`
+        UPDATE development_activity
+        SET task_key = ${to} || substring(task_key from ${from.length + 1}::int)
+        WHERE workspace_id = ${workspaceId}
+          AND task_key LIKE ${`${from}-%`}
+      `;
+    });
+
+    return { migrated, skipped };
   }
 
   async listRepositories(connectionId: string): Promise<RepositoryInfo[]> {

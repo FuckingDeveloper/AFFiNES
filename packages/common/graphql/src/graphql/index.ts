@@ -2600,6 +2600,21 @@ export const importDevelopmentRepositoryMutation = {
 }`,
 };
 
+export const migrateDevelopmentTaskKeysMutation = {
+  id: 'migrateDevelopmentTaskKeysMutation' as const,
+  op: 'migrateDevelopmentTaskKeys',
+  query: `mutation migrateDevelopmentTaskKeys($workspaceId: String!, $fromPrefix: String!, $toPrefix: String!) {
+  migrateDevelopmentTaskKeys(
+    workspaceId: $workspaceId
+    fromPrefix: $fromPrefix
+    toPrefix: $toPrefix
+  ) {
+    migrated
+    skipped
+  }
+}`,
+};
+
 export const refreshDevelopmentPipelinesMutation = {
   id: 'refreshDevelopmentPipelinesMutation' as const,
   op: 'refreshDevelopmentPipelines',

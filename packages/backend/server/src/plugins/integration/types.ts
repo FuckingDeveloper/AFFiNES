@@ -481,3 +481,12 @@ export class DevelopmentActivityConnectionType {
   @Field()
   hasNextPage!: boolean;
 }
+
+@ObjectType('DevelopmentTaskKeyMigrationResult')
+export class DevelopmentTaskKeyMigrationResultType {
+  @Field()
+  migrated!: number;
+
+  @Field()
+  skipped!: number;
+}
