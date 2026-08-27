@@ -1,7 +1,6 @@
 import { FlexWrapper, Input, notify, Wrapper } from '@affine/component';
 import { Button } from '@affine/component/ui/button';
 import { useCatchEventCallback } from '@affine/core/components/hooks/use-catch-event-hook';
-import { useMutation } from '@affine/core/components/hooks/use-mutation';
 import { Upload } from '@affine/core/components/pure/file-upload';
 import { WorkspaceAvatar } from '@affine/core/components/workspace-avatar';
 import { WorkspacePermissionService } from '@affine/core/modules/permissions';
@@ -9,7 +8,6 @@ import { WorkspaceService } from '@affine/core/modules/workspace';
 import { normalizeWorkspaceTaskKey } from '@affine/core/utils/first-app-data';
 import { validateAndReduceImage } from '@affine/core/utils/reduce-image';
 import { UNTITLED_WORKSPACE_NAME } from '@affine/env/constant';
-import { migrateDevelopmentTaskKeysMutation } from '@affine/graphql';
 import { useI18n } from '@affine/i18n';
 import { CameraIcon } from '@blocksuite/icons/rc';
 import { LiveData, useLiveData, useService } from '@toeverything/infra';
@@ -125,49 +123,18 @@ export const ProfilePanel = () => {
     handleUpdateWorkspaceName(input);
   }, [handleUpdateWorkspaceName, input]);
 
-  const { trigger: migrateTaskKeyTrigger } = useMutation({
-    mutation: migrateDevelopmentTaskKeysMutation,
-  });
-
   const handleUpdateTaskKey = useCallback(() => {
     const nextTaskKey = normalizeWorkspaceTaskKey(taskKey);
-    if (nextTaskKey.length !== 4) {
-      notify.error({ title: 'Workspace task key must contain 4 letters' });
+    if (!/^[A-Z][A-Z0-9]{1,15}$/.test(nextTaskKey)) {
+      notify.error({
+        title: 'Workspace task key must contain 2–16 letters or digits',
+      });
       return;
     }
-
-    const previousTaskKey = normalizeWorkspaceTaskKey(currentTaskKey ?? 'TASK');
 
     setWorkspaceTaskKey(nextTaskKey);
     notify.success({ title: 'Update workspace task key success' });
-
-    if (previousTaskKey === nextTaskKey) {
-      return;
-    }
-
-    migrateTaskKeyTrigger({
-      workspaceId: workspace.id,
-      fromPrefix: previousTaskKey,
-      toPrefix: nextTaskKey,
-    })
-      .then(() => {
-        notify.success({
-          title: t['com.affine.integration.task-key-migrated'](),
-        });
-      })
-      .catch(() => {
-        notify.error({
-          title: t['com.affine.integration.task-key-migrate-failed'](),
-        });
-      });
-  }, [
-    currentTaskKey,
-    migrateTaskKeyTrigger,
-    setWorkspaceTaskKey,
-    t,
-    taskKey,
-    workspace.id,
-  ]);
+  }, [setWorkspaceTaskKey, taskKey]);
 
   const handleRemoveUserAvatar = useCatchEventCallback(async () => {
     await setWorkspaceAvatar(null);
@@ -256,8 +223,8 @@ export const ProfilePanel = () => {
             style={{ width: 280, height: 32 }}
             data-testid="workspace-task-key-input"
             placeholder="TASK"
-            maxLength={4}
-            minLength={0}
+            maxLength={16}
+            minLength={2}
             onChange={value => {
               setTaskKey(normalizeWorkspaceTaskKey(value));
             }}

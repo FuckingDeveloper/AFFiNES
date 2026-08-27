@@ -9020,6 +9020,54 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.jenkins.username"](): string;
     /**
+      * `Jenkins URL`
+      */
+    ["com.affine.integration.jenkins.connection.base-url"](): string;
+    /**
+      * `API token`
+      */
+    ["com.affine.integration.jenkins.connection.token"](): string;
+    /**
+      * `Connect Jenkins`
+      */
+    ["com.affine.integration.jenkins.connection.create"](): string;
+    /**
+      * `Jenkins connection created`
+      */
+    ["com.affine.integration.jenkins.connection.created"](): string;
+    /**
+      * `Jenkins connection updated`
+      */
+    ["com.affine.integration.jenkins.connection.updated"](): string;
+    /**
+      * `Jenkins connection deleted`
+      */
+    ["com.affine.integration.jenkins.connection.deleted"](): string;
+    /**
+      * `Jenkins credentials rotated`
+      */
+    ["com.affine.integration.jenkins.connection.rotated"](): string;
+    /**
+      * `Failed to create Jenkins connection`
+      */
+    ["com.affine.integration.jenkins.connection.create-failed"](): string;
+    /**
+      * `Failed to update Jenkins connection`
+      */
+    ["com.affine.integration.jenkins.connection.update-failed"](): string;
+    /**
+      * `Failed to delete Jenkins connection`
+      */
+    ["com.affine.integration.jenkins.connection.delete-failed"](): string;
+    /**
+      * `Delete Jenkins connection?`
+      */
+    ["com.affine.integration.jenkins.connection.delete-confirm-title"](): string;
+    /**
+      * `This removes the connection, its stored pipeline data, and its task activity. This action cannot be undone.`
+      */
+    ["com.affine.integration.jenkins.connection.delete-confirm-description"](): string;
+    /**
       * `Refresh pipelines`
       */
     ["com.affine.integration.jenkins.refresh"](): string;
@@ -9031,14 +9079,6 @@ export function useAFFiNEI18N(): {
       * `Failed to refresh pipelines`
       */
     ["com.affine.integration.jenkins.refresh-failed"](): string;
-    /**
-      * `Development links migrated to the new task key prefix`
-      */
-    ["com.affine.integration.task-key-migrated"](): string;
-    /**
-      * `Failed to migrate development links`
-      */
-    ["com.affine.integration.task-key-migrate-failed"](): string;
     /**
       * `Link GitLab repositories, commits, merge requests and pipelines to TrackWork tasks.`
       */
@@ -9076,6 +9116,14 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.gitlab.connection.delete"](): string;
     /**
+      * `Delete GitLab connection?`
+      */
+    ["com.affine.integration.gitlab.connection.delete-confirm-title"](): string;
+    /**
+      * `This removes the connection, its stored development links, and its task activity. This action cannot be undone.`
+      */
+    ["com.affine.integration.gitlab.connection.delete-confirm-description"](): string;
+    /**
       * `Copy`
       */
     ["com.affine.integration.gitlab.connection.copy"](): string;
@@ -9104,6 +9152,10 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.gitlab.connection.created"](): string;
     /**
+      * `GitLab connection updated`
+      */
+    ["com.affine.integration.gitlab.connection.updated"](): string;
+    /**
       * `GitLab connection deleted`
       */
     ["com.affine.integration.gitlab.connection.deleted"](): string;
@@ -9128,6 +9180,10 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.integration.gitlab.connection.test-failed"](): string;
     /**
+      * `Failed to copy webhook URL`
+      */
+    ["com.affine.integration.gitlab.connection.copy-failed"](): string;
+    /**
       * `Load repositories`
       */
     ["com.affine.integration.gitlab.repositories.load"](): string;
@@ -9135,6 +9191,10 @@ export function useAFFiNEI18N(): {
       * `Failed to load repositories`
       */
     ["com.affine.integration.gitlab.repositories.load-failed"](): string;
+    /**
+      * `Failed to update repository tracking`
+      */
+    ["com.affine.integration.gitlab.repositories.update-failed"](): string;
     /**
       * `Import`
       */

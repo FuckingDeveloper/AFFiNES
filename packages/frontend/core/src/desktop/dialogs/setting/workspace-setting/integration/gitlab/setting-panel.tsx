@@ -1,4 +1,4 @@
-import { Button, notify } from '@affine/component';
+import { Button, notify, useConfirmModal } from '@affine/component';
 import { useMutation } from '@affine/core/components/hooks/use-mutation';
 import { useQuery } from '@affine/core/components/hooks/use-query';
 import { WorkspaceService } from '@affine/core/modules/workspace';
@@ -25,6 +25,7 @@ export const GitLabSettingPanel = () => {
   const t = useI18n();
   const workspaceService = useService(WorkspaceService);
   const workspaceId = workspaceService.workspace.id;
+  const { openConfirmModal } = useConfirmModal();
 
   const { data, mutate: revalidate } = useQuery({
     query: developmentIntegrationsQuery,
@@ -56,7 +57,9 @@ export const GitLabSettingPanel = () => {
     mutation: setDevelopmentRepositoryEnabledMutation,
   });
 
-  const connection = data?.workspace?.developmentIntegrations?.[0];
+  const connection = data?.workspace?.developmentIntegrations?.find(
+    item => item.provider === 'gitlab'
+  );
 
   const [name, setName] = useState('');
   const [baseUrl, setBaseUrl] = useState('https://gitlab.com');
@@ -77,6 +80,7 @@ export const GitLabSettingPanel = () => {
       enabled: boolean;
     }>
   >([]);
+  const [repositoriesLoaded, setRepositoriesLoaded] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
 
   const connectionId = connection?.id;
@@ -155,12 +159,42 @@ export const GitLabSettingPanel = () => {
           input: { id: connectionId, enabled },
         });
         await revalidate();
+      } catch {
+        notify.error({
+          title: t['com.affine.integration.gitlab.connection.update-failed'](),
+        });
       } finally {
         setBusy(null);
       }
     },
-    [connectionId, revalidate, updateTrigger]
+    [connectionId, revalidate, t, updateTrigger]
   );
+
+  const handleSaveConnection = useCallback(async () => {
+    if (!connectionId || !name.trim()) {
+      return;
+    }
+    setBusy('save');
+    try {
+      await updateTrigger({
+        input: {
+          id: connectionId,
+          name: name.trim(),
+          baseUrl: baseUrl.trim(),
+        },
+      });
+      notify.success({
+        title: t['com.affine.integration.gitlab.connection.updated'](),
+      });
+      await revalidate();
+    } catch {
+      notify.error({
+        title: t['com.affine.integration.gitlab.connection.update-failed'](),
+      });
+    } finally {
+      setBusy(null);
+    }
+  }, [baseUrl, connectionId, name, revalidate, t, updateTrigger]);
 
   const handleRotate = useCallback(async () => {
     if (!connectionId) {
@@ -201,6 +235,7 @@ export const GitLabSettingPanel = () => {
         title: t['com.affine.integration.gitlab.connection.deleted'](),
       });
       setRepositories([]);
+      setRepositoriesLoaded(false);
       await revalidate();
     } catch {
       notify.error({
@@ -219,6 +254,7 @@ export const GitLabSettingPanel = () => {
     try {
       const result = await repositoriesTrigger({ connectionId });
       setRepositories(result.developmentRepositories);
+      setRepositoriesLoaded(true);
     } catch {
       notify.error({
         title: t['com.affine.integration.gitlab.repositories.load-failed'](),
@@ -268,6 +304,9 @@ export const GitLabSettingPanel = () => {
 
   const handleToggleRepository = useCallback(
     async (externalId: string, enabled: boolean) => {
+      if (!connectionId) {
+        return;
+      }
       const repository = repositories.find(
         item => item.externalId === externalId
       );
@@ -302,19 +341,29 @@ export const GitLabSettingPanel = () => {
               : item
           )
         );
+        notify.error({
+          title:
+            t['com.affine.integration.gitlab.repositories.update-failed'](),
+        });
       }
     },
-    [connectionId, enableTrigger, importTrigger, repositories]
+    [connectionId, enableTrigger, importTrigger, repositories, t]
   );
 
   const handleCopyWebhookUrl = useCallback(async () => {
     if (!connection?.webhookUrl) {
       return;
     }
-    await navigator.clipboard.writeText(connection.webhookUrl);
-    notify.success({
-      title: t['com.affine.integration.gitlab.connection.copied'](),
-    });
+    try {
+      await navigator.clipboard.writeText(connection.webhookUrl);
+      notify.success({
+        title: t['com.affine.integration.gitlab.connection.copied'](),
+      });
+    } catch {
+      notify.error({
+        title: t['com.affine.integration.gitlab.connection.copy-failed'](),
+      });
+    }
   }, [connection?.webhookUrl, t]);
 
   return (
@@ -371,15 +420,50 @@ export const GitLabSettingPanel = () => {
           </label>
           <Button
             onClick={() => void handleCreate()}
-            disabled={busy !== null || !baseUrl.trim() || !token}
+            disabled={
+              busy !== null || !baseUrl.trim() || !token || !webhookSecret
+            }
           >
             {t['com.affine.integration.gitlab.connection.create']()}
           </Button>
         </div>
       ) : (
         <div className={styles.form}>
+          <div className={styles.formGrid}>
+            <label className={styles.label}>
+              {t['com.affine.integration.gitlab.connection.name']()}
+              <input
+                className={styles.input}
+                value={name}
+                onChange={event => {
+                  setName(event.target.value);
+                }}
+              />
+            </label>
+            <label className={styles.label}>
+              {t['com.affine.integration.gitlab.connection.base-url']()}
+              <input
+                className={styles.input}
+                value={baseUrl}
+                onChange={event => {
+                  setBaseUrl(event.target.value);
+                }}
+              />
+            </label>
+          </div>
           <div className={styles.row}>
-            <span className={styles.value}>{connection.name}</span>
+            <Button
+              onClick={() => void handleSaveConnection()}
+              disabled={
+                busy !== null ||
+                !name.trim() ||
+                !baseUrl.trim() ||
+                (name.trim() === connection.name &&
+                  baseUrl.trim() === connection.baseUrl)
+              }
+            >
+              {t['Save']()}
+            </Button>
             <label className={styles.toggleLabel}>
               <input
                 type="checkbox"
@@ -390,9 +474,6 @@ export const GitLabSettingPanel = () => {
               />
               {t['com.affine.integration.gitlab.connection.enabled']()}
             </label>
-          </div>
-          <div className={styles.row}>
-            <span className={styles.value}>{connection.baseUrl}</span>
           </div>
           <div className={styles.row}>
             <span className={styles.muted}>
@@ -497,11 +578,33 @@ export const GitLabSettingPanel = () => {
                 </div>
               ))}
             </div>
+          ) : repositoriesLoaded ? (
+            <div className={styles.muted}>
+              {t['com.affine.integration.gitlab.repositories.empty']()}
+            </div>
           ) : null}
 
           <div className={styles.separator} />
 
-          <Button onClick={() => void handleDelete()} disabled={busy !== null}>
+          <Button
+            onClick={() => {
+              openConfirmModal({
+                title:
+                  t[
+                    'com.affine.integration.gitlab.connection.delete-confirm-title'
+                  ](),
+                description:
+                  t[
+                    'com.affine.integration.gitlab.connection.delete-confirm-description'
+                  ](),
+                confirmText: t['Delete'](),
+                cancelText: t['Cancel'](),
+                confirmButtonOptions: { variant: 'error' },
+                onConfirm: () => void handleDelete(),
+              });
+            }}
+            disabled={busy !== null}
+          >
             {t['com.affine.integration.gitlab.connection.delete']()}
           </Button>
         </div>

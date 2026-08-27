@@ -9,8 +9,10 @@ import {
   onStart,
   smartRetry,
 } from '@toeverything/infra';
+import { trackWorkDocumentBacklinksQuery } from '@affine/graphql';
 import { tap } from 'rxjs';
 
+import type { WorkspaceServerService } from '../../cloud';
 import type { DocService, DocsService } from '../../doc';
 import type { DocsSearchService } from '../../docs-search';
 import type { FeatureFlagService } from '../../feature-flag';
@@ -33,7 +35,8 @@ export class DocBacklinks extends Entity {
     private readonly docService: DocService,
     private readonly docsService: DocsService,
     private readonly featureFlagService: FeatureFlagService,
-    private readonly workspaceService: WorkspaceService
+    private readonly workspaceService: WorkspaceService,
+    private readonly workspaceServerService: WorkspaceServerService
   ) {
     super();
   }
@@ -83,7 +86,7 @@ export class DocBacklinks extends Entity {
             prefer: searchFromCloud ? 'remote' : 'local',
           }
         );
-        return buckets.flatMap(bucket => {
+        const indexedBacklinks = buckets.flatMap(bucket => {
           const title =
             this.docsService.list.doc$(bucket.key).value?.title$.value ?? '';
 
@@ -139,6 +142,41 @@ export class DocBacklinks extends Entity {
             };
           });
         });
+
+        const server = this.workspaceServerService.server;
+        if (!server || this.workspaceService.workspace.flavour === 'local') {
+          return indexedBacklinks;
+        }
+
+        try {
+          const result = await server.gql({
+            query: trackWorkDocumentBacklinksQuery,
+            variables: {
+              workspaceId: this.workspaceService.workspace.id,
+              documentId: this.docService.doc.id,
+            },
+          });
+          const taskBacklinks = result.trackWorkDocumentBacklinks.flatMap(
+            task => {
+              const taskDoc = this.docsService.list.doc$(task.docId).value;
+              if (taskDoc?.trash$.value) {
+                return [];
+              }
+              return [
+                {
+                  docId: task.docId,
+                  blockId: `trackwork:${task.docId}`,
+                  title: taskDoc?.title$.value || task.taskKey,
+                  markdownPreview: task.taskKey,
+                  displayMode: 'page',
+                },
+              ];
+            }
+          );
+          return [...indexedBacklinks, ...taskBacklinks];
+        } catch {
+          return indexedBacklinks;
+        }
       }).pipe(
         smartRetry(),
         tap(backlinks => {

@@ -173,7 +173,7 @@ export interface ScmProvider {
     targetBranch: string;
     title: string;
     description?: string;
-  }): Promise<{ iid: string; url: string }>;
+  }): Promise<{ externalId: string; iid: string; url: string }>;
 }
 
 export interface CiProvider {
@@ -219,6 +219,9 @@ export class DevelopmentIntegrationConnectionType {
 
   @Field()
   baseUrl!: string;
+
+  @Field({ nullable: true })
+  username?: string;
 
   @Field()
   enabled!: boolean;
@@ -335,6 +338,12 @@ export class UpdateDevelopmentIntegrationInput {
   name?: string;
 
   @Field({ nullable: true })
+  baseUrl?: string;
+
+  @Field({ nullable: true })
+  username?: string;
+
+  @Field({ nullable: true })
   enabled?: boolean;
 }
 
@@ -430,6 +439,9 @@ export class DevelopmentMergeRequestType {
 
 @ObjectType('TrackWorkDevelopmentInfo')
 export class TrackWorkDevelopmentInfoType {
+  @Field(() => [String])
+  repositories!: string[];
+
   @Field(() => [DevelopmentCommitType])
   commits!: DevelopmentCommitType[];
 
@@ -506,15 +518,6 @@ export class DevelopmentActivityConnectionType {
   hasNextPage!: boolean;
 }
 
-@ObjectType('DevelopmentTaskKeyMigrationResult')
-export class DevelopmentTaskKeyMigrationResultType {
-  @Field()
-  migrated!: number;
-
-  @Field()
-  skipped!: number;
-}
-
 @ObjectType('DevelopmentBranchCreated')
 export class DevelopmentBranchCreatedType {
   @Field()
@@ -546,6 +549,9 @@ export class CreateDevelopmentBranchInput {
 
   @Field()
   name!: string;
+
+  @Field()
+  taskKey!: string;
 }
 
 @InputType()
@@ -567,4 +573,7 @@ export class CreateDevelopmentMergeRequestInput {
 
   @Field({ nullable: true })
   description?: string;
+
+  @Field()
+  taskKey!: string;
 }

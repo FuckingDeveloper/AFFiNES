@@ -1,4 +1,4 @@
-import { Button, notify } from '@affine/component';
+import { Button, notify, useConfirmModal } from '@affine/component';
 import { useMutation } from '@affine/core/components/hooks/use-mutation';
 import { useQuery } from '@affine/core/components/hooks/use-query';
 import { WorkspaceService } from '@affine/core/modules/workspace';
@@ -23,6 +23,7 @@ export const JenkinsSettingPanel = () => {
   const t = useI18n();
   const workspaceService = useService(WorkspaceService);
   const workspaceId = workspaceService.workspace.id;
+  const { openConfirmModal } = useConfirmModal();
 
   const { data, mutate: revalidate } = useQuery({
     query: developmentIntegrationsQuery,
@@ -67,6 +68,7 @@ export const JenkinsSettingPanel = () => {
     if (connection) {
       setName(connection.name);
       setBaseUrl(connection.baseUrl);
+      setUsername(connection.username ?? '');
     }
   }, [connection]);
 
@@ -84,13 +86,13 @@ export const JenkinsSettingPanel = () => {
         },
       });
       notify.success({
-        title: t['com.affine.integration.gitlab.connection.created'](),
+        title: t['com.affine.integration.jenkins.connection.created'](),
       });
       setToken('');
       await revalidate();
     } catch {
       notify.error({
-        title: t['com.affine.integration.gitlab.connection.create-failed'](),
+        title: t['com.affine.integration.jenkins.connection.create-failed'](),
       });
     } finally {
       setBusy(null);
@@ -134,12 +136,43 @@ export const JenkinsSettingPanel = () => {
       try {
         await updateTrigger({ input: { id: connectionId, enabled } });
         await revalidate();
+      } catch {
+        notify.error({
+          title: t['com.affine.integration.jenkins.connection.update-failed'](),
+        });
       } finally {
         setBusy(null);
       }
     },
-    [connectionId, revalidate, updateTrigger]
+    [connectionId, revalidate, t, updateTrigger]
   );
+
+  const handleSaveConnection = useCallback(async () => {
+    if (!connectionId || !name.trim()) {
+      return;
+    }
+    setBusy('save');
+    try {
+      await updateTrigger({
+        input: {
+          id: connectionId,
+          name: name.trim(),
+          baseUrl: baseUrl.trim(),
+          username: username.trim(),
+        },
+      });
+      notify.success({
+        title: t['com.affine.integration.jenkins.connection.updated'](),
+      });
+      await revalidate();
+    } catch {
+      notify.error({
+        title: t['com.affine.integration.jenkins.connection.update-failed'](),
+      });
+    } finally {
+      setBusy(null);
+    }
+  }, [baseUrl, connectionId, name, revalidate, t, updateTrigger, username]);
 
   const handleRotate = useCallback(async () => {
     if (!connectionId) {
@@ -149,13 +182,13 @@ export const JenkinsSettingPanel = () => {
     try {
       await rotateTrigger({ input: { id: connectionId, token: newToken } });
       notify.success({
-        title: t['com.affine.integration.gitlab.connection.rotated'](),
+        title: t['com.affine.integration.jenkins.connection.rotated'](),
       });
       setNewToken('');
       await revalidate();
     } catch {
       notify.error({
-        title: t['com.affine.integration.gitlab.connection.update-failed'](),
+        title: t['com.affine.integration.jenkins.connection.update-failed'](),
       });
     } finally {
       setBusy(null);
@@ -170,13 +203,13 @@ export const JenkinsSettingPanel = () => {
     try {
       await deleteTrigger({ connectionId });
       notify.success({
-        title: t['com.affine.integration.gitlab.connection.deleted'](),
+        title: t['com.affine.integration.jenkins.connection.deleted'](),
       });
       setPipelineCount(null);
       await revalidate();
     } catch {
       notify.error({
-        title: t['com.affine.integration.gitlab.connection.delete-failed'](),
+        title: t['com.affine.integration.jenkins.connection.delete-failed'](),
       });
     } finally {
       setBusy(null);
@@ -224,7 +257,7 @@ export const JenkinsSettingPanel = () => {
             />
           </label>
           <label className={styles.label}>
-            {t['com.affine.integration.gitlab.connection.base-url']()}
+            {t['com.affine.integration.jenkins.connection.base-url']()}
             <input
               className={styles.input}
               value={baseUrl}
@@ -244,7 +277,7 @@ export const JenkinsSettingPanel = () => {
             />
           </label>
           <label className={styles.label}>
-            {t['com.affine.integration.gitlab.connection.token']()}
+            {t['com.affine.integration.jenkins.connection.token']()}
             <input
               className={styles.input}
               type="password"
@@ -258,13 +291,57 @@ export const JenkinsSettingPanel = () => {
             onClick={() => void handleCreate()}
             disabled={busy !== null || !baseUrl.trim() || !token}
           >
-            {t['com.affine.integration.gitlab.connection.create']()}
+            {t['com.affine.integration.jenkins.connection.create']()}
           </Button>
         </div>
       ) : (
         <div className={styles.form}>
+          <div className={styles.formGrid}>
+            <label className={styles.label}>
+              {t['com.affine.integration.gitlab.connection.name']()}
+              <input
+                className={styles.input}
+                value={name}
+                onChange={event => {
+                  setName(event.target.value);
+                }}
+              />
+            </label>
+            <label className={styles.label}>
+              {t['com.affine.integration.jenkins.connection.base-url']()}
+              <input
+                className={styles.input}
+                value={baseUrl}
+                onChange={event => {
+                  setBaseUrl(event.target.value);
+                }}
+              />
+            </label>
+            <label className={styles.label}>
+              {t['com.affine.integration.jenkins.username']()}
+              <input
+                className={styles.input}
+                value={username}
+                onChange={event => {
+                  setUsername(event.target.value);
+                }}
+              />
+            </label>
+          </div>
           <div className={styles.row}>
-            <span className={styles.value}>{connection.name}</span>
+            <Button
+              onClick={() => void handleSaveConnection()}
+              disabled={
+                busy !== null ||
+                !name.trim() ||
+                !baseUrl.trim() ||
+                (name.trim() === connection.name &&
+                  baseUrl.trim() === connection.baseUrl &&
+                  username.trim() === (connection.username ?? ''))
+              }
+            >
+              {t['Save']()}
+            </Button>
             <label className={styles.toggleLabel}>
               <input
                 type="checkbox"
@@ -275,9 +352,6 @@ export const JenkinsSettingPanel = () => {
               />
               {t['com.affine.integration.gitlab.connection.enabled']()}
             </label>
-          </div>
-          <div className={styles.row}>
-            <span className={styles.value}>{connection.baseUrl}</span>
           </div>
 
           <div className={styles.row}>
@@ -306,7 +380,7 @@ export const JenkinsSettingPanel = () => {
           <div className={styles.separator} />
 
           <label className={styles.label}>
-            {t['com.affine.integration.gitlab.connection.token']()}
+            {t['com.affine.integration.jenkins.connection.token']()}
             <input
               className={styles.input}
               type="password"
@@ -325,7 +399,25 @@ export const JenkinsSettingPanel = () => {
 
           <div className={styles.separator} />
 
-          <Button onClick={() => void handleDelete()} disabled={busy !== null}>
+          <Button
+            onClick={() => {
+              openConfirmModal({
+                title:
+                  t[
+                    'com.affine.integration.jenkins.connection.delete-confirm-title'
+                  ](),
+                description:
+                  t[
+                    'com.affine.integration.jenkins.connection.delete-confirm-description'
+                  ](),
+                confirmText: t['Delete'](),
+                cancelText: t['Cancel'](),
+                confirmButtonOptions: { variant: 'error' },
+                onConfirm: () => void handleDelete(),
+              });
+            }}
+            disabled={busy !== null}
+          >
             {t['com.affine.integration.gitlab.connection.delete']()}
           </Button>
         </div>

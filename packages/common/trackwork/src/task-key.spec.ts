@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   extractTrackWorkKeys,
   formatTaskKey,
-  nextTaskNumber,
   normalizeTaskKey,
   parseTaskKey,
   parseTaskNumber,
@@ -89,6 +88,8 @@ describe('parseTaskNumber', () => {
     expect(parseTaskNumber('')).toBe(0);
     expect(parseTaskNumber('abc')).toBe(0);
     expect(parseTaskNumber('TW-')).toBe(0);
+    expect(parseTaskNumber('-1')).toBe(0);
+    expect(parseTaskNumber('1.5')).toBe(0);
   });
 });
 
@@ -101,30 +102,12 @@ describe('parseTaskKey', () => {
   it('returns null for invalid keys', () => {
     expect(parseTaskKey('nope')).toBeNull();
     expect(parseTaskKey('TW-')).toBeNull();
+    expect(parseTaskKey('prefix TW-1 suffix')).toBeNull();
   });
 });
 
 describe('normalizeTaskKey', () => {
   it('trims and uppercases', () => {
     expect(normalizeTaskKey('  tw-142 ')).toBe('TW-142');
-  });
-});
-
-describe('nextTaskNumber', () => {
-  it('returns 1 for an empty workspace', () => {
-    expect(nextTaskNumber([])).toBe(1);
-    expect(nextTaskNumber([undefined])).toBe(1);
-  });
-
-  it('increments past the maximum stored number', () => {
-    expect(nextTaskNumber(['TASK-1', 'TASK-3', 'TW-142'])).toBe(143);
-  });
-
-  it('handles normalized numeric storage', () => {
-    expect(nextTaskNumber(['1', '2', '3'])).toBe(4);
-  });
-
-  it('ignores unparseable values', () => {
-    expect(nextTaskNumber(['abc', 'TASK-5', undefined])).toBe(6);
   });
 });

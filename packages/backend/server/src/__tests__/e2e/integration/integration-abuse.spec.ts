@@ -6,10 +6,12 @@ import {
   refreshDevelopmentPipelinesMutation,
 } from '@affine/graphql';
 import { app, e2e, Mockers } from '../test';
+import { registerTrackWorkTaskKeys } from './trackwork-test-utils';
 
 const WEBHOOK_SECRET = 'super-secret';
 
 const setupGitlab = async (workspaceId: string) => {
+  await registerTrackWorkTaskKeys(workspaceId, ['TASK-142']);
   const created = await app.gql({
     query: createDevelopmentIntegrationMutation,
     variables: {

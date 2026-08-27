@@ -242,6 +242,14 @@ enum AiJobStatus {
   running
 }
 
+input AllocateTrackWorkTaskInput {
+  docId: String!
+  legacyTasks: [TrackWorkLegacyTaskInput!]! = []
+  prefix: String!
+  relatedDocumentIds: [String!]! = []
+  workspaceId: String!
+}
+
 type AlreadyInSpaceDataType {
   spaceId: String!
 }
@@ -772,6 +780,7 @@ input CreateDevelopmentBranchInput {
   connectionId: String!
   name: String!
   repositoryId: String!
+  taskKey: String!
 }
 
 input CreateDevelopmentIntegrationInput {
@@ -790,6 +799,7 @@ input CreateDevelopmentMergeRequestInput {
   repositoryId: String!
   sourceBranch: String!
   targetBranch: String!
+  taskKey: String!
   title: String!
 }
 
@@ -892,6 +902,7 @@ type DevelopmentIntegrationConnection {
   provider: String!
   repositories: [DevelopmentRepository!]!
   updatedAt: DateTime!
+  username: String
   webhookUrl: String!
   workspaceId: String!
 }
@@ -941,11 +952,6 @@ type DevelopmentRepositoryInfo {
   imported: Boolean!
   name: String!
   webUrl: String!
-}
-
-type DevelopmentTaskKeyMigrationResult {
-  migrated: Int!
-  skipped: Int!
 }
 
 type DocActionDeniedDataType {
@@ -1727,6 +1733,7 @@ type Mutation {
 
   """Update workspace flags and features for admin"""
   adminUpdateWorkspace(input: AdminUpdateWorkspaceInput!): AdminWorkspace
+  allocateTrackWorkTask(input: AllocateTrackWorkTaskInput!): TrackWorkTask!
   approveMember(userId: String!, workspaceId: String!): Boolean!
 
   """Ban an user"""
@@ -1813,7 +1820,6 @@ type Mutation {
 
   """mention user in a doc"""
   mentionUser(input: MentionInput!): ID!
-  migrateDevelopmentTaskKeys(fromPrefix: String!, toPrefix: String!, workspaceId: String!): DevelopmentTaskKeyMigrationResult!
   previewLicense(license: Upload!): AdminLicensePreview!
   publishDoc(docId: String!, mode: PublicDocMode = Page, workspaceId: String!): DocType!
 
@@ -1873,8 +1879,10 @@ type Mutation {
   sendVerifyEmail(callbackUrl: String!): Boolean!
   setBlob(blob: Upload!, workspaceId: String!): String!
   setDevelopmentRepositoryEnabled(enabled: Boolean!, repositoryId: String!): DevelopmentRepository!
+  setTrackWorkTaskDocumentLinks(input: SetTrackWorkTaskDocumentLinksInput!): TrackWorkTask!
   settleTranscriptTask(taskId: String!, workspaceId: String!): TranscriptionResultType
   submitTranscriptTask(blob: Upload, blobId: String!, blobs: [Upload!], input: SubmitAudioTranscriptionInput, workspaceId: String!): TranscriptionResultType
+  syncTrackWorkTasks(input: SyncTrackWorkTasksInput!): [TrackWorkTask!]!
   testDevelopmentIntegration(connectionId: String!): DevelopmentConnectionTestResult!
   testWorkspaceByokConfig(input: TestWorkspaceByokConfigInput!): TestWorkspaceByokConfigResultType!
   unlinkCalendarAccount(accountId: String!): Boolean!
@@ -2157,6 +2165,8 @@ type Query {
   """server config"""
   serverConfig: ServerConfigType!
   trackWorkActivity(after: String, first: Int = 20, taskKey: String, workspaceId: String!): DevelopmentActivityConnection!
+  trackWorkDocumentBacklinks(documentId: String!, workspaceId: String!): [TrackWorkTask!]!
+  trackWorkTask(taskKey: String!, workspaceId: String!): TrackWorkTask
   trackWorkTaskDevelopment(taskKey: String!, workspaceId: String!): TrackWorkDevelopmentInfo!
 
   """Get user by email"""
@@ -2475,6 +2485,12 @@ enum ServerFeature {
   Payment
 }
 
+input SetTrackWorkTaskDocumentLinksInput {
+  documentIds: [String!]!
+  taskDocId: String!
+  workspaceId: String!
+}
+
 type SpaceAccessDeniedDataType {
   spaceId: String!
 }
@@ -2596,6 +2612,12 @@ enum SubscriptionVariant {
   Onetime
 }
 
+input SyncTrackWorkTasksInput {
+  prefix: String!
+  tasks: [TrackWorkLegacyTaskInput!]!
+  workspaceId: String!
+}
+
 input TestWorkspaceByokConfigInput {
   apiKey: String
   configId: ID
@@ -2630,6 +2652,21 @@ type TrackWorkDevelopmentInfo {
   commits: [DevelopmentCommit!]!
   mergeRequests: [DevelopmentMergeRequest!]!
   pipelines: [DevelopmentPipeline!]!
+  repositories: [String!]!
+}
+
+input TrackWorkLegacyTaskInput {
+  docId: String!
+  relatedDocumentIds: [String!]! = []
+  taskKey: String!
+}
+
+type TrackWorkTask {
+  createdAt: DateTime!
+  docId: String!
+  number: Int!
+  relatedDocumentIds: [String!]!
+  taskKey: String!
 }
 
 type TranscriptProviderMetaType {
@@ -2721,9 +2758,11 @@ input UpdateChatSessionInput {
 }
 
 input UpdateDevelopmentIntegrationInput {
+  baseUrl: String
   enabled: Boolean
   id: String!
   name: String
+  username: String
 }
 
 input UpdateDocDefaultRoleInput {

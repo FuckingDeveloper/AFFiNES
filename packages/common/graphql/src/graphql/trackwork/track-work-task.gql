@@ -1,0 +1,9 @@
+query trackWorkTask($workspaceId: String!, $taskKey: String!) {
+  trackWorkTask(workspaceId: $workspaceId, taskKey: $taskKey) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}

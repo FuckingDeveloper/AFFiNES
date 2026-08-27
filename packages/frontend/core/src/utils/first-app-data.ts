@@ -17,8 +17,9 @@ export const normalizeWorkspaceTaskKey = (value: string): string => {
   return value
     .trim()
     .toUpperCase()
-    .replace(/[^A-Z]/g, '')
-    .slice(0, 4);
+    .replace(/[^A-Z0-9]/g, '')
+    .replace(/^[^A-Z]+/, '')
+    .slice(0, 16);
 };
 
 export const buildWorkspaceTaskKey = (workspaceName: string): string => {

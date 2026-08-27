@@ -5,7 +5,7 @@ export type TaskRefTextAttributes = AffineTextAttributes & {
   taskRef?: string | null;
 };
 
-const TASK_KEY_PATTERN = /(^|[\s(])([A-Z]{4}-\d+)\s$/;
+const TASK_KEY_PATTERN = /(^|[\s([])([A-Z][A-Z0-9]{1,15}-\d+)\s$/i;
 
 export const TaskRefMarkdownExtension =
   InlineMarkdownExtension<TaskRefTextAttributes>({

@@ -1,5 +1,6 @@
 query trackWorkTaskDevelopment($workspaceId: String!, $taskKey: String!) {
   trackWorkTaskDevelopment(workspaceId: $workspaceId, taskKey: $taskKey) {
+    repositories
     commits {
       externalId
       title

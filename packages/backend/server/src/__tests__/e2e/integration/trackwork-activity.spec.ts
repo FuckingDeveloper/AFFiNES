@@ -9,6 +9,7 @@ import {
 } from '@affine/graphql';
 import { IntegrationConnectionService } from '../../../plugins/integration/service';
 import { app, e2e, Mockers } from '../test';
+import { registerTrackWorkTaskKeys } from './trackwork-test-utils';
 
 const clearRefreshRateLimit = () => {
   const service = app.get(IntegrationConnectionService) as unknown as {
@@ -28,6 +29,7 @@ const sendWebhook = async (connectionId: string, payload: object) => {
 };
 
 const setupGitlab = async (workspaceId: string) => {
+  await registerTrackWorkTaskKeys(workspaceId, ['TW-142', 'TW-160']);
   const created = await app.gql({
     query: createDevelopmentIntegrationMutation,
     variables: {

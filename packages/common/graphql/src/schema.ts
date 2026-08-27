@@ -296,6 +296,14 @@ export enum AiJobStatus {
   running = 'running',
 }
 
+export interface AllocateTrackWorkTaskInput {
+  docId: Scalars['String']['input'];
+  legacyTasks?: Array<TrackWorkLegacyTaskInput>;
+  prefix: Scalars['String']['input'];
+  relatedDocumentIds?: Array<Scalars['String']['input']>;
+  workspaceId: Scalars['String']['input'];
+}
+
 export interface AlreadyInSpaceDataType {
   __typename?: 'AlreadyInSpaceDataType';
   spaceId: Scalars['String']['output'];
@@ -912,6 +920,7 @@ export interface CreateDevelopmentBranchInput {
   connectionId: Scalars['String']['input'];
   name: Scalars['String']['input'];
   repositoryId: Scalars['String']['input'];
+  taskKey: Scalars['String']['input'];
 }
 
 export interface CreateDevelopmentIntegrationInput {
@@ -930,6 +939,7 @@ export interface CreateDevelopmentMergeRequestInput {
   repositoryId: Scalars['String']['input'];
   sourceBranch: Scalars['String']['input'];
   targetBranch: Scalars['String']['input'];
+  taskKey: Scalars['String']['input'];
   title: Scalars['String']['input'];
 }
 
@@ -1037,6 +1047,7 @@ export interface DevelopmentIntegrationConnection {
   provider: Scalars['String']['output'];
   repositories: Array<DevelopmentRepository>;
   updatedAt: Scalars['DateTime']['output'];
+  username: Maybe<Scalars['String']['output']>;
   webhookUrl: Scalars['String']['output'];
   workspaceId: Scalars['String']['output'];
 }
@@ -1091,12 +1102,6 @@ export interface DevelopmentRepositoryInfo {
   imported: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
   webUrl: Scalars['String']['output'];
-}
-
-export interface DevelopmentTaskKeyMigrationResult {
-  __typename?: 'DevelopmentTaskKeyMigrationResult';
-  migrated: Scalars['Int']['output'];
-  skipped: Scalars['Int']['output'];
 }
 
 export interface DocActionDeniedDataType {
@@ -1955,6 +1960,7 @@ export interface Mutation {
   addWorkspaceFeature: Scalars['Boolean']['output'];
   /** Update workspace flags and features for admin */
   adminUpdateWorkspace: Maybe<AdminWorkspace>;
+  allocateTrackWorkTask: TrackWorkTask;
   approveMember: Scalars['Boolean']['output'];
   /** Ban an user */
   banUser: UserType;
@@ -2026,7 +2032,6 @@ export interface Mutation {
   linkCalendarAccount: Scalars['String']['output'];
   /** mention user in a doc */
   mentionUser: Scalars['ID']['output'];
-  migrateDevelopmentTaskKeys: DevelopmentTaskKeyMigrationResult;
   previewLicense: AdminLicensePreview;
   publishDoc: DocType;
   /** queue workspace doc embedding */
@@ -2074,8 +2079,10 @@ export interface Mutation {
   sendVerifyEmail: Scalars['Boolean']['output'];
   setBlob: Scalars['String']['output'];
   setDevelopmentRepositoryEnabled: DevelopmentRepository;
+  setTrackWorkTaskDocumentLinks: TrackWorkTask;
   settleTranscriptTask: Maybe<TranscriptionResultType>;
   submitTranscriptTask: Maybe<TranscriptionResultType>;
+  syncTrackWorkTasks: Array<TrackWorkTask>;
   testDevelopmentIntegration: DevelopmentConnectionTestResult;
   testWorkspaceByokConfig: TestWorkspaceByokConfigResultType;
   unlinkCalendarAccount: Scalars['Boolean']['output'];
@@ -2158,6 +2165,10 @@ export interface MutationAddWorkspaceFeatureArgs {
 
 export interface MutationAdminUpdateWorkspaceArgs {
   input: AdminUpdateWorkspaceInput;
+}
+
+export interface MutationAllocateTrackWorkTaskArgs {
+  input: AllocateTrackWorkTaskInput;
 }
 
 export interface MutationApproveMemberArgs {
@@ -2378,12 +2389,6 @@ export interface MutationMentionUserArgs {
   input: MentionInput;
 }
 
-export interface MutationMigrateDevelopmentTaskKeysArgs {
-  fromPrefix: Scalars['String']['input'];
-  toPrefix: Scalars['String']['input'];
-  workspaceId: Scalars['String']['input'];
-}
-
 export interface MutationPreviewLicenseArgs {
   license: Scalars['Upload']['input'];
 }
@@ -2531,6 +2536,10 @@ export interface MutationSetDevelopmentRepositoryEnabledArgs {
   repositoryId: Scalars['String']['input'];
 }
 
+export interface MutationSetTrackWorkTaskDocumentLinksArgs {
+  input: SetTrackWorkTaskDocumentLinksInput;
+}
+
 export interface MutationSettleTranscriptTaskArgs {
   taskId: Scalars['String']['input'];
   workspaceId: Scalars['String']['input'];
@@ -2542,6 +2551,10 @@ export interface MutationSubmitTranscriptTaskArgs {
   blobs?: InputMaybe<Array<Scalars['Upload']['input']>>;
   input?: InputMaybe<SubmitAudioTranscriptionInput>;
   workspaceId: Scalars['String']['input'];
+}
+
+export interface MutationSyncTrackWorkTasksArgs {
+  input: SyncTrackWorkTasksInput;
 }
 
 export interface MutationTestDevelopmentIntegrationArgs {
@@ -2884,6 +2897,8 @@ export interface Query {
   /** server config */
   serverConfig: ServerConfigType;
   trackWorkActivity: DevelopmentActivityConnection;
+  trackWorkDocumentBacklinks: Array<TrackWorkTask>;
+  trackWorkTask: Maybe<TrackWorkTask>;
   trackWorkTaskDevelopment: TrackWorkDevelopmentInfo;
   /** Get user by email */
   user: Maybe<UserOrLimitedUser>;
@@ -2954,6 +2969,16 @@ export interface QueryTrackWorkActivityArgs {
   after?: InputMaybe<Scalars['String']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
   taskKey?: InputMaybe<Scalars['String']['input']>;
+  workspaceId: Scalars['String']['input'];
+}
+
+export interface QueryTrackWorkDocumentBacklinksArgs {
+  documentId: Scalars['String']['input'];
+  workspaceId: Scalars['String']['input'];
+}
+
+export interface QueryTrackWorkTaskArgs {
+  taskKey: Scalars['String']['input'];
   workspaceId: Scalars['String']['input'];
 }
 
@@ -3271,6 +3296,12 @@ export enum ServerFeature {
   Payment = 'Payment',
 }
 
+export interface SetTrackWorkTaskDocumentLinksInput {
+  documentIds: Array<Scalars['String']['input']>;
+  taskDocId: Scalars['String']['input'];
+  workspaceId: Scalars['String']['input'];
+}
+
 export interface SpaceAccessDeniedDataType {
   __typename?: 'SpaceAccessDeniedDataType';
   spaceId: Scalars['String']['output'];
@@ -3397,6 +3428,12 @@ export enum SubscriptionVariant {
   Onetime = 'Onetime',
 }
 
+export interface SyncTrackWorkTasksInput {
+  prefix: Scalars['String']['input'];
+  tasks: Array<TrackWorkLegacyTaskInput>;
+  workspaceId: Scalars['String']['input'];
+}
+
 export interface TestWorkspaceByokConfigInput {
   apiKey?: InputMaybe<Scalars['String']['input']>;
   configId?: InputMaybe<Scalars['ID']['input']>;
@@ -3434,6 +3471,22 @@ export interface TrackWorkDevelopmentInfo {
   commits: Array<DevelopmentCommit>;
   mergeRequests: Array<DevelopmentMergeRequest>;
   pipelines: Array<DevelopmentPipeline>;
+  repositories: Array<Scalars['String']['output']>;
+}
+
+export interface TrackWorkLegacyTaskInput {
+  docId: Scalars['String']['input'];
+  relatedDocumentIds?: Array<Scalars['String']['input']>;
+  taskKey: Scalars['String']['input'];
+}
+
+export interface TrackWorkTask {
+  __typename?: 'TrackWorkTask';
+  createdAt: Scalars['DateTime']['output'];
+  docId: Scalars['String']['output'];
+  number: Scalars['Int']['output'];
+  relatedDocumentIds: Array<Scalars['String']['output']>;
+  taskKey: Scalars['String']['output'];
 }
 
 export interface TranscriptProviderMetaType {
@@ -3538,9 +3591,11 @@ export interface UpdateChatSessionInput {
 }
 
 export interface UpdateDevelopmentIntegrationInput {
+  baseUrl?: InputMaybe<Scalars['String']['input']>;
   enabled?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['String']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
+  username?: InputMaybe<Scalars['String']['input']>;
 }
 
 export interface UpdateDocDefaultRoleInput {
@@ -7462,6 +7517,7 @@ export type DevelopmentIntegrationsQuery = {
       provider: string;
       name: string;
       baseUrl: string;
+      username: string | null;
       enabled: boolean;
       hasToken: boolean;
       hasWebhookSecret: boolean;
@@ -7516,21 +7572,6 @@ export type ImportDevelopmentRepositoryMutation = {
     webUrl: string;
     defaultBranch: string | null;
     enabled: boolean;
-  };
-};
-
-export type MigrateDevelopmentTaskKeysMutationVariables = Exact<{
-  workspaceId: Scalars['String']['input'];
-  fromPrefix: Scalars['String']['input'];
-  toPrefix: Scalars['String']['input'];
-}>;
-
-export type MigrateDevelopmentTaskKeysMutation = {
-  __typename?: 'Mutation';
-  migrateDevelopmentTaskKeys: {
-    __typename?: 'DevelopmentTaskKeyMigrationResult';
-    migrated: number;
-    skipped: number;
   };
 };
 
@@ -7630,6 +7671,7 @@ export type TrackWorkTaskDevelopmentQuery = {
   __typename?: 'Query';
   trackWorkTaskDevelopment: {
     __typename?: 'TrackWorkDevelopmentInfo';
+    repositories: Array<string>;
     commits: Array<{
       __typename?: 'DevelopmentCommit';
       externalId: string;
@@ -8154,6 +8196,88 @@ export type SubscriptionQuery = {
       canceledAt: string | null;
       variant: SubscriptionVariant | null;
     }>;
+  } | null;
+};
+
+export type AllocateTrackWorkTaskMutationVariables = Exact<{
+  input: AllocateTrackWorkTaskInput;
+}>;
+
+export type AllocateTrackWorkTaskMutation = {
+  __typename?: 'Mutation';
+  allocateTrackWorkTask: {
+    __typename?: 'TrackWorkTask';
+    docId: string;
+    taskKey: string;
+    number: number;
+    relatedDocumentIds: Array<string>;
+    createdAt: string;
+  };
+};
+
+export type SetTrackWorkTaskDocumentLinksMutationVariables = Exact<{
+  input: SetTrackWorkTaskDocumentLinksInput;
+}>;
+
+export type SetTrackWorkTaskDocumentLinksMutation = {
+  __typename?: 'Mutation';
+  setTrackWorkTaskDocumentLinks: {
+    __typename?: 'TrackWorkTask';
+    docId: string;
+    taskKey: string;
+    number: number;
+    relatedDocumentIds: Array<string>;
+    createdAt: string;
+  };
+};
+
+export type SyncTrackWorkTasksMutationVariables = Exact<{
+  input: SyncTrackWorkTasksInput;
+}>;
+
+export type SyncTrackWorkTasksMutation = {
+  __typename?: 'Mutation';
+  syncTrackWorkTasks: Array<{
+    __typename?: 'TrackWorkTask';
+    docId: string;
+    taskKey: string;
+    number: number;
+    relatedDocumentIds: Array<string>;
+    createdAt: string;
+  }>;
+};
+
+export type TrackWorkDocumentBacklinksQueryVariables = Exact<{
+  workspaceId: Scalars['String']['input'];
+  documentId: Scalars['String']['input'];
+}>;
+
+export type TrackWorkDocumentBacklinksQuery = {
+  __typename?: 'Query';
+  trackWorkDocumentBacklinks: Array<{
+    __typename?: 'TrackWorkTask';
+    docId: string;
+    taskKey: string;
+    number: number;
+    relatedDocumentIds: Array<string>;
+    createdAt: string;
+  }>;
+};
+
+export type TrackWorkTaskQueryVariables = Exact<{
+  workspaceId: Scalars['String']['input'];
+  taskKey: Scalars['String']['input'];
+}>;
+
+export type TrackWorkTaskQuery = {
+  __typename?: 'Query';
+  trackWorkTask: {
+    __typename?: 'TrackWorkTask';
+    docId: string;
+    taskKey: string;
+    number: number;
+    relatedDocumentIds: Array<string>;
+    createdAt: string;
   } | null;
 };
 
@@ -9036,6 +9160,16 @@ export type Queries =
       response: SubscriptionQuery;
     }
   | {
+      name: 'trackWorkDocumentBacklinksQuery';
+      variables: TrackWorkDocumentBacklinksQueryVariables;
+      response: TrackWorkDocumentBacklinksQuery;
+    }
+  | {
+      name: 'trackWorkTaskQuery';
+      variables: TrackWorkTaskQueryVariables;
+      response: TrackWorkTaskQuery;
+    }
+  | {
       name: 'workspaceBlobQuotaQuery';
       variables: WorkspaceBlobQuotaQueryVariables;
       response: WorkspaceBlobQuotaQuery;
@@ -9433,11 +9567,6 @@ export type Mutations =
       response: ImportDevelopmentRepositoryMutation;
     }
   | {
-      name: 'migrateDevelopmentTaskKeysMutation';
-      variables: MigrateDevelopmentTaskKeysMutationVariables;
-      response: MigrateDevelopmentTaskKeysMutation;
-    }
-  | {
       name: 'refreshDevelopmentPipelinesMutation';
       variables: RefreshDevelopmentPipelinesMutationVariables;
       response: RefreshDevelopmentPipelinesMutation;
@@ -9576,6 +9705,21 @@ export type Mutations =
       name: 'requestApplySubscriptionMutation';
       variables: RequestApplySubscriptionMutationVariables;
       response: RequestApplySubscriptionMutation;
+    }
+  | {
+      name: 'allocateTrackWorkTaskMutation';
+      variables: AllocateTrackWorkTaskMutationVariables;
+      response: AllocateTrackWorkTaskMutation;
+    }
+  | {
+      name: 'setTrackWorkTaskDocumentLinksMutation';
+      variables: SetTrackWorkTaskDocumentLinksMutationVariables;
+      response: SetTrackWorkTaskDocumentLinksMutation;
+    }
+  | {
+      name: 'syncTrackWorkTasksMutation';
+      variables: SyncTrackWorkTasksMutationVariables;
+      response: SyncTrackWorkTasksMutation;
     }
   | {
       name: 'updateDocDefaultRoleMutation';

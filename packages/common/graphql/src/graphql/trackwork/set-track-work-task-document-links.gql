@@ -1,0 +1,11 @@
+mutation setTrackWorkTaskDocumentLinks(
+  $input: SetTrackWorkTaskDocumentLinksInput!
+) {
+  setTrackWorkTaskDocumentLinks(input: $input) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}

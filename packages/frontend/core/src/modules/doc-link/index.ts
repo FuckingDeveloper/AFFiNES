@@ -1,5 +1,6 @@
 import { type Framework } from '@toeverything/infra';
 
+import { WorkspaceServerService } from '../cloud';
 import { DocScope } from '../doc/scopes/doc';
 import { DocService } from '../doc/services/doc';
 import { DocsService } from '../doc/services/docs';
@@ -25,6 +26,7 @@ export function configureDocLinksModule(framework: Framework) {
       DocsService,
       FeatureFlagService,
       WorkspaceService,
+      WorkspaceServerService,
     ])
     .entity(DocLinks, [DocsSearchService, DocService]);
 }

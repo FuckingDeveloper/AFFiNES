@@ -11,6 +11,7 @@ import {
 } from '@affine/graphql';
 import { WorkspaceRole } from '../../../models';
 import { app, e2e, Mockers } from '../test';
+import { registerTrackWorkTaskKeys } from './trackwork-test-utils';
 import Sinon from 'sinon';
 
 const createConnectionVariables = (workspaceId: string) => ({
@@ -202,6 +203,7 @@ e2e('creates a gitlab branch and merge request', async t => {
     owner: { id: admin.id },
   });
   await app.login(admin);
+  await registerTrackWorkTaskKeys(workspace.id, ['TW-142']);
 
   const created = await app.gql({
     query: createDevelopmentIntegrationMutation,
@@ -257,6 +259,7 @@ e2e('creates a gitlab branch and merge request', async t => {
           repositoryId: '1',
           baseBranch: 'main',
           name: 'feature/TW-142-fix-token',
+          taskKey: 'TW-142',
         },
       },
     });
@@ -273,6 +276,7 @@ e2e('creates a gitlab branch and merge request', async t => {
           targetBranch: 'main',
           title: 'TW-142 Fix token race',
           description: 'TrackWork: TW-142',
+          taskKey: 'TW-142',
         },
       },
     });

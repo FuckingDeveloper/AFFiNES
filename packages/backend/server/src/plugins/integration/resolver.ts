@@ -25,7 +25,6 @@ import {
   DevelopmentPipelineType,
   DevelopmentRepositoryInfoType,
   DevelopmentRepositoryType,
-  DevelopmentTaskKeyMigrationResultType,
   ImportDevelopmentRepositoryInput,
   RotateDevelopmentCredentialsInput,
   TrackWorkDevelopmentInfoType,
@@ -39,6 +38,7 @@ const mapConnectionToType = (
     provider: string;
     name: string;
     baseUrl: string;
+    username: string | null;
     tokenCipher: string;
     webhookSecretCipher: string | null;
     enabled: boolean;
@@ -53,6 +53,7 @@ const mapConnectionToType = (
   provider: connection.provider,
   name: connection.name,
   baseUrl: connection.baseUrl,
+  username: connection.username ?? undefined,
   enabled: connection.enabled,
   hasToken: connection.tokenCipher.length > 0,
   hasWebhookSecret: connection.webhookSecretCipher !== null,
@@ -114,6 +115,7 @@ export class WorkspaceIntegrationResolver {
 export class DevelopmentInfoResolver {
   constructor(
     private readonly links: DevelopmentLinkService,
+    private readonly connections: IntegrationConnectionService,
     private readonly access: AccessController
   ) {}
 
@@ -133,6 +135,9 @@ export class DevelopmentInfoResolver {
       .assert('Workspace.Read');
 
     const links = await this.links.listByTaskKey(workspaceId, taskKey);
+    const repositories = await this.connections.listRepositoriesByIds(
+      links.map(link => link.repositoryId).filter(Boolean)
+    );
 
     const commits = links
       .filter(link => link.entityType === 'commit')
@@ -187,7 +192,15 @@ export class DevelopmentInfoResolver {
           : null,
       }));
 
-    return { commits, branches, mergeRequests, pipelines };
+    return {
+      repositories: [
+        ...new Set(repositories.map(repository => repository.fullName)),
+      ],
+      commits,
+      branches,
+      mergeRequests,
+      pipelines,
+    };
   }
 
   @Query(() => DevelopmentActivityConnectionType)
@@ -289,6 +302,8 @@ export class IntegrationMutationResolver {
     const record = await this.connections.update({
       id: input.id,
       name: input.name,
+      baseUrl: input.baseUrl,
+      username: input.username,
       enabled: input.enabled,
     });
 
@@ -364,7 +379,8 @@ export class IntegrationMutationResolver {
       input.connectionId,
       input.repositoryId,
       input.baseBranch,
-      input.name
+      input.name,
+      input.taskKey
     );
   }
 
@@ -386,24 +402,9 @@ export class IntegrationMutationResolver {
       input.sourceBranch,
       input.targetBranch,
       input.title,
-      input.description ?? undefined
+      input.description ?? undefined,
+      input.taskKey
     );
-  }
-
-  @Mutation(() => DevelopmentTaskKeyMigrationResultType)
-  async migrateDevelopmentTaskKeys(
-    @CurrentUser() user: CurrentUser | null,
-    @Args('workspaceId') workspaceId: string,
-    @Args('fromPrefix') fromPrefix: string,
-    @Args('toPrefix') toPrefix: string
-  ) {
-    if (!user) {
-      throw new AuthenticationRequired();
-    }
-
-    await this.assertCanManage(user.id, workspaceId);
-
-    return this.connections.migrateTaskKeys(workspaceId, fromPrefix, toPrefix);
   }
 
   @Mutation(() => [DevelopmentPipelineType])

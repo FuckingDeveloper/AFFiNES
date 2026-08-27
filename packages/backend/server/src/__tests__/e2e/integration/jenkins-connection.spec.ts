@@ -10,10 +10,12 @@ import {
 } from '@affine/graphql';
 import { WorkspaceRole } from '../../../models';
 import { app, e2e, Mockers } from '../test';
+import { registerTrackWorkTaskKeys } from './trackwork-test-utils';
 
 const JENKINS_URL = 'https://ci.example.org';
 
 const createJenkinsConnection = async (workspaceId: string) => {
+  await registerTrackWorkTaskKeys(workspaceId, ['TW-142', 'TW-151']);
   const created = await app.gql({
     query: createDevelopmentIntegrationMutation,
     variables: {

@@ -15,6 +15,14 @@ type JenkinsBuild = {
   duration?: number;
   url?: string;
   description?: string | null;
+  actions?: Array<{
+    parameters?: Array<{ name?: string; value?: unknown }>;
+    lastBuiltRevision?: {
+      SHA1?: string;
+      branch?: Array<{ name?: string }>;
+    };
+  }>;
+  changeSet?: { items?: Array<{ comment?: string; id?: string }> };
 };
 
 type JenkinsJob = {
@@ -24,6 +32,30 @@ type JenkinsJob = {
 
 type JenkinsResponse = {
   jobs?: JenkinsJob[];
+};
+
+const stringParameter = (build: JenkinsBuild, names: string[]) => {
+  for (const action of build.actions ?? []) {
+    for (const parameter of action.parameters ?? []) {
+      if (
+        parameter.name &&
+        names.includes(parameter.name) &&
+        typeof parameter.value === 'string'
+      ) {
+        return parameter.value;
+      }
+    }
+  }
+  return undefined;
+};
+
+const revisionMetadata = (build: JenkinsBuild) => {
+  for (const action of build.actions ?? []) {
+    if (action.lastBuiltRevision) {
+      return action.lastBuiltRevision;
+    }
+  }
+  return undefined;
 };
 
 const mapJenkinsStatus = (
@@ -92,8 +124,7 @@ export class JenkinsCiProvider implements CiProvider {
     });
 
     if (!response.ok) {
-      const message = await response.text().catch(() => '');
-      throw new Error(`Jenkins API error ${response.status}: ${message}`);
+      throw new Error(`Jenkins API request failed (${response.status})`);
     }
 
     return response.json() as Promise<unknown>;
@@ -136,7 +167,7 @@ export class JenkinsCiProvider implements CiProvider {
 
     const result = (await this.request(
       input.baseUrl,
-      '/api/json?tree=jobs[name,color,builds[number,result,building,timestamp,duration,url,description]{0,20}]',
+      '/api/json?tree=jobs[name,color,builds[number,result,building,timestamp,duration,url,description,actions[parameters[name,value],lastBuiltRevision[SHA1,branch[name]]],changeSet[items[comment,id]]]{0,20}]',
       input.username,
       input.token
     )) as JenkinsResponse;
@@ -165,6 +196,27 @@ export class JenkinsCiProvider implements CiProvider {
           build.building || !build.timestamp || !build.duration
             ? undefined
             : new Date(build.timestamp + build.duration);
+        const revision = revisionMetadata(build);
+        const branch =
+          stringParameter(build, ['GIT_BRANCH', 'BRANCH_NAME']) ??
+          revision?.branch?.[0]?.name;
+        const commitSha =
+          stringParameter(build, ['GIT_COMMIT']) ?? revision?.SHA1;
+        const taskReference = stringParameter(build, [
+          'TRACKWORK_TASK',
+          'TRACKWORK_TASK_KEY',
+        ]);
+        const changeMessages = (build.changeSet?.items ?? [])
+          .map(item => item.comment)
+          .filter((value): value is string => !!value);
+        const description = [
+          build.description,
+          taskReference,
+          branch,
+          ...changeMessages,
+        ]
+          .filter((value): value is string => !!value)
+          .join('\n');
 
         pipelines.push({
           provider: 'jenkins',
@@ -173,7 +225,9 @@ export class JenkinsCiProvider implements CiProvider {
           name: job.name,
           status,
           url: build.url,
-          description: build.description ?? undefined,
+          description: description || undefined,
+          branch,
+          commitSha,
           startedAt,
           finishedAt,
         });

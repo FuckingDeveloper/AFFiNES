@@ -7,10 +7,12 @@ import {
 } from '@affine/graphql';
 import { IntegrationJob } from '../../../plugins/integration/job';
 import { app, e2e, Mockers } from '../test';
+import { registerTrackWorkTaskKeys } from './trackwork-test-utils';
 
 const WEBHOOK_SECRET = 'super-secret';
 
 const setupConnection = async (workspaceId: string) => {
+  await registerTrackWorkTaskKeys(workspaceId, ['TW-142', 'TW-151']);
   const created = await app.gql({
     query: createDevelopmentIntegrationMutation,
     variables: {
@@ -161,6 +163,36 @@ e2e('links commits, branches and merge requests to tasks', async t => {
   t.is(development.mergeRequests.length, 1);
   t.is(development.mergeRequests[0].iid, '318');
   t.is(development.mergeRequests[0].status, 'open');
+});
+
+e2e('ignores parsed task keys that are not in the registry', async t => {
+  const owner = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: owner.id },
+  });
+  await app.login(owner);
+
+  const connectionId = await setupConnection(workspace.id);
+  await sendWebhook(
+    connectionId,
+    pushPayload(1, 'refs/heads/feature/TW-999-unknown', [
+      {
+        id: 'unknown-task-key',
+        title: 'Unknown task',
+        message: 'fix: TW-999 must not link',
+      },
+    ])
+  );
+  await processWebhookJobs();
+
+  const db = app.get(PrismaClient);
+  t.is(await getLinkCount(db, workspace.id, 'TW-999'), 0);
+  t.is(
+    await db.developmentActivity.count({
+      where: { workspaceId: workspace.id, taskKey: 'TW-999' },
+    }),
+    0
+  );
 });
 
 e2e(

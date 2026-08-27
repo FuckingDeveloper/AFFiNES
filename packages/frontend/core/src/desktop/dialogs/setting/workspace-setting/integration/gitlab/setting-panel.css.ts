@@ -12,6 +12,12 @@ export const form = style({
   background: cssVarV2.layer.background.primary,
 });
 
+export const formGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  gap: 12,
+});
+
 export const label = style({
   display: 'flex',
   flexDirection: 'column',
@@ -37,6 +43,7 @@ export const row = style({
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: 12,
+  flexWrap: 'wrap',
 });
 
 export const value = style({

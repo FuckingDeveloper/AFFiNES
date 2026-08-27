@@ -182,10 +182,50 @@ model Workspace {
   projectedInvitations       WorkspaceInvitation[]
   docAccessPolicies          DocAccessPolicy[]
   docGrants                  DocGrant[]
+  developmentIntegrations    DevelopmentIntegrationConnection[]
+  trackWorkTasks             TrackWorkTask[]
 
   @@index([lastCheckEmbeddings])
   @@index([createdAt])
   @@map("workspaces")
+}
+
+model TrackWorkTask {
+  id               String   @id @default(uuid()) @db.VarChar
+  workspaceId      String   @map("workspace_id") @db.VarChar
+  docId            String   @map("doc_id") @db.VarChar
+  taskKey          String   @map("task_key") @db.VarChar
+  number           Int
+  linksInitialized Boolean  @default(false) @map("links_initialized")
+  createdById      String?  @map("created_by_id") @db.VarChar
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  workspace Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  links     TrackWorkDocumentLink[]
+
+  @@unique([workspaceId, docId])
+  @@unique([workspaceId, taskKey])
+  @@unique([workspaceId, number])
+  @@unique([workspaceId, id])
+  @@index([workspaceId, createdAt])
+  @@map("trackwork_tasks")
+}
+
+model TrackWorkDocumentLink {
+  id          String   @id @default(uuid()) @db.VarChar
+  workspaceId String   @map("workspace_id") @db.VarChar
+  taskId      String   @map("task_id") @db.VarChar
+  documentId  String   @map("document_id") @db.VarChar
+  createdById String?  @map("created_by_id") @db.VarChar
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  task TrackWorkTask @relation(fields: [workspaceId, taskId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([taskId, documentId])
+  @@index([workspaceId, documentId])
+  @@index([workspaceId, taskId])
+  @@map("trackwork_document_links")
 }
 
 model WorkspaceRuntimeState {
@@ -1431,6 +1471,10 @@ model DevelopmentIntegrationConnection {
 
   repositories        DevelopmentRepository[]
   DevelopmentPipeline DevelopmentPipeline[]
+  taskLinks           DevelopmentTaskLink[]
+  webhookEvents       DevelopmentWebhookEvent[]
+  activities          DevelopmentActivity[]
+  workspace           Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
   @@map("development_integration_connections")
@@ -1470,7 +1514,9 @@ model DevelopmentTaskLink {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  @@unique([workspaceId, taskKey, entityType, externalId])
+  connection DevelopmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, repositoryId, taskKey, entityType, externalId], map: "dev_task_links_connection_repo_task_entity_external_key")
   @@index([workspaceId, taskKey])
   @@index([connectionId])
   @@index([repositoryId])
@@ -1483,6 +1529,8 @@ model DevelopmentWebhookEvent {
   idempotencyKey String   @map("idempotency_key") @db.VarChar
   eventType      String   @map("event_type") @db.VarChar
   processedAt    DateTime @default(now()) @map("processed_at") @db.Timestamptz(3)
+
+  connection DevelopmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
   @@unique([connectionId, idempotencyKey])
   @@map("development_webhook_events")
@@ -1521,6 +1569,8 @@ model DevelopmentActivity {
   repositoryName String?  @map("repository_name") @db.VarChar
   metadata       Json     @db.JsonB
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  connection DevelopmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, taskKey, createdAt])
   @@index([workspaceId, createdAt])

@@ -23,15 +23,19 @@ import {
   useTaskTrackerI18n,
 } from '@affine/core/utils/task-tracker-i18n';
 import {
+  allocateTrackWorkTaskMutation,
   createDevelopmentBranchMutation,
   createDevelopmentMergeRequestMutation,
   developmentIntegrationsQuery,
+  setTrackWorkTaskDocumentLinksMutation,
+  syncTrackWorkTasksMutation,
   trackWorkActivityQuery,
   trackWorkTaskDevelopmentQuery,
 } from '@affine/graphql';
 import {
   formatTaskKey,
-  nextTaskNumber,
+  normalizeTaskKey,
+  parseTaskKey,
   parseTaskNumber,
 } from '@affine/trackwork';
 import { DeleteIcon, LinkIcon, PlusIcon } from '@blocksuite/icons/rc';
@@ -47,6 +51,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Observable } from 'rxjs';
 
 import { applyAutomationRules } from './automation';
@@ -122,6 +127,18 @@ type TaskCard = {
   history: TaskHistoryEntry[];
   relatedDocs: string[];
   relations: TaskRelations;
+};
+
+const resolveStoredTaskKey = (
+  workspacePrefix: string,
+  storedValue: string | undefined
+): string => {
+  if (storedValue && parseTaskKey(storedValue)) {
+    return normalizeTaskKey(storedValue);
+  }
+
+  const number = parseTaskNumber(storedValue);
+  return number > 0 ? formatTaskKey(workspacePrefix, number) : '';
 };
 
 type DocTitleItem = {
@@ -727,27 +744,21 @@ const TaskCardItem = ({
   task,
   columnId,
   tagNameMap,
-  workspace,
   hasActiveFilters,
-  expanded,
-  onToggleExpanded,
+  onOpenPreview,
   onOpenEditor,
   onOpenTaskDoc,
   onDeleteTask,
-  onDownloadAttachment,
   onDraggingChange,
 }: {
   task: TaskCard;
   columnId: string;
   tagNameMap: Map<string, string>;
-  workspace: WorkspaceService['workspace'] | null;
   hasActiveFilters: boolean;
-  expanded: boolean;
-  onToggleExpanded: (taskId: string) => void;
+  onOpenPreview: (taskId: string) => void;
   onOpenEditor: (taskId: string) => void;
   onOpenTaskDoc: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
-  onDownloadAttachment: (attachment: TaskAttachment) => void;
   onDraggingChange: (dragTask: ActiveDragTask | null) => void;
 }) => {
   const { t, locale } = useTaskTrackerI18n();
@@ -789,14 +800,11 @@ const TaskCardItem = ({
   return (
     <article
       ref={dragRef}
-      className={clsx(styles.task, {
-        [styles.taskSelected]: expanded,
-        [styles.taskExpanded]: expanded,
-      })}
+      className={styles.task}
       data-dragging={dragging}
       data-testid={`task-card:${task.id}`}
       onClick={() => {
-        onToggleExpanded(task.id);
+        onOpenPreview(task.id);
       }}
     >
       <div className={styles.taskHero}>
@@ -908,72 +916,264 @@ const TaskCardItem = ({
           </span>
         ))}
       </div>
+    </article>
+  );
+};
 
-      {expanded ? (
-        <div className={styles.expandedCardSurface}>
+const TaskModal = ({
+  children,
+  onClose,
+  label,
+}: {
+  children: ReactNode;
+  onClose: () => void;
+  label: string;
+}) => {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    dialogRef.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, []);
+
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      className={styles.taskModalOverlay}
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        ref={dialogRef}
+        className={styles.taskModalSurface}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        tabIndex={-1}
+      >
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+const TaskPreview = ({
+  task,
+  workspace,
+  tagNameMap,
+  onEdit,
+  onClose,
+  onOpenTaskDoc,
+  onDownloadAttachment,
+}: {
+  task: TaskCard;
+  workspace: WorkspaceService['workspace'] | null;
+  tagNameMap: Map<string, string>;
+  onEdit: () => void;
+  onClose: () => void;
+  onOpenTaskDoc: (taskId: string) => void;
+  onDownloadAttachment: (attachment: TaskAttachment) => void;
+}) => {
+  const { t, locale } = useTaskTrackerI18n();
+  const complexity = complexityMeta(task.complexity);
+  const subtaskDoneCount = task.subtasks.filter(item => item.done).length;
+  const labels = task.labelIds
+    .map(labelId => tagNameMap.get(labelId) ?? '')
+    .filter(Boolean);
+
+  return (
+    <div className={styles.expandedCardMain}>
+      <header className={styles.expandedCardHeader}>
+        <div className={styles.expandedCardTitleBlock}>
+          <span className={styles.detailTaskNumber}>{task.number}</span>
+          <h2 id="task-preview-title" className={styles.expandedTitleText}>
+            {task.title || t('untitledTask')}
+          </h2>
+        </div>
+        <div className={styles.expandedCardHeaderActions}>
+          <Button variant="plain" onClick={onEdit}>
+            {t('openEditor')}
+          </Button>
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label={t('openTaskDocument')}
+            onClick={() => {
+              onOpenTaskDoc(task.id);
+            }}
+          >
+            <LinkIcon />
+          </button>
+          <button
+            type="button"
+            className={styles.modalCloseButton}
+            aria-label={t('close')}
+            title={t('close')}
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
+      </header>
+
+      <div className={styles.expandedTopGrid}>
+        <section className={styles.expandedOverviewCard}>
+          <div className={styles.expandedOverviewHeader}>
+            <span className={styles.sectionTitle}>{t('parameters')}</span>
+            <div className={styles.expandedMetaPills}>
+              {labels.map(label => (
+                <span className={styles.taskTag} key={label}>
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className={styles.expandedOverviewStats}>
+            <div className={styles.expandedOverviewStat}>
+              <span className={styles.expandedOverviewLabel}>{t('type')}</span>
+              <span className={styles.expandedOverviewValue}>
+                {t(task.type)}
+              </span>
+            </div>
+            <div className={styles.expandedOverviewStat}>
+              <span className={styles.expandedOverviewLabel}>
+                {t('priority')}
+              </span>
+              <span className={styles.expandedOverviewValue}>
+                {t(task.priority)}
+              </span>
+            </div>
+            <div className={styles.expandedOverviewStat}>
+              <span className={styles.expandedOverviewLabel}>
+                {t('complexity')}
+              </span>
+              <span className={styles.expandedOverviewValue}>
+                {t(complexity.value)}
+              </span>
+            </div>
+            <div className={styles.expandedOverviewStat}>
+              <span className={styles.expandedOverviewLabel}>
+                {t('dueDate')}
+              </span>
+              <span className={styles.expandedOverviewValue}>
+                {formatDueDateLabel(task.dueDate, locale, t('noDueDate'))}
+              </span>
+            </div>
+          </div>
           <div className={styles.expandedDescriptionBlock}>
             <span className={styles.sectionTitle}>{t('description')}</span>
             <div className={styles.expandedReadOnlyText}>
               {task.description || t('noDescription')}
             </div>
           </div>
-
-          <div className={styles.expandedSectionCard}>
-            <div className={styles.expandedSectionHeader}>
-              <span className={styles.sectionTitle}>{t('subtasks')}</span>
-              <span className={styles.expandedSectionMeta}>
-                {t('completedCount', {
-                  done: subtaskDoneCount,
-                  total: task.subtasks.length,
-                })}
-              </span>
-            </div>
-            {task.subtasks.length > 0 ? (
-              <div className={styles.subtasksListDetail}>
-                {task.subtasks.map(subtask => (
-                  <div
-                    key={subtask.id}
-                    className={clsx(styles.subtaskDetailItem, {
-                      [styles.subtaskDetailItemDone]: subtask.done,
-                    })}
-                  >
-                    <span
-                      className={clsx(styles.subtaskIndicator, {
-                        [styles.subtaskIndicatorDone]: subtask.done,
-                      })}
-                    />
-                    <span className={styles.subtaskDetailTitle}>
-                      {subtask.title}
-                    </span>
-                  </div>
-                ))}
+          {task.extraInfo ? (
+            <div className={styles.expandedNotesBlock}>
+              <span className={styles.sectionTitle}>{t('extraInfo')}</span>
+              <div className={styles.expandedReadOnlyText}>
+                {task.extraInfo}
               </div>
-            ) : (
-              <div className={styles.expandedEmptyState}>{t('noSubtasks')}</div>
-            )}
-          </div>
-
-          <div className={styles.expandedSectionCard}>
-            <div className={styles.expandedSectionHeader}>
-              <span className={styles.sectionTitle}>{t('files')}</span>
-              <span className={styles.expandedSectionMeta}>
-                {t('attachedCount', { count: task.attachments.length })}
-              </span>
             </div>
-            <AttachmentPreviewStrip
-              attachments={task.attachments}
-              workspace={workspace}
-              max={6}
-              large
-              onOpenAttachment={onDownloadAttachment}
-            />
-            {task.attachments.length === 0 ? (
-              <div className={styles.expandedEmptyState}>{t('noFiles')}</div>
-            ) : null}
+          ) : null}
+        </section>
+
+        <section className={styles.expandedFieldsCard}>
+          <div className={styles.expandedFieldsHeader}>
+            <span className={styles.sectionTitle}>{t('parameters')}</span>
           </div>
-        </div>
-      ) : null}
-    </article>
+          <div className={styles.expandedFieldGrid}>
+            <span className={styles.editorFieldLabel}>{t('assignee')}</span>
+            <span className={styles.expandedFieldValue}>
+              {task.assignee || t('unassigned')}
+            </span>
+            <span className={styles.editorFieldLabel}>{t('subtasks')}</span>
+            <span className={styles.expandedFieldValue}>
+              {subtaskDoneCount}/{task.subtasks.length}
+            </span>
+            <span className={styles.editorFieldLabel}>{t('files')}</span>
+            <span className={styles.expandedFieldValue}>
+              {task.attachments.length}
+            </span>
+          </div>
+        </section>
+      </div>
+
+      <div className={styles.expandedBottomGrid}>
+        <section className={styles.expandedSectionCard}>
+          <div className={styles.expandedSectionHeader}>
+            <span className={styles.sectionTitle}>{t('subtasks')}</span>
+            <span className={styles.expandedSectionMeta}>
+              {t('completedCount', {
+                done: subtaskDoneCount,
+                total: task.subtasks.length,
+              })}
+            </span>
+          </div>
+          {task.subtasks.length > 0 ? (
+            <div className={styles.subtasksListDetail}>
+              {task.subtasks.map(subtask => (
+                <div
+                  key={subtask.id}
+                  className={clsx(styles.subtaskDetailItem, {
+                    [styles.subtaskDetailItemDone]: subtask.done,
+                  })}
+                >
+                  <span
+                    className={clsx(styles.subtaskIndicator, {
+                      [styles.subtaskIndicatorDone]: subtask.done,
+                    })}
+                  />
+                  <span className={styles.subtaskDetailTitle}>
+                    {subtask.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.expandedEmptyState}>{t('noSubtasks')}</div>
+          )}
+        </section>
+
+        <section className={styles.expandedSectionCard}>
+          <div className={styles.expandedSectionHeader}>
+            <span className={styles.sectionTitle}>{t('files')}</span>
+            <span className={styles.expandedSectionMeta}>
+              {t('attachedCount', { count: task.attachments.length })}
+            </span>
+          </div>
+          <AttachmentPreviewStrip
+            attachments={task.attachments}
+            workspace={workspace}
+            max={6}
+            large
+            onOpenAttachment={onDownloadAttachment}
+          />
+          {task.attachments.length === 0 ? (
+            <div className={styles.expandedEmptyState}>{t('noFiles')}</div>
+          ) : null}
+        </section>
+      </div>
+    </div>
   );
 };
 
@@ -1087,6 +1287,7 @@ const TaskDetailPanel = ({
   onDownloadAttachment: (attachment: TaskAttachment) => void;
 }) => {
   const { t, locale } = useTaskTrackerI18n();
+  const [developmentRevision, setDevelopmentRevision] = useState(0);
   const labelsText = task.labelIds
     .map(labelId => tagNameMap.get(labelId) ?? '')
     .filter(Boolean)
@@ -1094,10 +1295,11 @@ const TaskDetailPanel = ({
   const subtasksText = task.subtasks.map(item => item.title).join('\n');
 
   return (
-    <aside className={styles.detailPanel}>
+    <div className={styles.detailPanel}>
       <div className={styles.detailHeader}>
         <span className={styles.detailTaskNumber}>{task.number}</span>
         <input
+          id="task-editor-title"
           className={styles.detailTitleInput}
           defaultValue={task.title}
           onBlur={event => {
@@ -1125,8 +1327,14 @@ const TaskDetailPanel = ({
           >
             <DeleteIcon />
           </button>
-          <button type="button" className={styles.textButton} onClick={onClose}>
-            {t('close')}
+          <button
+            type="button"
+            className={styles.modalCloseButton}
+            aria-label={t('close')}
+            title={t('close')}
+            onClick={onClose}
+          >
+            ×
           </button>
         </div>
       </div>
@@ -1349,12 +1557,15 @@ const TaskDetailPanel = ({
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
-          <span className={styles.sectionTitle}>{t('createBranch')}</span>
+          <span className={styles.sectionTitle}>{t('developmentActions')}</span>
         </div>
         <TaskGitLabActionsSection
           taskKey={task.number}
           taskTitle={task.title}
           t={t}
+          onCreated={() => {
+            setDevelopmentRevision(value => value + 1);
+          }}
         />
       </section>
 
@@ -1363,6 +1574,7 @@ const TaskDetailPanel = ({
           <span className={styles.sectionTitle}>{t('development')}</span>
         </div>
         <TaskDevelopmentSection
+          key={`${task.id}:${developmentRevision}`}
           workspaceId={workspace?.id ?? ''}
           taskKey={task.number}
           t={t}
@@ -1424,7 +1636,7 @@ const TaskDetailPanel = ({
           <div className={styles.editorEmptyState}>{t('noHistory')}</div>
         )}
       </section>
-    </aside>
+    </div>
   );
 };
 
@@ -1443,6 +1655,48 @@ const pipelineStatusClass = (status: string) => {
   }
 };
 
+const pipelineStatusLabel = (
+  t: TaskTrackerTranslator,
+  status: string
+): string => {
+  switch (status) {
+    case 'success':
+      return t('pipelineStatusSuccess');
+    case 'failed':
+      return t('pipelineStatusFailed');
+    case 'unstable':
+      return t('pipelineStatusUnstable');
+    case 'running':
+      return t('pipelineStatusRunning');
+    case 'queued':
+      return t('pipelineStatusQueued');
+    case 'canceled':
+      return t('pipelineStatusCanceled');
+    case 'skipped':
+      return t('pipelineStatusSkipped');
+    default:
+      return t('pipelineStatusUnknown');
+  }
+};
+
+const mergeRequestStatusLabel = (
+  t: TaskTrackerTranslator,
+  status: string
+): string => {
+  switch (status) {
+    case 'open':
+      return t('mrStatusOpen');
+    case 'merged':
+      return t('mrStatusMerged');
+    case 'closed':
+      return t('mrStatusClosed');
+    case 'draft':
+      return t('mrStatusDraft');
+    default:
+      return t('mrStatusUnknown');
+  }
+};
+
 const TaskDevelopmentSection = ({
   workspaceId,
   taskKey,
@@ -1452,22 +1706,34 @@ const TaskDevelopmentSection = ({
   taskKey: string;
   t: TaskTrackerTranslator;
 }) => {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, mutate } = useQuery({
     query: trackWorkTaskDevelopmentQuery,
     variables: { workspaceId, taskKey },
   });
 
   const development = data?.trackWorkTaskDevelopment;
 
-  if (isLoading || error || !development || !workspaceId) {
+  if (error) {
     return (
       <div className={styles.editorEmptyState}>
-        {error ? `${t('developmentError')}. ` : ''}
+        {t('developmentError')}
+        <Button variant="plain" onClick={() => void mutate()}>
+          {t('developmentRetry')}
+        </Button>
+      </div>
+    );
+  }
+
+  if (isLoading || !development || !workspaceId) {
+    return (
+      <div className={styles.editorEmptyState}>
+        {isLoading ? t('loading') : null}
       </div>
     );
   }
 
   const isEmpty =
+    development.repositories.length === 0 &&
     development.commits.length === 0 &&
     development.branches.length === 0 &&
     development.mergeRequests.length === 0 &&
@@ -1481,6 +1747,19 @@ const TaskDevelopmentSection = ({
 
   return (
     <div>
+      {development.repositories.length > 0 ? (
+        <div className={styles.developmentGroup}>
+          <span className={styles.developmentGroupTitle}>
+            {t('developmentRepository')}
+          </span>
+          {development.repositories.map(repository => (
+            <div key={repository} className={styles.developmentItem}>
+              <span className={styles.developmentItemTitle}>{repository}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {development.branches.length > 0 ? (
         <div className={styles.developmentGroup}>
           <span className={styles.developmentGroupTitle}>
@@ -1488,7 +1767,14 @@ const TaskDevelopmentSection = ({
           </span>
           {development.branches.map(branch => (
             <div key={branch.name} className={styles.developmentItem}>
-              <span className={styles.developmentItemTitle}>{branch.name}</span>
+              <a
+                className={styles.developmentLink}
+                href={branch.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {branch.name}
+              </a>
             </div>
           ))}
         </div>
@@ -1510,9 +1796,7 @@ const TaskDevelopmentSection = ({
                 !{mr.iid} {mr.title}
               </a>
               <span className={styles.developmentItemMeta}>
-                {t(
-                  `mrStatus${mr.status.charAt(0).toUpperCase()}${mr.status.slice(1)}` as TaskTrackerTranslationKey
-                )}
+                {mergeRequestStatusLabel(t, mr.status)}
               </span>
             </div>
           ))}
@@ -1540,9 +1824,7 @@ const TaskDevelopmentSection = ({
                   pipelineStatusClass(pipeline.status)
                 )}
               >
-                {t(
-                  `pipelineStatus${pipeline.status.charAt(0).toUpperCase()}${pipeline.status.slice(1)}` as TaskTrackerTranslationKey
-                )}
+                {pipelineStatusLabel(t, pipeline.status)}
               </span>
             </div>
           ))}
@@ -1595,17 +1877,29 @@ const TaskActivitySection = ({
   taskKey: string;
   t: TaskTrackerTranslator;
 }) => {
-  const { data, isLoading, error } = useQuery({
+  const { locale } = useTaskTrackerI18n();
+  const { data, isLoading, error, mutate } = useQuery({
     query: trackWorkActivityQuery,
     variables: { workspaceId, taskKey, first: 20 },
   });
 
   const items = data?.trackWorkActivity?.items;
 
-  if (isLoading || error || !items || !workspaceId) {
+  if (error) {
     return (
       <div className={styles.editorEmptyState}>
-        {error ? `${t('developmentActivityError')}. ` : ''}
+        {t('developmentActivityError')}
+        <Button variant="plain" onClick={() => void mutate()}>
+          {t('developmentRetry')}
+        </Button>
+      </div>
+    );
+  }
+
+  if (isLoading || !items || !workspaceId) {
+    return (
+      <div className={styles.editorEmptyState}>
+        {isLoading ? t('loading') : null}
       </div>
     );
   }
@@ -1622,6 +1916,12 @@ const TaskActivitySection = ({
     <div className={styles.activityList}>
       {items.map(item => (
         <div key={item.id} className={styles.activityItem}>
+          <span className={styles.developmentItemMeta}>
+            {new Intl.DateTimeFormat(locale, {
+              hour: '2-digit',
+              minute: '2-digit',
+            }).format(new Date(item.createdAt))}
+          </span>
           <span className={styles.activityItemType}>
             {activityEventLabel(t, item.eventType)}
           </span>
@@ -1654,6 +1954,10 @@ const TaskRelatedDocsSection = ({
   const docsService = useService(DocsService);
   const docsSearch = useService(DocsSearchService);
   const workbench = useService(WorkbenchService).workbench;
+  const workspace = useService(WorkspaceService).workspace;
+  const { trigger: setDocumentLinks } = useMutation({
+    mutation: setTrackWorkTaskDocumentLinksMutation,
+  });
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
 
@@ -1676,34 +1980,53 @@ const TaskRelatedDocsSection = ({
     }, [docsSearch, queryTrimmed, task.id, task.relatedDocs])
   );
 
-  const handleAdd = useCallback(
-    (docId: string) => {
-      const doc = docsService.list.doc$(docId).value;
-      if (!doc) {
-        return;
-      }
-      doc.setCustomProperty(
-        TASK_RELATED_DOCS_PROPERTY,
-        stringifyRelatedDocs([...task.relatedDocs, docId])
-      );
-      setQuery('');
-      setAdding(false);
-    },
-    [docsService.list, task.relatedDocs]
-  );
-
-  const handleRemove = useCallback(
-    (docId: string) => {
+  const updateDocumentLinks = useCallback(
+    async (documentIds: string[]) => {
       const doc = docsService.list.doc$(task.id).value;
       if (!doc) {
         return;
       }
-      doc.setCustomProperty(
-        TASK_RELATED_DOCS_PROPERTY,
-        stringifyRelatedDocs(task.relatedDocs.filter(id => id !== docId))
-      );
+
+      try {
+        const result = await setDocumentLinks({
+          input: {
+            workspaceId: workspace.id,
+            taskDocId: task.id,
+            documentIds,
+          },
+        });
+        doc.setCustomProperty(
+          TASK_RELATED_DOCS_PROPERTY,
+          stringifyRelatedDocs(
+            result.setTrackWorkTaskDocumentLinks.relatedDocumentIds
+          )
+        );
+      } catch {
+        notify.error({ title: t('relatedDocsUpdateFailed') });
+        return false;
+      }
+      return true;
     },
-    [docsService.list, task.id, task.relatedDocs]
+    [docsService.list, setDocumentLinks, t, task.id, workspace.id]
+  );
+
+  const handleAdd = useCallback(
+    async (docId: string) => {
+      const updated = await updateDocumentLinks([...task.relatedDocs, docId]);
+      if (!updated) {
+        return;
+      }
+      setQuery('');
+      setAdding(false);
+    },
+    [task.relatedDocs, updateDocumentLinks]
+  );
+
+  const handleRemove = useCallback(
+    async (docId: string) => {
+      await updateDocumentLinks(task.relatedDocs.filter(id => id !== docId));
+    },
+    [task.relatedDocs, updateDocumentLinks]
   );
 
   return (
@@ -1717,10 +2040,10 @@ const TaskRelatedDocsSection = ({
                 type="button"
                 className={styles.textButton}
                 onClick={() => {
-                  handleRemove(docId);
+                  void handleRemove(docId);
                 }}
               >
-                {t('relatedDocsRemoved')}
+                {t('relatedDocsRemove')}
               </button>
             </div>
           ))}
@@ -1745,7 +2068,7 @@ const TaskRelatedDocsSection = ({
                 type="button"
                 className={styles.textButton}
                 onClick={() => {
-                  handleAdd(docId);
+                  void handleAdd(docId);
                 }}
               >
                 <RelatedDocTitle docId={docId} onOpen={() => undefined} />
@@ -1820,14 +2143,15 @@ const RelatedDocTitle = ({
   docId: string;
   onOpen: (docId: string) => void;
 }) => {
+  const { t } = useTaskTrackerI18n();
   const docsService = useService(DocsService);
   const doc = docsService.list.doc$(docId).value;
   const title = useLiveData(
     useMemo(
       () =>
         doc?.meta$?.map(meta => meta.title) ??
-        LiveData.from(new Observable<string>(() => {}), 'Untitled'),
-      [doc]
+        LiveData.from(new Observable<string>(() => {}), t('untitledDocument')),
+      [doc, t]
     )
   );
 
@@ -1985,22 +2309,33 @@ const TaskRelationsSection = ({
   ) => void;
   t: TaskTrackerTranslator;
 }) => {
-  const [linking, setLinking] = useState<
-    'blockedBy' | 'relatesTo' | 'duplicates' | null
-  >(null);
+  type RelationKind = 'blockedBy' | 'blocks' | 'relatesTo' | 'duplicates';
+
+  const [activeKind, setActiveKind] = useState<RelationKind>('blockedBy');
+  const [linking, setLinking] = useState(false);
   const [query, setQuery] = useState('');
 
   const taskById = new Map(allTasks.map(item => [item.id, item]));
+  const blockedTasks = allTasks.filter(item =>
+    item.relations.blockedBy.includes(task.id)
+  );
+  const relationTaskIds: Record<RelationKind, string[]> = {
+    blockedBy: task.relations.blockedBy,
+    blocks: blockedTasks.map(item => item.id),
+    relatesTo: task.relations.relatesTo,
+    duplicates: task.relations.duplicates,
+  };
+  const activeTaskIds = relationTaskIds[activeKind];
+  const relatedTaskIds = new Set(Object.values(relationTaskIds).flat());
+  const normalizedQuery = query.trim().toLowerCase();
 
-  const candidates = query.trim()
+  const candidates = normalizedQuery
     ? allTasks.filter(
         item =>
           item.id !== task.id &&
-          !task.relations.blockedBy.includes(item.id) &&
-          !task.relations.relatesTo.includes(item.id) &&
-          !task.relations.duplicates.includes(item.id) &&
-          (item.title.toLowerCase().includes(query.trim().toLowerCase()) ||
-            item.number.toLowerCase().includes(query.trim().toLowerCase()))
+          !relatedTaskIds.has(item.id) &&
+          (item.title.toLowerCase().includes(normalizedQuery) ||
+            item.number.toLowerCase().includes(normalizedQuery))
       )
     : [];
 
@@ -2010,11 +2345,11 @@ const TaskRelationsSection = ({
       return null;
     }
     return (
-      <div key={taskId} className={styles.developmentItem}>
-        <span className={styles.developmentItemMeta}>{linked.number}</span>
+      <div key={taskId} className={styles.relationItem}>
+        <span className={styles.relationItemKey}>{linked.number}</span>
         <button
           type="button"
-          className={styles.textButton}
+          className={styles.relationItemTitle}
           onClick={() => {
             onSelectTask(taskId);
           }}
@@ -2023,110 +2358,125 @@ const TaskRelationsSection = ({
         </button>
         <button
           type="button"
-          className={styles.textButton}
+          className={styles.relationRemoveButton}
+          aria-label={t('relatedDocsRemove')}
+          title={t('relatedDocsRemove')}
           onClick={() => {
-            if (linking) {
-              onRemoveRelation(task.id, linking, taskId);
+            if (activeKind === 'blocks') {
+              onRemoveRelation(taskId, 'blockedBy', task.id);
+            } else {
+              onRemoveRelation(task.id, activeKind, taskId);
             }
           }}
         >
-          ✕
+          ×
         </button>
       </div>
     );
   };
 
+  const relationKinds: RelationKind[] = [
+    'blockedBy',
+    'blocks',
+    'relatesTo',
+    'duplicates',
+  ];
+
   return (
-    <div>
-      <div className={styles.developmentGroup}>
-        <span className={styles.developmentGroupTitle}>{t('blockedBy')}</span>
-        {task.relations.blockedBy.length === 0 ? (
-          <div className={styles.editorEmptyState}>{t('noLinkedTasks')}</div>
-        ) : (
-          task.relations.blockedBy.map(renderRelationRow)
-        )}
-      </div>
-
-      <div className={styles.developmentGroup}>
-        <span className={styles.developmentGroupTitle}>{t('relatesTo')}</span>
-        {task.relations.relatesTo.length === 0 ? (
-          <div className={styles.editorEmptyState}>{t('noLinkedTasks')}</div>
-        ) : (
-          task.relations.relatesTo.map(renderRelationRow)
-        )}
-      </div>
-
-      <div className={styles.developmentGroup}>
-        <span className={styles.developmentGroupTitle}>{t('duplicates')}</span>
-        {task.relations.duplicates.length === 0 ? (
-          <div className={styles.editorEmptyState}>{t('noLinkedTasks')}</div>
-        ) : (
-          task.relations.duplicates.map(renderRelationRow)
-        )}
-      </div>
-
-      {linking ? (
-        <div className={styles.developmentGroup}>
-          <input
-            className={styles.fieldInput}
-            value={query}
-            placeholder={t('relationSearchPlaceholder')}
-            onChange={event => {
-              setQuery(event.target.value);
+    <div className={styles.relationsEditor}>
+      <div className={styles.relationTabs} role="tablist">
+        {relationKinds.map(kind => (
+          <button
+            key={kind}
+            type="button"
+            role="tab"
+            aria-selected={activeKind === kind}
+            className={clsx(styles.relationTab, {
+              [styles.relationTabActive]: activeKind === kind,
+            })}
+            onClick={() => {
+              setActiveKind(kind);
+              setLinking(false);
+              setQuery('');
             }}
-          />
-          {candidates.length === 0 ? (
-            <div className={styles.editorEmptyState}>
-              {t('taskSearchEmpty')}
-            </div>
-          ) : (
-            candidates.slice(0, 8).map(candidate => (
-              <div key={candidate.id} className={styles.developmentItem}>
-                <button
-                  type="button"
-                  className={styles.textButton}
-                  onClick={() => {
-                    if (linking) {
-                      onAddRelation(task.id, linking, candidate.id);
-                    }
-                    setLinking(null);
-                    setQuery('');
-                  }}
-                >
-                  {candidate.number} {candidate.title || t('untitledTask')}
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      ) : null}
+          >
+            <span>{t(kind)}</span>
+            <span className={styles.relationTabCount}>
+              {relationTaskIds[kind].length}
+            </span>
+          </button>
+        ))}
+      </div>
 
-      <Button
-        variant="plain"
-        onClick={() => {
-          setLinking(current => (current === 'blockedBy' ? null : 'blockedBy'));
-        }}
-      >
-        {t('blockedBy')}
-      </Button>
-      <Button
-        variant="plain"
-        onClick={() => {
-          setLinking(current => (current === 'relatesTo' ? null : 'relatesTo'));
-        }}
-      >
-        {t('relatesTo')}
-      </Button>
-      <Button
-        variant="plain"
-        onClick={() => {
-          setLinking(current =>
-            current === 'duplicates' ? null : 'duplicates'
-          );
-        }}
-      >
-        {t('duplicates')}
-      </Button>
+      <div className={styles.relationPanel} role="tabpanel">
+        <div className={styles.relationPanelHeader}>
+          <span className={styles.relationPanelTitle}>{t(activeKind)}</span>
+          <Button
+            variant="plain"
+            onClick={() => {
+              setLinking(current => !current);
+              setQuery('');
+            }}
+          >
+            <PlusIcon />
+            {t('linkTask')}
+          </Button>
+        </div>
+
+        {activeTaskIds.length === 0 ? (
+          <div className={styles.relationEmptyState}>{t('noLinkedTasks')}</div>
+        ) : (
+          <div className={styles.relationList}>
+            {activeTaskIds.map(renderRelationRow)}
+          </div>
+        )}
+
+        {linking ? (
+          <div className={styles.relationSearch}>
+            <input
+              autoFocus
+              className={styles.relationSearchInput}
+              value={query}
+              placeholder={t('relationSearchPlaceholder')}
+              onChange={event => {
+                setQuery(event.target.value);
+              }}
+            />
+            {normalizedQuery && candidates.length === 0 ? (
+              <div className={styles.relationSearchEmpty}>
+                {t('taskSearchEmpty')}
+              </div>
+            ) : null}
+            {candidates.length > 0 ? (
+              <div className={styles.relationCandidateList}>
+                {candidates.slice(0, 8).map(candidate => (
+                  <button
+                    key={candidate.id}
+                    type="button"
+                    className={styles.relationCandidate}
+                    onClick={() => {
+                      if (activeKind === 'blocks') {
+                        onAddRelation(candidate.id, 'blockedBy', task.id);
+                      } else {
+                        onAddRelation(task.id, activeKind, candidate.id);
+                      }
+                      setLinking(false);
+                      setQuery('');
+                    }}
+                  >
+                    <span className={styles.relationItemKey}>
+                      {candidate.number}
+                    </span>
+                    <span className={styles.relationCandidateTitle}>
+                      {candidate.title || t('untitledTask')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };
@@ -2142,10 +2492,12 @@ const TaskGitLabActionsSection = ({
   taskKey,
   taskTitle,
   t,
+  onCreated,
 }: {
   taskKey: string;
   taskTitle: string;
   t: TaskTrackerTranslator;
+  onCreated: () => void;
 }) => {
   const workspaceService = useService(WorkspaceService);
   const workspaceId = workspaceService.workspace.id;
@@ -2167,7 +2519,9 @@ const TaskGitLabActionsSection = ({
     item => item.provider === 'gitlab' && item.enabled
   );
 
-  const repositories = gitlabConnection?.repositories ?? [];
+  const repositories =
+    gitlabConnection?.repositories.filter(repository => repository.enabled) ??
+    [];
 
   const { trigger: branchTrigger } = useMutation({
     mutation: createDevelopmentBranchMutation,
@@ -2177,17 +2531,19 @@ const TaskGitLabActionsSection = ({
   });
 
   const slug = makeBranchSlug(taskTitle);
-  const suggestedBranch = `feature/${taskKey.toLowerCase()}-${slug}`;
+  const suggestedBranch = `feature/${taskKey}-${slug}`;
 
   const openBranchForm = () => {
     setMode('branch');
     setRepositoryId(repositories[0]?.externalId ?? '');
+    setBaseBranch(repositories[0]?.defaultBranch ?? 'main');
     setBranchName(suggestedBranch);
   };
 
   const openMrForm = () => {
     setMode('mr');
     setRepositoryId(repositories[0]?.externalId ?? '');
+    setTargetBranch(repositories[0]?.defaultBranch ?? 'main');
     setSourceBranch(suggestedBranch);
     setMrTitle(`${taskKey} ${taskTitle}`);
     setMrDescription(`TrackWork: ${taskKey}`);
@@ -2204,9 +2560,11 @@ const TaskGitLabActionsSection = ({
           repositoryId,
           baseBranch,
           name: branchName,
+          taskKey,
         },
       });
       notify.success({ title: t('branchCreated') });
+      onCreated();
       setMode(null);
     } catch {
       notify.error({ title: t('createBranchFailed') });
@@ -2232,9 +2590,11 @@ const TaskGitLabActionsSection = ({
           targetBranch,
           title: mrTitle,
           description: mrDescription || undefined,
+          taskKey,
         },
       });
       notify.success({ title: t('mrCreated') });
+      onCreated();
       setMode(null);
     } catch {
       notify.error({ title: t('createMrFailed') });
@@ -2243,7 +2603,9 @@ const TaskGitLabActionsSection = ({
 
   if (!gitlabConnection || repositories.length === 0) {
     return (
-      <div className={styles.editorEmptyState}>{t('referencesEmpty')}</div>
+      <div className={styles.editorEmptyState}>
+        {t('gitlabActionsUnavailable')}
+      </div>
     );
   }
 
@@ -2267,6 +2629,10 @@ const TaskGitLabActionsSection = ({
               value={repositoryId}
               onChange={event => {
                 setRepositoryId(event.target.value);
+                const repository = repositories.find(
+                  item => item.externalId === event.target.value
+                );
+                setBaseBranch(repository?.defaultBranch ?? 'main');
               }}
             >
               {repositories.map(repository => (
@@ -2314,6 +2680,10 @@ const TaskGitLabActionsSection = ({
               value={repositoryId}
               onChange={event => {
                 setRepositoryId(event.target.value);
+                const repository = repositories.find(
+                  item => item.externalId === event.target.value
+                );
+                setTargetBranch(repository?.defaultBranch ?? 'main');
               }}
             >
               {repositories.map(repository => (
@@ -2381,6 +2751,13 @@ const TaskTrackerPage = () => {
   const workspacePropertyService = useService(WorkspacePropertyService);
   const workspaceDialogService = useService(WorkspaceDialogService);
   const workspace = useService(WorkspaceService).workspace;
+  const { trigger: allocateTrackWorkTask } = useMutation({
+    mutation: allocateTrackWorkTaskMutation,
+  });
+  const { trigger: syncTrackWorkTasks } = useMutation({
+    mutation: syncTrackWorkTasksMutation,
+  });
+  const lastRegistrySyncRef = useRef('');
 
   const trackerEnabledValues = useLiveData(
     useMemo(
@@ -2662,7 +3039,9 @@ const TaskTrackerPage = () => {
   const [labelFilter, setLabelFilter] = useState('all');
   const [dueFilter, setDueFilter] = useState<DueFilter>('all');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [taskModalMode, setTaskModalMode] = useState<'view' | 'edit' | null>(
+    null
+  );
   const [uploadingTaskId, setUploadingTaskId] = useState<string | null>(null);
   const [activeDragTask, setActiveDragTask] = useState<ActiveDragTask | null>(
     null
@@ -2961,9 +3340,9 @@ const TaskTrackerPage = () => {
       .map((docId: string) => {
         return {
           id: docId,
-          number: formatTaskKey(
+          number: resolveStoredTaskKey(
             workspaceTaskKey,
-            parseTaskNumber(numberValues.get(docId))
+            numberValues.get(docId)
           ),
           relatedDocs: parseRelatedDocs(relatedDocsValues.get(docId)),
           relations: parseTaskRelations(relationsValues.get(docId)),
@@ -3010,34 +3389,64 @@ const TaskTrackerPage = () => {
   ]);
 
   useEffect(() => {
-    const sorted = [...tasks].sort((a, b) => a.id.localeCompare(b.id));
-    const seen = new Set<number>();
-    const toFix: TaskCard[] = [];
-
-    for (const task of sorted) {
-      const number = parseTaskNumber(task.number);
-      if (number > 0 && !seen.has(number)) {
-        seen.add(number);
-      } else {
-        toFix.push(task);
-      }
-    }
-
-    if (toFix.length === 0) {
+    if (workspace.flavour === 'local' || tasks.length === 0) {
       return;
     }
 
-    let next = Math.max(0, ...seen) + 1;
-    for (const task of toFix) {
-      const doc = docsService.list.doc$(task.id).value;
-      if (!doc) {
-        continue;
-      }
-      doc.setCustomProperty(TASK_NUMBER_PROPERTY, String(next));
-      seen.add(next);
-      next += 1;
+    const registryTasks = tasks.map(task => ({
+      docId: task.id,
+      taskKey: task.number,
+      relatedDocumentIds: task.relatedDocs,
+    }));
+    const signature = JSON.stringify(registryTasks);
+    if (lastRegistrySyncRef.current === signature) {
+      return;
     }
-  }, [docsService.list, tasks]);
+    lastRegistrySyncRef.current = signature;
+
+    syncTrackWorkTasks({
+      input: {
+        workspaceId: workspace.id,
+        prefix: workspaceTaskKey,
+        tasks: registryTasks,
+      },
+    })
+      .then(result => {
+        for (const registered of result.syncTrackWorkTasks) {
+          const doc = docsService.list.doc$(registered.docId).value;
+          if (!doc) {
+            continue;
+          }
+          if (
+            doc.customProperty$(TASK_NUMBER_PROPERTY).value !==
+            registered.taskKey
+          ) {
+            doc.setCustomProperty(TASK_NUMBER_PROPERTY, registered.taskKey);
+          }
+          const relatedDocuments = stringifyRelatedDocs(
+            registered.relatedDocumentIds
+          );
+          if (
+            doc.customProperty$(TASK_RELATED_DOCS_PROPERTY).value !==
+            relatedDocuments
+          ) {
+            doc.setCustomProperty(TASK_RELATED_DOCS_PROPERTY, relatedDocuments);
+          }
+        }
+      })
+      .catch(() => {
+        lastRegistrySyncRef.current = '';
+        notify.error({ title: t('registrySyncFailed') });
+      });
+  }, [
+    docsService.list,
+    syncTrackWorkTasks,
+    t,
+    tasks,
+    workspace.flavour,
+    workspace.id,
+    workspaceTaskKey,
+  ]);
 
   const selectedBoardTasks = useMemo(() => {
     const currentBoardId = selectedBoard?.id;
@@ -3251,6 +3660,7 @@ const TaskTrackerPage = () => {
       !selectedBoardTasks.some(task => task.id === selectedTaskId)
     ) {
       setSelectedTaskId(null);
+      setTaskModalMode(null);
     }
   }, [selectedBoardTasks, selectedTaskId]);
 
@@ -3431,19 +3841,45 @@ const TaskTrackerPage = () => {
     tasks,
   ]);
 
-  const handleCreateTask = useCallback(() => {
+  const handleCreateTask = useCallback(async () => {
     const targetColumn = flow[0];
     if (!targetColumn) {
       return;
     }
 
+    if (workspace.flavour === 'local') {
+      notify.error({ title: t('registryRequired') });
+      return;
+    }
+
     const nextOrder =
       (allTasksByColumn.get(targetColumn.id)?.length ?? 0) * 1000 + 1000;
-    const nextNumber = nextTaskNumber(tasks.map(task => task.number));
 
     const doc = docsService.createDoc({
       primaryMode: 'page',
     });
+
+    let taskKey: string;
+    try {
+      const result = await allocateTrackWorkTask({
+        input: {
+          workspaceId: workspace.id,
+          docId: doc.id,
+          prefix: workspaceTaskKey,
+          relatedDocumentIds: [],
+          legacyTasks: tasks.map(task => ({
+            docId: task.id,
+            taskKey: task.number,
+            relatedDocumentIds: task.relatedDocs,
+          })),
+        },
+      });
+      taskKey = result.allocateTrackWorkTask.taskKey;
+    } catch {
+      doc.moveToTrash();
+      notify.error({ title: t('createTaskFailed') });
+      return;
+    }
 
     doc.setCustomProperty(TASK_TRACKER_FLAG_PROPERTY, 'true');
     doc.setCustomProperty(
@@ -3456,7 +3892,7 @@ const TaskTrackerPage = () => {
     doc.setCustomProperty(TASK_ASSIGNEE_PROPERTY, '');
     doc.setCustomProperty(TASK_DUE_DATE_PROPERTY, '');
     doc.setCustomProperty(TASK_ORDER_PROPERTY, String(nextOrder));
-    doc.setCustomProperty(TASK_NUMBER_PROPERTY, String(nextNumber));
+    doc.setCustomProperty(TASK_NUMBER_PROPERTY, taskKey);
     doc.setCustomProperty(TASK_DESCRIPTION_PROPERTY, '');
     doc.setCustomProperty(TASK_EXTRA_INFO_PROPERTY, '');
     doc.setCustomProperty(TASK_ATTACHMENTS_PROPERTY, '[]');
@@ -3473,8 +3909,20 @@ const TaskTrackerPage = () => {
       notify.error({ title: t('setTitleFailed') });
     });
     setSelectedTaskId(doc.id);
+    setTaskModalMode('edit');
     return doc.id;
-  }, [allTasksByColumn, docsService, flow, selectedBoard, t, tasks]);
+  }, [
+    allocateTrackWorkTask,
+    allTasksByColumn,
+    docsService,
+    flow,
+    selectedBoard,
+    t,
+    tasks,
+    workspace.flavour,
+    workspace.id,
+    workspaceTaskKey,
+  ]);
 
   const handleRenameTask = useCallback(
     (taskId: string, title: string) => {
@@ -3502,6 +3950,7 @@ const TaskTrackerPage = () => {
       doc?.moveToTrash();
       if (selectedTaskId === taskId) {
         setSelectedTaskId(null);
+        setTaskModalMode(null);
       }
     },
     [docsService.list, selectedTaskId]
@@ -4028,8 +4477,14 @@ const TaskTrackerPage = () => {
       }
       updateTaskRelations(taskId, relations => ({
         ...relations,
-        [kind]: [...relations[kind], targetId],
+        [kind]: [...new Set([...relations[kind], targetId])],
       }));
+      if (kind === 'relatesTo' || kind === 'duplicates') {
+        updateTaskRelations(targetId, relations => ({
+          ...relations,
+          [kind]: [...new Set([...relations[kind], taskId])],
+        }));
+      }
     },
     [updateTaskRelations]
   );
@@ -4044,13 +4499,19 @@ const TaskTrackerPage = () => {
         ...relations,
         [kind]: relations[kind].filter(id => id !== targetId),
       }));
+      if (kind === 'relatesTo' || kind === 'duplicates') {
+        updateTaskRelations(targetId, relations => ({
+          ...relations,
+          [kind]: relations[kind].filter(id => id !== taskId),
+        }));
+      }
     },
     [updateTaskRelations]
   );
 
   const handleCreateSubtask = useCallback(
-    (parentId: string) => {
-      const newTaskId = handleCreateTask();
+    async (parentId: string) => {
+      const newTaskId = await handleCreateTask();
       if (newTaskId) {
         setTaskParent(newTaskId, parentId);
       }
@@ -4131,7 +4592,7 @@ const TaskTrackerPage = () => {
             >
               {t('boardSettings')}
             </Button>
-            <Button onClick={() => handleCreateTask()}>
+            <Button onClick={() => void handleCreateTask()}>
               <PlusIcon />
               {t('newTask')}
             </Button>
@@ -4289,11 +4750,7 @@ const TaskTrackerPage = () => {
             <div className={styles.filterHint}>{t('filtersDisableDrag')}</div>
           ) : null}
 
-          <div
-            className={clsx(styles.boardLayout, {
-              [styles.boardLayoutSingle]: !selectedTask,
-            })}
-          >
+          <div className={styles.boardLayout}>
             <div className={styles.boardScroller}>
               <div className={styles.board}>
                 {flow.map(column => {
@@ -4374,22 +4831,17 @@ const TaskTrackerPage = () => {
                                   task={task}
                                   columnId={column.id}
                                   tagNameMap={tagNameMap}
-                                  workspace={workspace}
                                   hasActiveFilters={hasActiveFilters}
-                                  expanded={expandedTaskId === task.id}
-                                  onToggleExpanded={taskId => {
-                                    setExpandedTaskId(current =>
-                                      current === taskId ? null : taskId
-                                    );
+                                  onOpenPreview={taskId => {
+                                    setSelectedTaskId(taskId);
+                                    setTaskModalMode('view');
                                   }}
-                                  onOpenEditor={setSelectedTaskId}
+                                  onOpenEditor={taskId => {
+                                    setSelectedTaskId(taskId);
+                                    setTaskModalMode('edit');
+                                  }}
                                   onOpenTaskDoc={handleOpenTaskDoc}
                                   onDeleteTask={handleDeleteTask}
-                                  onDownloadAttachment={attachment => {
-                                    handleDownloadAttachment(attachment).catch(
-                                      () => {}
-                                    );
-                                  }}
                                   onDraggingChange={handleDraggingChange}
                                 />
                               </TaskCardDropTarget>
@@ -4411,15 +4863,52 @@ const TaskTrackerPage = () => {
                 })}
               </div>
             </div>
+          </div>
 
-            {selectedTask ? (
+          {selectedTask && taskModalMode === 'view' ? (
+            <TaskModal
+              label={`${selectedTask.number} ${selectedTask.title || t('untitledTask')}`}
+              onClose={() => {
+                setSelectedTaskId(null);
+                setTaskModalMode(null);
+              }}
+            >
+              <TaskPreview
+                task={selectedTask}
+                workspace={workspace}
+                tagNameMap={tagNameMap}
+                onEdit={() => {
+                  setTaskModalMode('edit');
+                }}
+                onClose={() => {
+                  setSelectedTaskId(null);
+                  setTaskModalMode(null);
+                }}
+                onOpenTaskDoc={handleOpenTaskDoc}
+                onDownloadAttachment={attachment => {
+                  handleDownloadAttachment(attachment).catch(() => {});
+                }}
+              />
+            </TaskModal>
+          ) : null}
+
+          {selectedTask && taskModalMode === 'edit' ? (
+            <TaskModal
+              label={`${selectedTask.number} ${selectedTask.title || t('untitledTask')}`}
+              onClose={() => {
+                setSelectedTaskId(null);
+                setTaskModalMode(null);
+              }}
+            >
               <TaskDetailPanel
+                key={selectedTask.id}
                 task={selectedTask}
                 workspace={workspace}
                 taskIds={tasks.map(task => task.id)}
                 allTasks={tasks}
                 onSelectTask={taskId => {
                   setSelectedTaskId(taskId);
+                  setTaskModalMode('edit');
                 }}
                 onSetParent={setTaskParent}
                 onAddRelation={addTaskRelation}
@@ -4429,6 +4918,7 @@ const TaskTrackerPage = () => {
                 uploading={uploadingTaskId === selectedTask.id}
                 onClose={() => {
                   setSelectedTaskId(null);
+                  setTaskModalMode(null);
                 }}
                 onRenameTask={handleRenameTask}
                 onOpenTaskDoc={handleOpenTaskDoc}
@@ -4450,8 +4940,8 @@ const TaskTrackerPage = () => {
                   handleDownloadAttachment(attachment).catch(() => {});
                 }}
               />
-            ) : null}
-          </div>
+            </TaskModal>
+          ) : null}
         </div>
       </ViewBody>
     </>

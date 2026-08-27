@@ -146,9 +146,8 @@ export class GitLabScmProvider implements ScmProvider {
     });
 
     if (!response.ok) {
-      const message = await response.text().catch(() => '');
       this.logger.warn(`GitLab API request failed (${response.status})`);
-      throw new Error(`GitLab API error ${response.status}: ${message}`);
+      throw new Error(`GitLab API request failed (${response.status})`);
     }
 
     return response.json() as Promise<unknown>;
@@ -377,9 +376,8 @@ export class GitLabScmProvider implements ScmProvider {
     });
 
     if (!response.ok) {
-      const message = await response.text().catch(() => '');
       this.logger.warn(`GitLab create branch failed (${response.status})`);
-      throw new Error(`GitLab API error ${response.status}: ${message}`);
+      throw new Error(`GitLab create branch failed (${response.status})`);
     }
 
     const branch = (await response.json()) as {
@@ -401,7 +399,7 @@ export class GitLabScmProvider implements ScmProvider {
     targetBranch: string;
     title: string;
     description?: string;
-  }): Promise<{ iid: string; url: string }> {
+  }): Promise<{ externalId: string; iid: string; url: string }> {
     const url = new URL(
       `/api/v4/projects/${encodeURIComponent(input.repositoryId)}/merge_requests`,
       input.baseUrl
@@ -419,17 +417,20 @@ export class GitLabScmProvider implements ScmProvider {
     });
 
     if (!response.ok) {
-      const message = await response.text().catch(() => '');
       this.logger.warn(`GitLab create MR failed (${response.status})`);
-      throw new Error(`GitLab API error ${response.status}: ${message}`);
+      throw new Error(
+        `GitLab create merge request failed (${response.status})`
+      );
     }
 
     const mr = (await response.json()) as {
+      id?: number;
       iid?: number;
       web_url?: string;
     };
 
     return {
+      externalId: String(mr.id ?? mr.iid ?? ''),
       iid: String(mr.iid ?? ''),
       url: mr.web_url ?? url.toString(),
     };

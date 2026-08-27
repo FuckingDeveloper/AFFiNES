@@ -211,6 +211,49 @@ test('respects the pipeline limit', async t => {
   t.is(pipelines.length, 3);
 });
 
+test('normalizes task, branch and revision metadata', async t => {
+  mockFetch({
+    status: 200,
+    body: {
+      jobs: [
+        {
+          name: 'auth-service',
+          builds: [
+            {
+              number: 42,
+              result: 'SUCCESS',
+              actions: [
+                {
+                  parameters: [
+                    { name: 'TRACKWORK_TASK', value: 'TW-142' },
+                    {
+                      name: 'GIT_BRANCH',
+                      value: 'feature/TW-142-refresh-token',
+                    },
+                  ],
+                  lastBuiltRevision: { SHA1: 'a83f1d2' },
+                },
+              ],
+              changeSet: {
+                items: [{ comment: 'fix(auth): refresh token [TW-142]' }],
+              },
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  const [pipeline] = await provider.listPipelines({
+    baseUrl: 'https://ci.example.org',
+    token: 'token',
+  });
+
+  t.is(pipeline?.branch, 'feature/TW-142-refresh-token');
+  t.is(pipeline?.commitSha, 'a83f1d2');
+  t.true(pipeline?.description?.includes('TW-142'));
+});
+
 test('validateJenkinsBaseUrl rejects non-http schemes', t => {
   t.throws(() => validateJenkinsBaseUrl('ftp://ci.example.org'));
   t.throws(() => validateJenkinsBaseUrl('not-a-url'));

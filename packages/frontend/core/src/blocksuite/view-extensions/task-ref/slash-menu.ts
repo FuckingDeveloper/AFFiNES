@@ -30,7 +30,7 @@ export function taskRefSlashMenuExtension(
           icon: CheckBoxCheckLinearIcon(),
           group: '1_List@99',
           searchAlias: ['trackwork', 'task', 'issue'],
-          when: ({ std }) => !!std.selection.some(TextSelection),
+          when: ({ std }) => !!std.selection.find(TextSelection),
           action: ({ std }) => {
             const [success, result] = std.command.exec(getTextSelectionCommand);
             if (!success || !result?.currentTextSelection) {
@@ -60,7 +60,7 @@ export function taskRefSlashMenuExtension(
 
             void import('./trackwork-actions')
               .then(({ createTaskFromText }) =>
-                createTaskFromText(framework, text)
+                createTaskFromText(framework, text, std.store.id)
               )
               .then(docId => {
                 if (!docId) {

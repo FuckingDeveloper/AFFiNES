@@ -37,53 +37,55 @@ export class IntegrationJob {
   }
 
   private async processEvent(connectionId: string, event: DevelopmentEvent) {
-    if (await this.links.isEventProcessed(connectionId, event.idempotencyKey)) {
+    const claimed = await this.links.markEventProcessed(
+      connectionId,
+      event.idempotencyKey,
+      event.type
+    );
+    if (!claimed) {
       this.logger.log(
         `Skipping duplicate webhook event [${event.type}] for connection ${connectionId}`
       );
       return;
     }
 
-    const repository = await this.connections.getRepositoryByExternalId(
-      connectionId,
-      event.repository.externalId
-    );
-
-    if (!repository?.enabled) {
-      this.logger.log(
-        `Ignoring event [${event.type}] for untracked repository ${event.repository.externalId}`
-      );
-      await this.links.markEventProcessed(
+    try {
+      const repository = await this.connections.getRepositoryByExternalId(
         connectionId,
-        event.idempotencyKey,
-        event.type
+        event.repository.externalId
       );
-      return;
+
+      if (!repository?.enabled) {
+        this.logger.log(
+          `Ignoring event [${event.type}] for untracked repository ${event.repository.externalId}`
+        );
+        return;
+      }
+
+      const connection = await this.connections.get(connectionId);
+
+      const taskKeys = await this.links.upsertEventLinks(event, {
+        workspaceId: connection.workspaceId,
+        connectionId,
+        repositoryId: repository.id,
+      });
+
+      await this.recordEventActivity(
+        { ...event, taskKeys },
+        {
+          workspaceId: connection.workspaceId,
+          connectionId,
+          repositoryName: repository.fullName,
+        }
+      );
+
+      this.logger.log(
+        `Linked webhook event [${event.type}] for keys [${taskKeys.join(', ')}]`
+      );
+    } catch (error) {
+      await this.links.unmarkEventProcessed(connectionId, event.idempotencyKey);
+      throw error;
     }
-
-    const connection = await this.connections.get(connectionId);
-
-    await this.links.upsertEventLinks(event, {
-      workspaceId: connection.workspaceId,
-      connectionId,
-      repositoryId: repository.id,
-    });
-
-    await this.recordEventActivity(event, {
-      workspaceId: connection.workspaceId,
-      connectionId,
-      repositoryName: repository.fullName,
-    });
-
-    await this.links.markEventProcessed(
-      connectionId,
-      event.idempotencyKey,
-      event.type
-    );
-
-    this.logger.log(
-      `Linked webhook event [${event.type}] for keys [${event.taskKeys.join(', ')}]`
-    );
   }
 
   private async recordEventActivity(

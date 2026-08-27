@@ -1,7 +1,11 @@
 import { PayloadTooLargeException } from '@nestjs/common';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { extractTrackWorkKeys } from '@affine/trackwork';
+import {
+  extractTrackWorkKeys,
+  normalizeTaskKey,
+  parseTaskKey,
+} from '@affine/trackwork';
 
 import { BadRequest, CryptoHelper, NotFound } from '../../base';
 import { JobQueue } from '../../base/job/queue';
@@ -31,6 +35,8 @@ export type CreateConnectionInput = {
 export type UpdateConnectionInput = {
   id: string;
   name?: string;
+  baseUrl?: string;
+  username?: string;
   enabled?: boolean;
 };
 
@@ -54,6 +60,16 @@ export class IntegrationConnectionService {
   ) {}
 
   async create(input: CreateConnectionInput) {
+    if (input.provider !== 'gitlab' && input.provider !== 'jenkins') {
+      throw new BadRequest('UNSUPPORTED_DEVELOPMENT_PROVIDER');
+    }
+    if (!input.name.trim() || !input.token) {
+      throw new BadRequest('INVALID_DEVELOPMENT_CONNECTION');
+    }
+    if (input.provider === 'gitlab' && !input.webhookSecret) {
+      throw new BadRequest('GITLAB_WEBHOOK_SECRET_REQUIRED');
+    }
+
     const baseUrl =
       input.provider === 'jenkins'
         ? validateJenkinsBaseUrl(input.baseUrl)
@@ -63,7 +79,7 @@ export class IntegrationConnectionService {
       data: {
         workspaceId: input.workspaceId,
         provider: input.provider,
-        name: input.name,
+        name: input.name.trim(),
         baseUrl,
         tokenCipher: this.crypto.encrypt(input.token),
         webhookSecretCipher: input.webhookSecret
@@ -96,19 +112,44 @@ export class IntegrationConnectionService {
   }
 
   async update(input: UpdateConnectionInput) {
-    await this.get(input.id);
+    const connection = await this.get(input.id);
+
+    if (input.name !== undefined && !input.name.trim()) {
+      throw new BadRequest('INVALID_DEVELOPMENT_CONNECTION_NAME');
+    }
+
+    const baseUrl = input.baseUrl
+      ? connection.provider === 'jenkins'
+        ? validateJenkinsBaseUrl(input.baseUrl)
+        : validateGitLabBaseUrl(input.baseUrl)
+      : undefined;
 
     return this.prisma.developmentIntegrationConnection.update({
       where: { id: input.id },
       data: {
-        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+        ...(baseUrl !== undefined ? { baseUrl } : {}),
+        ...(input.username !== undefined
+          ? { username: input.username.trim() || null }
+          : {}),
         ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
       },
     });
   }
 
   async rotateCredentials(input: RotateCredentialsInput) {
-    await this.get(input.id);
+    const connection = await this.get(input.id);
+
+    if (input.token !== undefined && !input.token) {
+      throw new BadRequest('INVALID_DEVELOPMENT_TOKEN');
+    }
+    if (
+      connection.provider === 'gitlab' &&
+      input.webhookSecret !== undefined &&
+      !input.webhookSecret
+    ) {
+      throw new BadRequest('GITLAB_WEBHOOK_SECRET_REQUIRED');
+    }
 
     return this.prisma.developmentIntegrationConnection.update({
       where: { id: input.id },
@@ -216,9 +257,17 @@ export class IntegrationConnectionService {
         },
       });
 
-      const taskKeys = extractTrackWorkKeys(
+      const extractedTaskKeys = extractTrackWorkKeys(
         [pipeline.name, pipeline.description].filter(Boolean).join(' ')
       );
+      const registeredTasks = await this.prisma.trackWorkTask.findMany({
+        where: {
+          workspaceId: connection.workspaceId,
+          taskKey: { in: extractedTaskKeys },
+        },
+        select: { taskKey: true },
+      });
+      const taskKeys = registeredTasks.map(task => task.taskKey);
 
       if (statusChanged && taskKeys.length > 0) {
         await this.prisma.developmentActivity.createMany({
@@ -231,6 +280,8 @@ export class IntegrationConnectionService {
             url: pipeline.url ?? connection.baseUrl,
             repositoryName: null,
             metadata: {
+              branch: pipeline.branch ?? null,
+              commitSha: pipeline.commitSha ?? null,
               startedAt: pipeline.startedAt?.toISOString() ?? null,
               finishedAt: pipeline.finishedAt?.toISOString() ?? null,
             },
@@ -241,8 +292,9 @@ export class IntegrationConnectionService {
       for (const taskKey of taskKeys) {
         await this.prisma.developmentTaskLink.upsert({
           where: {
-            workspaceId_taskKey_entityType_externalId: {
-              workspaceId: connection.workspaceId,
+            connectionId_repositoryId_taskKey_entityType_externalId: {
+              connectionId,
+              repositoryId: '',
               taskKey,
               entityType: 'pipeline',
               externalId: pipeline.externalId,
@@ -260,6 +312,8 @@ export class IntegrationConnectionService {
             title: `${pipeline.name ?? pipeline.externalId} #${pipeline.number ?? ''}`,
             status: pipeline.status,
             metadata: {
+              branch: pipeline.branch ?? null,
+              commitSha: pipeline.commitSha ?? null,
               startedAt: pipeline.startedAt?.toISOString() ?? null,
               finishedAt: pipeline.finishedAt?.toISOString() ?? null,
             },
@@ -282,70 +336,6 @@ export class IntegrationConnectionService {
       orderBy: { updatedAt: 'desc' },
       take: 50,
     });
-  }
-
-  async migrateTaskKeys(
-    workspaceId: string,
-    fromPrefix: string,
-    toPrefix: string
-  ) {
-    const from = fromPrefix.toUpperCase();
-    const to = toPrefix.toUpperCase();
-
-    if (!/^[A-Z]{4}$/.test(from) || !/^[A-Z]{4}$/.test(to) || from === to) {
-      throw new BadRequest('INVALID_TASK_KEY_PREFIX');
-    }
-
-    const links = await this.prisma.developmentTaskLink.findMany({
-      where: {
-        workspaceId,
-        taskKey: { startsWith: `${from}-` },
-      },
-    });
-
-    const targets = await this.prisma.developmentTaskLink.findMany({
-      where: {
-        workspaceId,
-        taskKey: { startsWith: `${to}-` },
-      },
-      select: { taskKey: true, entityType: true, externalId: true },
-    });
-
-    const occupied = new Set(
-      targets.map(
-        target => `${target.taskKey}:${target.entityType}:${target.externalId}`
-      )
-    );
-
-    let migrated = 0;
-    let skipped = 0;
-
-    await this.prisma.$transaction(async tx => {
-      for (const link of links) {
-        const suffix = link.taskKey.slice(from.length + 1);
-        const target = `${to}-${suffix}`;
-
-        if (occupied.has(`${target}:${link.entityType}:${link.externalId}`)) {
-          skipped += 1;
-          continue;
-        }
-
-        await tx.developmentTaskLink.update({
-          where: { id: link.id },
-          data: { taskKey: target },
-        });
-        migrated += 1;
-      }
-
-      await tx.$executeRaw`
-        UPDATE development_activity
-        SET task_key = ${to} || substring(task_key from ${from.length + 1}::int)
-        WHERE workspace_id = ${workspaceId}
-          AND task_key LIKE ${`${from}-%`}
-      `;
-    });
-
-    return { migrated, skipped };
   }
 
   async listRepositories(connectionId: string): Promise<RepositoryInfo[]> {
@@ -393,6 +383,16 @@ export class IntegrationConnectionService {
     });
   }
 
+  async listRepositoriesByIds(repositoryIds: string[]) {
+    if (repositoryIds.length === 0) {
+      return [];
+    }
+    return this.prisma.developmentRepository.findMany({
+      where: { id: { in: [...new Set(repositoryIds)] } },
+      orderBy: { fullName: 'asc' },
+    });
+  }
+
   async getRepositoryByExternalId(connectionId: string, externalId: string) {
     return this.prisma.developmentRepository.findUnique({
       where: {
@@ -405,7 +405,8 @@ export class IntegrationConnectionService {
     connectionId: string,
     repositoryId: string,
     baseBranch: string,
-    name: string
+    name: string,
+    rawTaskKey: string
   ) {
     const connection = await this.get(connectionId);
     const repository = await this.getRepositoryByExternalId(
@@ -413,19 +414,50 @@ export class IntegrationConnectionService {
       repositoryId
     );
 
-    if (!repository) {
+    if (!connection.enabled || !repository?.enabled) {
       throw new NotFound('Development repository not found');
     }
 
+    const taskKey = await this.validateTaskKey(
+      connection.workspaceId,
+      rawTaskKey
+    );
+
     const provider = this.providers.get(connection.provider as ScmProviderType);
 
-    return provider.createBranch({
+    const branch = await provider.createBranch({
       baseUrl: connection.baseUrl,
       token: await this.decrypt(connection.tokenCipher),
       repositoryId,
       baseBranch,
       name,
     });
+
+    await this.prisma.developmentTaskLink.upsert({
+      where: {
+        connectionId_repositoryId_taskKey_entityType_externalId: {
+          connectionId,
+          repositoryId: repository.id,
+          taskKey,
+          entityType: 'branch',
+          externalId: branch.name,
+        },
+      },
+      create: {
+        workspaceId: connection.workspaceId,
+        connectionId,
+        repositoryId: repository.id,
+        taskKey,
+        entityType: 'branch',
+        externalId: branch.name,
+        url: branch.url,
+        title: branch.name,
+        metadata: {},
+      },
+      update: { url: branch.url, title: branch.name },
+    });
+
+    return branch;
   }
 
   async createMergeRequest(
@@ -434,7 +466,8 @@ export class IntegrationConnectionService {
     sourceBranch: string,
     targetBranch: string,
     title: string,
-    description?: string
+    description: string | undefined,
+    rawTaskKey: string
   ) {
     const connection = await this.get(connectionId);
     const repository = await this.getRepositoryByExternalId(
@@ -442,13 +475,18 @@ export class IntegrationConnectionService {
       repositoryId
     );
 
-    if (!repository) {
+    if (!connection.enabled || !repository?.enabled) {
       throw new NotFound('Development repository not found');
     }
 
+    const taskKey = await this.validateTaskKey(
+      connection.workspaceId,
+      rawTaskKey
+    );
+
     const provider = this.providers.get(connection.provider as ScmProviderType);
 
-    return provider.createMergeRequest({
+    const mergeRequest = await provider.createMergeRequest({
       baseUrl: connection.baseUrl,
       token: await this.decrypt(connection.tokenCipher),
       repositoryId,
@@ -457,6 +495,40 @@ export class IntegrationConnectionService {
       title,
       description,
     });
+
+    await this.prisma.developmentTaskLink.upsert({
+      where: {
+        connectionId_repositoryId_taskKey_entityType_externalId: {
+          connectionId,
+          repositoryId: repository.id,
+          taskKey,
+          entityType: 'merge_request',
+          externalId: mergeRequest.externalId,
+        },
+      },
+      create: {
+        workspaceId: connection.workspaceId,
+        connectionId,
+        repositoryId: repository.id,
+        taskKey,
+        entityType: 'merge_request',
+        externalId: mergeRequest.externalId,
+        iid: mergeRequest.iid,
+        url: mergeRequest.url,
+        title,
+        status: 'open',
+        metadata: { sourceBranch, targetBranch },
+      },
+      update: {
+        iid: mergeRequest.iid,
+        url: mergeRequest.url,
+        title,
+        status: 'open',
+        metadata: { sourceBranch, targetBranch },
+      },
+    });
+
+    return mergeRequest;
   }
 
   async getRepository(repositoryId: string) {
@@ -555,5 +627,23 @@ export class IntegrationConnectionService {
     } catch {
       throw new NotFound('Development integration connection not found');
     }
+  }
+
+  private async validateTaskKey(
+    workspaceId: string,
+    rawTaskKey: string
+  ): Promise<string> {
+    const taskKey = normalizeTaskKey(rawTaskKey);
+    if (!parseTaskKey(taskKey)) {
+      throw new BadRequest('INVALID_TRACKWORK_TASK_KEY');
+    }
+    const registered = await this.prisma.trackWorkTask.findUnique({
+      where: { workspaceId_taskKey: { workspaceId, taskKey } },
+      select: { id: true },
+    });
+    if (!registered) {
+      throw new BadRequest('INVALID_TRACKWORK_TASK_KEY');
+    }
+    return taskKey;
   }
 }

@@ -114,8 +114,8 @@ export const CreateWorkspaceDialog = ({
             className={styles.input}
             data-testid="create-workspace-task-key-input"
             placeholder={buildWorkspaceTaskKey(workspaceName)}
-            maxLength={4}
-            minLength={0}
+            maxLength={16}
+            minLength={2}
             value={workspaceTaskKey}
             onChange={value => {
               setWorkspaceTaskKey(normalizeWorkspaceTaskKey(value));
@@ -175,8 +175,8 @@ const CustomConfirmButton = ({
         workspacesService,
         server?.id ?? 'local',
         workspaceName,
-        workspaceTaskKey
-          ? buildWorkspaceTaskKey(workspaceTaskKey)
+        workspaceTaskKey.length >= 2
+          ? normalizeWorkspaceTaskKey(workspaceTaskKey)
           : buildWorkspaceTaskKey(workspaceName)
       );
       onCreated(res);

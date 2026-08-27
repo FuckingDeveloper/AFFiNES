@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 import { normalizeTaskKey } from '@affine/trackwork';
 import type { DevelopmentEvent } from './types';
@@ -51,12 +51,13 @@ export class DevelopmentLinkService {
 
   async upsertLink(link: DevelopmentLinkEntity) {
     const taskKey = normalizeTaskKey(link.taskKey);
-    const { workspaceId, entityType, externalId } = link;
+    const { connectionId, workspaceId, entityType, externalId } = link;
 
     return this.prisma.developmentTaskLink.upsert({
       where: {
-        workspaceId_taskKey_entityType_externalId: {
-          workspaceId,
+        connectionId_repositoryId_taskKey_entityType_externalId: {
+          connectionId,
+          repositoryId: link.repositoryId,
           taskKey,
           entityType,
           externalId,
@@ -114,9 +115,21 @@ export class DevelopmentLinkService {
         },
       });
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        return false;
+      }
+      throw error;
     }
+  }
+
+  async unmarkEventProcessed(connectionId: string, idempotencyKey: string) {
+    await this.prisma.developmentWebhookEvent.deleteMany({
+      where: { connectionId, idempotencyKey },
+    });
   }
 
   async recordActivity(activity: DevelopmentActivityRecord) {
@@ -208,10 +221,20 @@ export class DevelopmentLinkService {
       repositoryId: string;
     }
   ) {
-    const taskKeys = event.taskKeys.map(normalizeTaskKey);
+    const extractedTaskKeys = [
+      ...new Set(event.taskKeys.map(normalizeTaskKey)),
+    ];
+    const registeredTasks = await this.prisma.trackWorkTask.findMany({
+      where: {
+        workspaceId: context.workspaceId,
+        taskKey: { in: extractedTaskKeys },
+      },
+      select: { taskKey: true },
+    });
+    const taskKeys = registeredTasks.map(task => task.taskKey);
 
     if (taskKeys.length === 0) {
-      return;
+      return [];
     }
 
     const counts = await this.prisma.developmentTaskLink.groupBy({
@@ -238,6 +261,8 @@ export class DevelopmentLinkService {
 
       await this.upsertEventLinksForKey(event, { ...context, taskKey });
     }
+
+    return taskKeys;
   }
 
   private async upsertEventLinksForKey(
