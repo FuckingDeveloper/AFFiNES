@@ -74,6 +74,7 @@
   },
   "exports": {
     "./*": "./src/*.ts",
-    "./components/ui/*": "./src/components/ui/*.tsx"
+    "./components/ui/*": "./src/components/ui/*.tsx",
+    "./components/*": "./src/components/*.tsx"
   }
 }
