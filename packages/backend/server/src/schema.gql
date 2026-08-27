@@ -829,6 +829,7 @@ type DevelopmentActivity {
   eventType: String!
   id: String!
   repositoryName: String
+  taskKey: String!
   title: String!
   url: String!
 }

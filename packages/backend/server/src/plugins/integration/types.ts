@@ -452,6 +452,9 @@ export class DevelopmentActivityType {
   id!: string;
 
   @Field()
+  taskKey!: string;
+
+  @Field()
   eventType!: string;
 
   @Field()

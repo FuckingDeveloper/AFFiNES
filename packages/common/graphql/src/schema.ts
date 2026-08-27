@@ -968,6 +968,7 @@ export interface DevelopmentActivity {
   eventType: Scalars['String']['output'];
   id: Scalars['String']['output'];
   repositoryName: Maybe<Scalars['String']['output']>;
+  taskKey: Scalars['String']['output'];
   title: Scalars['String']['output'];
   url: Scalars['String']['output'];
 }
@@ -7534,6 +7535,7 @@ export type TrackWorkActivityQuery = {
     items: Array<{
       __typename?: 'DevelopmentActivity';
       id: string;
+      taskKey: string;
       eventType: string;
       title: string;
       url: string;

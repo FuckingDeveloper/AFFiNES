@@ -12,6 +12,7 @@ query trackWorkActivity(
   ) {
     items {
       id
+      taskKey
       eventType
       title
       url

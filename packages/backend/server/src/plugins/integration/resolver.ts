@@ -193,6 +193,7 @@ export class DevelopmentInfoResolver {
     return {
       items: nodes.map(node => ({
         id: node.id,
+        taskKey: node.taskKey,
         eventType: node.eventType,
         title: node.title,
         url: node.url,

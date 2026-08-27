@@ -2678,6 +2678,7 @@ export const trackWorkActivityQuery = {
   ) {
     items {
       id
+      taskKey
       eventType
       title
       url
