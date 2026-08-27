@@ -219,6 +219,12 @@ yarn build:trackwork
 
 `build:trackwork` собирает только server, web и admin.
 
+## Интеграции с системами разработки
+
+Подключение GitLab (коммиты, ветки, merge request'ы) и Jenkins (статусы
+пайплайнов), стабильные ключи задач и политика связей описаны в
+[trackwork-development-integrations.ru.md](trackwork-development-integrations.ru.md).
+
 ## Контакты
 
 - сайт: <https://trackwork.mrhsoftware.com>;
