@@ -1369,3 +1369,52 @@ export const taskTypeEpic = style({
   background: '#f3f0ff',
   color: '#5e4db2',
 });
+
+export const developmentGroup = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  marginBottom: 10,
+});
+
+export const developmentGroupTitle = style({
+  fontSize: 12,
+  fontWeight: 500,
+  lineHeight: '16px',
+  color: '#6b7280',
+  textTransform: 'uppercase',
+  letterSpacing: '0.02em',
+});
+
+export const developmentItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  fontSize: 13,
+  lineHeight: '20px',
+  minWidth: 0,
+});
+
+export const developmentItemTitle = style({
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  color: '#141414',
+});
+
+export const developmentItemMeta = style({
+  flexShrink: 0,
+  fontSize: 12,
+  lineHeight: '16px',
+  color: '#6b7280',
+});
+
+export const developmentLink = style({
+  color: '#035f9f',
+  textDecoration: 'none',
+  selectors: {
+    '&:hover': {
+      textDecoration: 'underline',
+    },
+  },
+});

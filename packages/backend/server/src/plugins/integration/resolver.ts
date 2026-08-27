@@ -2,6 +2,7 @@ import {
   Args,
   Mutation,
   Parent,
+  Query,
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
@@ -10,6 +11,7 @@ import { AuthenticationRequired, URLHelper } from '../../base';
 import { CurrentUser } from '../../core/auth';
 import { AccessController } from '../../core/permission';
 import { WorkspaceType } from '../../core/workspaces';
+import { DevelopmentLinkService } from './link-service';
 import { IntegrationConnectionService } from './service';
 import {
   CreateDevelopmentIntegrationInput,
@@ -19,6 +21,7 @@ import {
   DevelopmentRepositoryType,
   ImportDevelopmentRepositoryInput,
   RotateDevelopmentCredentialsInput,
+  TrackWorkDevelopmentInfoType,
   UpdateDevelopmentIntegrationInput,
 } from './types';
 
@@ -77,6 +80,71 @@ export class WorkspaceIntegrationResolver {
     const records = await this.connections.listByWorkspace(workspace.id);
 
     return records.map(record => mapConnectionToType(record, this.url));
+  }
+}
+
+@Resolver()
+export class DevelopmentInfoResolver {
+  constructor(
+    private readonly links: DevelopmentLinkService,
+    private readonly access: AccessController
+  ) {}
+
+  @Query(() => TrackWorkDevelopmentInfoType)
+  async trackWorkTaskDevelopment(
+    @CurrentUser() user: CurrentUser | null,
+    @Args('workspaceId') workspaceId: string,
+    @Args('taskKey') taskKey: string
+  ) {
+    if (!user) {
+      throw new AuthenticationRequired();
+    }
+
+    await this.access
+      .user(user.id)
+      .workspace(workspaceId)
+      .assert('Workspace.Read');
+
+    const links = await this.links.listByTaskKey(workspaceId, taskKey);
+
+    const commits = links
+      .filter(link => link.entityType === 'commit')
+      .map(link => ({
+        externalId: link.externalId,
+        title: link.title,
+        url: link.url,
+        shortSha:
+          (link.metadata as { shortSha?: string }).shortSha ??
+          link.externalId.slice(0, 7),
+        authorName: (link.metadata as { authorName?: string }).authorName ?? '',
+        committedAt: (link.metadata as { committedAt?: string }).committedAt
+          ? new Date((link.metadata as { committedAt: string }).committedAt)
+          : null,
+        branch: (link.metadata as { branch?: string }).branch ?? null,
+      }));
+
+    const branches = links
+      .filter(link => link.entityType === 'branch')
+      .map(link => ({
+        name: link.title,
+        url: link.url,
+      }));
+
+    const mergeRequests = links
+      .filter(link => link.entityType === 'merge_request')
+      .map(link => ({
+        externalId: link.externalId,
+        iid: link.iid ?? link.externalId,
+        title: link.title,
+        url: link.url,
+        status: link.status ?? 'unknown',
+        sourceBranch:
+          (link.metadata as { sourceBranch?: string }).sourceBranch ?? null,
+        targetBranch:
+          (link.metadata as { targetBranch?: string }).targetBranch ?? null,
+      }));
+
+    return { commits, branches, mergeRequests };
   }
 }
 

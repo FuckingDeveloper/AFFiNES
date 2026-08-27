@@ -1451,3 +1451,37 @@ model DevelopmentRepository {
   @@unique([connectionId, externalId])
   @@map("development_repositories")
 }
+
+model DevelopmentTaskLink {
+  id           String   @id @default(uuid()) @db.VarChar
+  workspaceId  String   @map("workspace_id") @db.VarChar
+  connectionId String   @map("connection_id") @db.VarChar
+  repositoryId String   @map("repository_id") @db.VarChar
+  taskKey      String   @map("task_key") @db.VarChar
+  entityType   String   @map("entity_type") @db.VarChar
+  externalId   String   @map("external_id") @db.VarChar
+  iid          String?  @db.VarChar
+  url          String   @db.VarChar
+  title        String   @db.VarChar
+  status       String?  @db.VarChar
+  metadata     Json     @db.JsonB
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([workspaceId, taskKey, entityType, externalId])
+  @@index([workspaceId, taskKey])
+  @@index([connectionId])
+  @@index([repositoryId])
+  @@map("development_task_links")
+}
+
+model DevelopmentWebhookEvent {
+  id             String   @id @default(uuid()) @db.VarChar
+  connectionId   String   @map("connection_id") @db.VarChar
+  idempotencyKey String   @map("idempotency_key") @db.VarChar
+  eventType      String   @map("event_type") @db.VarChar
+  processedAt    DateTime @default(now()) @map("processed_at") @db.Timestamptz(3)
+
+  @@unique([connectionId, idempotencyKey])
+  @@map("development_webhook_events")
+}

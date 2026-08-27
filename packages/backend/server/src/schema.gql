@@ -822,6 +822,21 @@ input DeleteSessionInput {
   workspaceId: String!
 }
 
+type DevelopmentBranch {
+  name: String!
+  url: String!
+}
+
+type DevelopmentCommit {
+  authorName: String!
+  branch: String
+  committedAt: DateTime
+  externalId: String!
+  shortSha: String!
+  title: String!
+  url: String!
+}
+
 type DevelopmentConnectionTestResult {
   message: String
   ok: Boolean!
@@ -839,6 +854,16 @@ type DevelopmentIntegrationConnection {
   updatedAt: DateTime!
   webhookUrl: String!
   workspaceId: String!
+}
+
+type DevelopmentMergeRequest {
+  externalId: String!
+  iid: String!
+  sourceBranch: String
+  status: String!
+  targetBranch: String
+  title: String!
+  url: String!
 }
 
 type DevelopmentRepository {
@@ -2067,6 +2092,7 @@ type Query {
 
   """server config"""
   serverConfig: ServerConfigType!
+  trackWorkTaskDevelopment(taskKey: String!, workspaceId: String!): TrackWorkDevelopmentInfo!
 
   """Get user by email"""
   user(email: String!): UserOrLimitedUser
@@ -2532,6 +2558,12 @@ type TimeWindow {
   requestedSize: Int!
   timezone: String!
   to: DateTime!
+}
+
+type TrackWorkDevelopmentInfo {
+  branches: [DevelopmentBranch!]!
+  commits: [DevelopmentCommit!]!
+  mergeRequests: [DevelopmentMergeRequest!]!
 }
 
 type TranscriptProviderMetaType {

@@ -14,20 +14,23 @@ const resources = {
     untitledStage: 'Untitled stage',
     addStage: 'Add stage',
     allowedTransitions: 'Allowed transitions',
-    transitionHint: 'Enable where tasks can be dragged from one stage to another.',
+    transitionHint:
+      'Enable where tasks can be dragged from one stage to another.',
     taskType: 'Task type',
     fromTo: 'From \\ To',
     allowed: 'Allowed',
     blocked: 'Blocked',
     flowTitle: 'Task Tracker Flow',
     flowSubtitle: 'Configure boards, statuses, and allowed drag transitions.',
-    initializeHint: 'Open Task Tracker board once to initialize workflow properties.',
+    initializeHint:
+      'Open Task Tracker board once to initialize workflow properties.',
     defaultBoard: 'Main board',
     defaultTodo: 'To Do',
     defaultInProgress: 'In Progress',
     defaultDone: 'Done',
     boardNumber: 'Board {{number}}',
-    boardMeta: '{{tasks}} tasks in board • {{stages}} stages • {{boards}} boards',
+    boardMeta:
+      '{{tasks}} tasks in board • {{stages}} stages • {{boards}} boards',
     searchPlaceholder: 'Search tasks, assignee, labels, description',
     allPriorities: 'All priorities',
     allTypes: 'All types',
@@ -38,7 +41,8 @@ const resources = {
     today: 'Today',
     next7Days: 'Next 7 days',
     noDueDate: 'No due date',
-    filtersDisableDrag: 'Drag-and-drop is disabled while filters/search are active.',
+    filtersDisableDrag:
+      'Drag-and-drop is disabled while filters/search are active.',
     urgent: 'Urgent',
     high: 'High',
     medium: 'Medium',
@@ -112,6 +116,19 @@ const resources = {
     workspaceTaskKeyLabel: 'Workspace Task Key',
     workspaceTaskKeyInvalid: 'Workspace task key must contain 4 letters',
     workspaceTaskKeyUpdated: 'Update workspace task key success',
+    development: 'Development',
+    developmentEmpty: 'No development activity yet',
+    developmentError: 'Failed to load development info',
+    developmentRetry: 'Retry',
+    developmentBranches: 'Branches',
+    developmentMergeRequests: 'Merge Requests',
+    developmentCommits: 'Commits',
+    developmentRepository: 'Repository',
+    mrStatusOpen: 'Open',
+    mrStatusMerged: 'Merged',
+    mrStatusClosed: 'Closed',
+    mrStatusDraft: 'Draft',
+    mrStatusUnknown: 'Unknown',
   },
   ru: {
     title: 'Трекер задач',
@@ -131,14 +148,17 @@ const resources = {
     allowed: 'Разрешён',
     blocked: 'Запрещён',
     flowTitle: 'Процесс трекера задач',
-    flowSubtitle: 'Настройте доски, статусы и разрешённые переходы при перетаскивании.',
-    initializeHint: 'Откройте доску трекера задач один раз, чтобы инициализировать свойства процесса.',
+    flowSubtitle:
+      'Настройте доски, статусы и разрешённые переходы при перетаскивании.',
+    initializeHint:
+      'Откройте доску трекера задач один раз, чтобы инициализировать свойства процесса.',
     defaultBoard: 'Основная доска',
     defaultTodo: 'К выполнению',
     defaultInProgress: 'В работе',
     defaultDone: 'Готово',
     boardNumber: 'Доска {{number}}',
-    boardMeta: 'Задач на доске: {{tasks}} • этапов: {{stages}} • досок: {{boards}}',
+    boardMeta:
+      'Задач на доске: {{tasks}} • этапов: {{stages}} • досок: {{boards}}',
     searchPlaceholder: 'Поиск по задачам, исполнителям, меткам и описанию',
     allPriorities: 'Все приоритеты',
     allTypes: 'Все типы',
@@ -149,7 +169,8 @@ const resources = {
     today: 'Сегодня',
     next7Days: 'Следующие 7 дней',
     noDueDate: 'Без срока',
-    filtersDisableDrag: 'Перетаскивание отключено, пока активны фильтры или поиск.',
+    filtersDisableDrag:
+      'Перетаскивание отключено, пока активны фильтры или поиск.',
     urgent: 'Срочный',
     high: 'Высокий',
     medium: 'Средний',
@@ -221,8 +242,22 @@ const resources = {
     movedTask: 'Перемещено из «{{from}}» в «{{to}}»',
     workspaceTaskKey: 'Ключ задач рабочего пространства',
     workspaceTaskKeyLabel: 'Ключ задач рабочего пространства',
-    workspaceTaskKeyInvalid: 'Ключ задач рабочего пространства должен содержать 4 буквы',
+    workspaceTaskKeyInvalid:
+      'Ключ задач рабочего пространства должен содержать 4 буквы',
     workspaceTaskKeyUpdated: 'Ключ задач рабочего пространства обновлён',
+    development: 'Разработка',
+    developmentEmpty: 'Активности разработки пока нет',
+    developmentError: 'Не удалось загрузить данные разработки',
+    developmentRetry: 'Повторить',
+    developmentBranches: 'Ветки',
+    developmentMergeRequests: 'Merge Request’ы',
+    developmentCommits: 'Коммиты',
+    developmentRepository: 'Репозиторий',
+    mrStatusOpen: 'Открыт',
+    mrStatusMerged: 'Слит',
+    mrStatusClosed: 'Закрыт',
+    mrStatusDraft: 'Черновик',
+    mrStatusUnknown: 'Неизвестно',
   },
 } as const;
 
@@ -364,7 +399,11 @@ export const localizeTaskTrackerHistory = (
 
 export const useTaskTrackerI18n = () => {
   const { i18n } = useTranslation('translation');
-  const language = (i18n.resolvedLanguage || i18n.language || 'en').toLowerCase();
+  const language = (
+    i18n.resolvedLanguage ||
+    i18n.language ||
+    'en'
+  ).toLowerCase();
   const dictionary = language.startsWith('ru') ? resources.ru : resources.en;
   const locale = language.startsWith('ru') ? 'ru-RU' : 'en-US';
 

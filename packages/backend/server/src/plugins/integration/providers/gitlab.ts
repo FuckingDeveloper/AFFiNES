@@ -92,7 +92,10 @@ const mapMergeRequestStatus = (
 const mapMergeRequestEventType = (
   action: string | undefined,
   state: string
-): 'merge_request.opened' | 'merge_request.updated' | 'merge_request.merged' => {
+):
+  | 'merge_request.opened'
+  | 'merge_request.updated'
+  | 'merge_request.merged' => {
   if (state === 'merged' || action === 'merge' || action === 'merge_request') {
     return 'merge_request.merged';
   }
@@ -102,9 +105,7 @@ const mapMergeRequestEventType = (
   return 'merge_request.updated';
 };
 
-const isGitLabPushPayload = (
-  body: unknown
-): body is GitLabPushPayload => {
+const isGitLabPushPayload = (body: unknown): body is GitLabPushPayload => {
   if (!body || typeof body !== 'object') {
     return false;
   }
@@ -163,9 +164,7 @@ export class GitLabScmProvider implements ScmProvider {
 
       return {
         ok: true,
-        message: user.username
-          ? `Connected as @${user.username}`
-          : 'Connected',
+        message: user.username ? `Connected as @${user.username}` : 'Connected',
       };
     } catch (error) {
       return {
@@ -237,7 +236,11 @@ export class GitLabScmProvider implements ScmProvider {
     const project = payload.project;
     const ref = payload.ref ?? '';
 
-    if (!project || !Array.isArray(payload.commits) || payload.commits.length === 0) {
+    if (
+      !project ||
+      !Array.isArray(payload.commits) ||
+      payload.commits.length === 0
+    ) {
       return [];
     }
 
@@ -262,12 +265,7 @@ export class GitLabScmProvider implements ScmProvider {
 
       events.push({
         type: 'commit.pushed',
-        idempotencyKey: [
-          'gitlab',
-          project.id,
-          'commit',
-          commit.id,
-        ].join(':'),
+        idempotencyKey: ['gitlab', project.id, 'commit', commit.id].join(':'),
         repository,
         commit: {
           sha: commit.id,
@@ -290,12 +288,7 @@ export class GitLabScmProvider implements ScmProvider {
     if (branchTaskKeys.length > 0) {
       events.push({
         type: 'branch.updated',
-        idempotencyKey: [
-          'gitlab',
-          project.id,
-          'branch',
-          branchName,
-        ].join(':'),
+        idempotencyKey: ['gitlab', project.id, 'branch', branchName].join(':'),
         repository,
         branch: {
           name: branchName,

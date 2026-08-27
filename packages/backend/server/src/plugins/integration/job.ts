@@ -1,17 +1,20 @@
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
 
 import { OnJob } from '../../base/job/queue/def';
+import { DevelopmentLinkService } from './link-service';
 import { ScmProviderRegistry } from './providers';
 import { IntegrationConnectionService } from './service';
-import type { ScmWebhookJobData } from './types';
+import type { DevelopmentEvent, ScmWebhookJobData } from './types';
 
+@Injectable()
 export class IntegrationJob {
   private readonly logger = new Logger(IntegrationJob.name);
 
   constructor(
     private readonly connections: IntegrationConnectionService,
-    private readonly providers: ScmProviderRegistry
+    private readonly providers: ScmProviderRegistry,
+    private readonly links: DevelopmentLinkService
   ) {}
 
   @OnJob('integration.scm-webhook')
@@ -29,10 +32,51 @@ export class IntegrationJob {
     const events = await scmProvider.parseWebhook({ body: payload });
 
     for (const event of events) {
-      // TODO(M3): persist development links and activity events
-      this.logger.log(
-        `Webhook event [${event.type}] for keys [${event.taskKeys.join(', ')}]`
-      );
+      await this.processEvent(connectionId, event);
     }
+  }
+
+  private async processEvent(connectionId: string, event: DevelopmentEvent) {
+    if (await this.links.isEventProcessed(connectionId, event.idempotencyKey)) {
+      this.logger.log(
+        `Skipping duplicate webhook event [${event.type}] for connection ${connectionId}`
+      );
+      return;
+    }
+
+    const repository = await this.connections.getRepositoryByExternalId(
+      connectionId,
+      event.repository.externalId
+    );
+
+    if (!repository?.enabled) {
+      this.logger.log(
+        `Ignoring event [${event.type}] for untracked repository ${event.repository.externalId}`
+      );
+      await this.links.markEventProcessed(
+        connectionId,
+        event.idempotencyKey,
+        event.type
+      );
+      return;
+    }
+
+    const connection = await this.connections.get(connectionId);
+
+    await this.links.upsertEventLinks(event, {
+      workspaceId: connection.workspaceId,
+      connectionId,
+      repositoryId: repository.id,
+    });
+
+    await this.links.markEventProcessed(
+      connectionId,
+      event.idempotencyKey,
+      event.type
+    );
+
+    this.logger.log(
+      `Linked webhook event [${event.type}] for keys [${event.taskKeys.join(', ')}]`
+    );
   }
 }

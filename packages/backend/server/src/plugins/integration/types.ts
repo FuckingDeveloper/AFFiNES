@@ -9,7 +9,12 @@ export type DevelopmentEntityType =
   | 'merge_request'
   | 'pipeline';
 
-export type MergeRequestStatus = 'open' | 'merged' | 'closed' | 'draft' | 'unknown';
+export type MergeRequestStatus =
+  | 'open'
+  | 'merged'
+  | 'closed'
+  | 'draft'
+  | 'unknown';
 
 export type PipelineStatus =
   | 'queued'
@@ -149,9 +154,7 @@ export interface ScmProvider {
     webhookSecret?: string;
   }): Promise<boolean>;
 
-  parseWebhook(input: {
-    body: unknown;
-  }): Promise<DevelopmentEvent[]>;
+  parseWebhook(input: { body: unknown }): Promise<DevelopmentEvent[]>;
 }
 
 export type IntegrationConnectionRecord = DevelopmentIntegrationConnection;
@@ -324,4 +327,73 @@ export class ImportDevelopmentRepositoryInput {
 
   @Field({ nullable: true })
   defaultBranch?: string;
+}
+
+@ObjectType('DevelopmentCommit')
+export class DevelopmentCommitType {
+  @Field()
+  externalId!: string;
+
+  @Field()
+  title!: string;
+
+  @Field()
+  url!: string;
+
+  @Field()
+  shortSha!: string;
+
+  @Field()
+  authorName!: string;
+
+  @Field({ nullable: true })
+  committedAt?: Date;
+
+  @Field({ nullable: true })
+  branch?: string;
+}
+
+@ObjectType('DevelopmentBranch')
+export class DevelopmentBranchType {
+  @Field()
+  name!: string;
+
+  @Field()
+  url!: string;
+}
+
+@ObjectType('DevelopmentMergeRequest')
+export class DevelopmentMergeRequestType {
+  @Field()
+  externalId!: string;
+
+  @Field()
+  iid!: string;
+
+  @Field()
+  title!: string;
+
+  @Field()
+  url!: string;
+
+  @Field()
+  status!: string;
+
+  @Field({ nullable: true })
+  sourceBranch?: string;
+
+  @Field({ nullable: true })
+  targetBranch?: string;
+}
+
+@ObjectType('TrackWorkDevelopmentInfo')
+export class TrackWorkDevelopmentInfoType {
+  @Field(() => [DevelopmentCommitType])
+  commits!: DevelopmentCommitType[];
+
+  @Field(() => [DevelopmentBranchType])
+  branches!: DevelopmentBranchType[];
+
+  @Field(() => [DevelopmentMergeRequestType])
+  mergeRequests!: DevelopmentMergeRequestType[];
 }

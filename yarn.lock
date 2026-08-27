@@ -933,6 +933,7 @@ __metadata:
     "@affine/realtime": "workspace:*"
     "@affine/s3-compat": "workspace:*"
     "@affine/server-native": "workspace:*"
+    "@affine/trackwork": "workspace:*"
     "@apollo/server": "npm:^5.5.0"
     "@as-integrations/express5": "npm:^1.1.2"
     "@faker-js/faker": "npm:^10.1.0"
