@@ -389,3 +389,75 @@ export const parseRelatedDocs = (value: string | undefined): string[] => {
 
 export const stringifyRelatedDocs = (docIds: string[]): string =>
   JSON.stringify([...new Set(docIds)]);
+
+export const TASK_RELATIONS_PROPERTY = 'taskRelations';
+
+export type TaskRelations = {
+  parentId?: string;
+  blockedBy: string[];
+  relatesTo: string[];
+  duplicates: string[];
+};
+
+export const parseTaskRelations = (
+  value: string | undefined
+): TaskRelations => {
+  if (!value) {
+    return { blockedBy: [], relatesTo: [], duplicates: [] };
+  }
+
+  try {
+    const parsed = JSON.parse(value) as Partial<TaskRelations>;
+    return {
+      parentId:
+        typeof parsed.parentId === 'string' ? parsed.parentId : undefined,
+      blockedBy: Array.isArray(parsed.blockedBy)
+        ? parsed.blockedBy.filter(
+            (item): item is string => typeof item === 'string'
+          )
+        : [],
+      relatesTo: Array.isArray(parsed.relatesTo)
+        ? parsed.relatesTo.filter(
+            (item): item is string => typeof item === 'string'
+          )
+        : [],
+      duplicates: Array.isArray(parsed.duplicates)
+        ? parsed.duplicates.filter(
+            (item): item is string => typeof item === 'string'
+          )
+        : [],
+    };
+  } catch {
+    return { blockedBy: [], relatesTo: [], duplicates: [] };
+  }
+};
+
+export const stringifyTaskRelations = (relations: TaskRelations): string =>
+  JSON.stringify({
+    parentId: relations.parentId ?? null,
+    blockedBy: [...new Set(relations.blockedBy)],
+    relatesTo: [...new Set(relations.relatesTo)],
+    duplicates: [...new Set(relations.duplicates)],
+  });
+
+export const wouldCreateTaskCycle = (
+  taskId: string,
+  parentId: string,
+  getParent: (id: string) => string | undefined
+): boolean => {
+  let current: string | undefined = parentId;
+  const seen = new Set<string>();
+
+  while (current) {
+    if (current === taskId) {
+      return true;
+    }
+    if (seen.has(current)) {
+      return true;
+    }
+    seen.add(current);
+    current = getParent(current);
+  }
+
+  return false;
+};
