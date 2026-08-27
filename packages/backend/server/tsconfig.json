@@ -17,6 +17,7 @@
     { "path": "../../../tools/cli" },
     { "path": "../../../tools/utils" },
     { "path": "../../common/graphql" },
-    { "path": "../../common/realtime" }
+    { "path": "../../common/realtime" },
+    { "path": "../../common/trackwork" }
   ]
 }
