@@ -340,3 +340,45 @@ e2e('development info requires workspace access', async t => {
     })
   );
 });
+
+e2e('keeps development data visible when gitlab is unavailable', async t => {
+  const owner = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: owner.id },
+  });
+  await app.login(owner);
+
+  const connectionId = await setupConnection(workspace.id);
+
+  await sendWebhook(
+    connectionId,
+    pushPayload(1, 'refs/heads/main', [
+      {
+        id: 'aabbccdd11',
+        title: 'Stored data',
+        message: 'fix: TW-142 stored data',
+      },
+    ])
+  );
+
+  const handler = app.get(
+    (await import('../../../plugins/integration/job')).IntegrationJob
+  );
+  const job = app.queue.last('integration.scm-webhook');
+  await handler.onScmWebhook({ data: { payload: job.payload } } as any);
+
+  const db = app.get(PrismaClient);
+  t.is(
+    await db.developmentTaskLink.count({
+      where: { workspaceId: workspace.id, taskKey: 'TW-142' },
+    }),
+    1
+  );
+
+  const result = await app.gql({
+    query: trackWorkTaskDevelopmentQuery,
+    variables: { workspaceId: workspace.id, taskKey: 'TW-142' },
+  });
+
+  t.is(result.trackWorkTaskDevelopment.commits.length, 1);
+});

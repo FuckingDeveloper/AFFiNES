@@ -462,6 +462,10 @@ export class IntegrationConnectionService {
 
     const provider = this.providers.get(input.provider);
 
+    this.logger.log(
+      `Webhook received for connection ${input.connectionId} (${input.provider})`
+    );
+
     const valid = await provider.verifyWebhook({
       headers: input.headers,
       body: input.body,

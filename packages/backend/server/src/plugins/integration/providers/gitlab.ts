@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { extractTrackWorkKeys } from '@affine/trackwork';
 
 import {
@@ -127,6 +127,8 @@ const isGitLabMergeRequestPayload = (
 export class GitLabScmProvider implements ScmProvider {
   readonly type: ScmProviderType = 'gitlab';
 
+  private readonly logger = new Logger(GitLabScmProvider.name);
+
   private async request(
     baseUrl: string,
     token: string,
@@ -145,6 +147,7 @@ export class GitLabScmProvider implements ScmProvider {
 
     if (!response.ok) {
       const message = await response.text().catch(() => '');
+      this.logger.warn(`GitLab API request failed (${response.status})`);
       throw new Error(`GitLab API error ${response.status}: ${message}`);
     }
 
