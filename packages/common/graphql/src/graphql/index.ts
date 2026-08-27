@@ -2517,6 +2517,17 @@ export const indexerSearchQuery = {
 }`,
 };
 
+export const createDevelopmentBranchMutation = {
+  id: 'createDevelopmentBranchMutation' as const,
+  op: 'createDevelopmentBranch',
+  query: `mutation createDevelopmentBranch($input: CreateDevelopmentBranchInput!) {
+  createDevelopmentBranch(input: $input) {
+    name
+    url
+  }
+}`,
+};
+
 export const createDevelopmentIntegrationMutation = {
   id: 'createDevelopmentIntegrationMutation' as const,
   op: 'createDevelopmentIntegration',
@@ -2533,6 +2544,17 @@ export const createDevelopmentIntegrationMutation = {
     webhookUrl
     createdAt
     updatedAt
+  }
+}`,
+};
+
+export const createDevelopmentMergeRequestMutation = {
+  id: 'createDevelopmentMergeRequestMutation' as const,
+  op: 'createDevelopmentMergeRequest',
+  query: `mutation createDevelopmentMergeRequest($input: CreateDevelopmentMergeRequestInput!) {
+  createDevelopmentMergeRequest(input: $input) {
+    iid
+    url
   }
 }`,
 };
@@ -2562,6 +2584,15 @@ export const developmentIntegrationsQuery = {
       webhookUrl
       createdAt
       updatedAt
+      repositories {
+        id
+        externalId
+        name
+        fullName
+        webUrl
+        defaultBranch
+        enabled
+      }
     }
   }
 }`,

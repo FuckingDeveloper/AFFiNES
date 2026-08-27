@@ -14,10 +14,14 @@ import { WorkspaceType } from '../../core/workspaces';
 import { DevelopmentLinkService } from './link-service';
 import { IntegrationConnectionService } from './service';
 import {
+  CreateDevelopmentBranchInput,
   CreateDevelopmentIntegrationInput,
+  CreateDevelopmentMergeRequestInput,
   DevelopmentActivityConnectionType,
+  DevelopmentBranchCreatedType,
   DevelopmentConnectionTestResultType,
   DevelopmentIntegrationConnectionType,
+  DevelopmentMergeRequestCreatedType,
   DevelopmentPipelineType,
   DevelopmentRepositoryInfoType,
   DevelopmentRepositoryType,
@@ -43,6 +47,7 @@ const mapConnectionToType = (
   },
   url: URLHelper
 ): DevelopmentIntegrationConnectionType => ({
+  repositories: [],
   id: connection.id,
   workspaceId: connection.workspaceId,
   provider: connection.provider,
@@ -82,7 +87,26 @@ export class WorkspaceIntegrationResolver {
 
     const records = await this.connections.listByWorkspace(workspace.id);
 
-    return records.map(record => mapConnectionToType(record, this.url));
+    const repositories = await Promise.all(
+      records.map(record =>
+        this.connections.listRepositoriesByConnection(record.id)
+      )
+    );
+
+    return records.map((record, index) => ({
+      ...mapConnectionToType(record, this.url),
+      repositories: repositories[index]!.map(repository => ({
+        id: repository.id,
+        connectionId: repository.connectionId,
+        externalId: repository.externalId,
+        name: repository.name,
+        fullName: repository.fullName,
+        webUrl: repository.webUrl,
+        defaultBranch: repository.defaultBranch,
+        enabled: repository.enabled,
+        createdAt: repository.createdAt,
+      })),
+    }));
   }
 }
 
@@ -322,6 +346,48 @@ export class IntegrationMutationResolver {
     await this.assertCanManage(user.id, connection.workspaceId);
 
     return this.connections.testConnection(connectionId);
+  }
+
+  @Mutation(() => DevelopmentBranchCreatedType)
+  async createDevelopmentBranch(
+    @CurrentUser() user: CurrentUser | null,
+    @Args('input') input: CreateDevelopmentBranchInput
+  ) {
+    if (!user) {
+      throw new AuthenticationRequired();
+    }
+
+    const connection = await this.connections.get(input.connectionId);
+    await this.assertCanManage(user.id, connection.workspaceId);
+
+    return this.connections.createBranch(
+      input.connectionId,
+      input.repositoryId,
+      input.baseBranch,
+      input.name
+    );
+  }
+
+  @Mutation(() => DevelopmentMergeRequestCreatedType)
+  async createDevelopmentMergeRequest(
+    @CurrentUser() user: CurrentUser | null,
+    @Args('input') input: CreateDevelopmentMergeRequestInput
+  ) {
+    if (!user) {
+      throw new AuthenticationRequired();
+    }
+
+    const connection = await this.connections.get(input.connectionId);
+    await this.assertCanManage(user.id, connection.workspaceId);
+
+    return this.connections.createMergeRequest(
+      input.connectionId,
+      input.repositoryId,
+      input.sourceBranch,
+      input.targetBranch,
+      input.title,
+      input.description ?? undefined
+    );
   }
 
   @Mutation(() => DevelopmentTaskKeyMigrationResultType)

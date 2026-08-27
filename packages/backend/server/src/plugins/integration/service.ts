@@ -401,6 +401,64 @@ export class IntegrationConnectionService {
     });
   }
 
+  async createBranch(
+    connectionId: string,
+    repositoryId: string,
+    baseBranch: string,
+    name: string
+  ) {
+    const connection = await this.get(connectionId);
+    const repository = await this.getRepositoryByExternalId(
+      connectionId,
+      repositoryId
+    );
+
+    if (!repository) {
+      throw new NotFound('Development repository not found');
+    }
+
+    const provider = this.providers.get(connection.provider as ScmProviderType);
+
+    return provider.createBranch({
+      baseUrl: connection.baseUrl,
+      token: await this.decrypt(connection.tokenCipher),
+      repositoryId,
+      baseBranch,
+      name,
+    });
+  }
+
+  async createMergeRequest(
+    connectionId: string,
+    repositoryId: string,
+    sourceBranch: string,
+    targetBranch: string,
+    title: string,
+    description?: string
+  ) {
+    const connection = await this.get(connectionId);
+    const repository = await this.getRepositoryByExternalId(
+      connectionId,
+      repositoryId
+    );
+
+    if (!repository) {
+      throw new NotFound('Development repository not found');
+    }
+
+    const provider = this.providers.get(connection.provider as ScmProviderType);
+
+    return provider.createMergeRequest({
+      baseUrl: connection.baseUrl,
+      token: await this.decrypt(connection.tokenCipher),
+      repositoryId,
+      sourceBranch,
+      targetBranch,
+      title,
+      description,
+    });
+  }
+
   async getRepository(repositoryId: string) {
     const repository = await this.prisma.developmentRepository.findUnique({
       where: { id: repositoryId },

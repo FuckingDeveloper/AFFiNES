@@ -1445,3 +1445,34 @@ export const activityItemType = style({
   lineHeight: '16px',
   color: '#6b7280',
 });
+
+export const row = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  flexWrap: 'wrap',
+});
+
+export const form = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 10,
+  marginTop: 10,
+});
+
+export const label = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4,
+  fontSize: 12,
+  lineHeight: '16px',
+  color: '#6b7280',
+});
+
+export const gitlabInput = style({
+  padding: '6px 10px',
+  borderRadius: 6,
+  border: '1px solid #d9d9d9',
+  fontSize: 13,
+  lineHeight: '20px',
+});

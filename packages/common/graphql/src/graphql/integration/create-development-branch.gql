@@ -1,0 +1,6 @@
+mutation createDevelopmentBranch($input: CreateDevelopmentBranchInput!) {
+  createDevelopmentBranch(input: $input) {
+    name
+    url
+  }
+}

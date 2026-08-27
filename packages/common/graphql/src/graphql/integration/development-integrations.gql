@@ -12,6 +12,15 @@ query developmentIntegrations($workspaceId: String!) {
       webhookUrl
       createdAt
       updatedAt
+      repositories {
+        id
+        externalId
+        name
+        fullName
+        webUrl
+        defaultBranch
+        enabled
+      }
     }
   }
 }

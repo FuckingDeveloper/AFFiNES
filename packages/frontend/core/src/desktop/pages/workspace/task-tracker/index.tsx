@@ -1,4 +1,5 @@
 import { Button, notify, useDraggable, useDropTarget } from '@affine/component';
+import { useMutation } from '@affine/core/components/hooks/use-mutation';
 import { useQuery } from '@affine/core/components/hooks/use-query';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { DocsService } from '@affine/core/modules/doc';
@@ -22,6 +23,9 @@ import {
   useTaskTrackerI18n,
 } from '@affine/core/utils/task-tracker-i18n';
 import {
+  createDevelopmentBranchMutation,
+  createDevelopmentMergeRequestMutation,
+  developmentIntegrationsQuery,
   trackWorkActivityQuery,
   trackWorkTaskDevelopmentQuery,
 } from '@affine/graphql';
@@ -1345,6 +1349,17 @@ const TaskDetailPanel = ({
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>{t('createBranch')}</span>
+        </div>
+        <TaskGitLabActionsSection
+          taskKey={task.number}
+          taskTitle={task.title}
+          t={t}
+        />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
           <span className={styles.sectionTitle}>{t('development')}</span>
         </div>
         <TaskDevelopmentSection
@@ -2112,6 +2127,248 @@ const TaskRelationsSection = ({
       >
         {t('duplicates')}
       </Button>
+    </div>
+  );
+};
+
+const makeBranchSlug = (title: string): string =>
+  title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40) || 'task';
+
+const TaskGitLabActionsSection = ({
+  taskKey,
+  taskTitle,
+  t,
+}: {
+  taskKey: string;
+  taskTitle: string;
+  t: TaskTrackerTranslator;
+}) => {
+  const workspaceService = useService(WorkspaceService);
+  const workspaceId = workspaceService.workspace.id;
+  const [mode, setMode] = useState<'branch' | 'mr' | null>(null);
+  const [repositoryId, setRepositoryId] = useState('');
+  const [baseBranch, setBaseBranch] = useState('main');
+  const [branchName, setBranchName] = useState('');
+  const [sourceBranch, setSourceBranch] = useState('');
+  const [targetBranch, setTargetBranch] = useState('main');
+  const [mrTitle, setMrTitle] = useState('');
+  const [mrDescription, setMrDescription] = useState('');
+
+  const { data } = useQuery({
+    query: developmentIntegrationsQuery,
+    variables: { workspaceId },
+  });
+
+  const gitlabConnection = data?.workspace?.developmentIntegrations?.find(
+    item => item.provider === 'gitlab' && item.enabled
+  );
+
+  const repositories = gitlabConnection?.repositories ?? [];
+
+  const { trigger: branchTrigger } = useMutation({
+    mutation: createDevelopmentBranchMutation,
+  });
+  const { trigger: mrTrigger } = useMutation({
+    mutation: createDevelopmentMergeRequestMutation,
+  });
+
+  const slug = makeBranchSlug(taskTitle);
+  const suggestedBranch = `feature/${taskKey.toLowerCase()}-${slug}`;
+
+  const openBranchForm = () => {
+    setMode('branch');
+    setRepositoryId(repositories[0]?.externalId ?? '');
+    setBranchName(suggestedBranch);
+  };
+
+  const openMrForm = () => {
+    setMode('mr');
+    setRepositoryId(repositories[0]?.externalId ?? '');
+    setSourceBranch(suggestedBranch);
+    setMrTitle(`${taskKey} ${taskTitle}`);
+    setMrDescription(`TrackWork: ${taskKey}`);
+  };
+
+  const handleCreateBranch = async () => {
+    if (!gitlabConnection || !repositoryId || !branchName) {
+      return;
+    }
+    try {
+      await branchTrigger({
+        input: {
+          connectionId: gitlabConnection.id,
+          repositoryId,
+          baseBranch,
+          name: branchName,
+        },
+      });
+      notify.success({ title: t('branchCreated') });
+      setMode(null);
+    } catch {
+      notify.error({ title: t('createBranchFailed') });
+    }
+  };
+
+  const handleCreateMr = async () => {
+    if (
+      !gitlabConnection ||
+      !repositoryId ||
+      !sourceBranch ||
+      !targetBranch ||
+      !mrTitle
+    ) {
+      return;
+    }
+    try {
+      await mrTrigger({
+        input: {
+          connectionId: gitlabConnection.id,
+          repositoryId,
+          sourceBranch,
+          targetBranch,
+          title: mrTitle,
+          description: mrDescription || undefined,
+        },
+      });
+      notify.success({ title: t('mrCreated') });
+      setMode(null);
+    } catch {
+      notify.error({ title: t('createMrFailed') });
+    }
+  };
+
+  if (!gitlabConnection || repositories.length === 0) {
+    return (
+      <div className={styles.editorEmptyState}>{t('referencesEmpty')}</div>
+    );
+  }
+
+  return (
+    <div>
+      <div className={styles.row}>
+        <Button variant="plain" onClick={openBranchForm}>
+          {t('createBranch')}
+        </Button>
+        <Button variant="plain" onClick={openMrForm}>
+          {t('createMr')}
+        </Button>
+      </div>
+
+      {mode === 'branch' ? (
+        <div className={styles.form}>
+          <label className={styles.label}>
+            {t('repository')}
+            <select
+              className={styles.gitlabInput}
+              value={repositoryId}
+              onChange={event => {
+                setRepositoryId(event.target.value);
+              }}
+            >
+              {repositories.map(repository => (
+                <option
+                  key={repository.externalId}
+                  value={repository.externalId}
+                >
+                  {repository.fullName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.label}>
+            {t('baseBranch')}
+            <input
+              className={styles.gitlabInput}
+              value={baseBranch}
+              onChange={event => {
+                setBaseBranch(event.target.value);
+              }}
+            />
+          </label>
+          <label className={styles.label}>
+            {t('branchName')}
+            <input
+              className={styles.gitlabInput}
+              value={branchName}
+              onChange={event => {
+                setBranchName(event.target.value);
+              }}
+            />
+          </label>
+          <Button onClick={() => void handleCreateBranch()}>
+            {t('createBranch')}
+          </Button>
+        </div>
+      ) : null}
+
+      {mode === 'mr' ? (
+        <div className={styles.form}>
+          <label className={styles.label}>
+            {t('repository')}
+            <select
+              className={styles.gitlabInput}
+              value={repositoryId}
+              onChange={event => {
+                setRepositoryId(event.target.value);
+              }}
+            >
+              {repositories.map(repository => (
+                <option
+                  key={repository.externalId}
+                  value={repository.externalId}
+                >
+                  {repository.fullName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.label}>
+            {t('sourceBranch')}
+            <input
+              className={styles.gitlabInput}
+              value={sourceBranch}
+              onChange={event => {
+                setSourceBranch(event.target.value);
+              }}
+            />
+          </label>
+          <label className={styles.label}>
+            {t('targetBranch')}
+            <input
+              className={styles.gitlabInput}
+              value={targetBranch}
+              onChange={event => {
+                setTargetBranch(event.target.value);
+              }}
+            />
+          </label>
+          <label className={styles.label}>
+            {t('mrTitle')}
+            <input
+              className={styles.gitlabInput}
+              value={mrTitle}
+              onChange={event => {
+                setMrTitle(event.target.value);
+              }}
+            />
+          </label>
+          <label className={styles.label}>
+            {t('mrDescription')}
+            <input
+              className={styles.gitlabInput}
+              value={mrDescription}
+              onChange={event => {
+                setMrDescription(event.target.value);
+              }}
+            />
+          </label>
+          <Button onClick={() => void handleCreateMr()}>{t('createMr')}</Button>
+        </div>
+      ) : null}
     </div>
   );
 };

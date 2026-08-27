@@ -907,6 +907,13 @@ export interface CreateCheckoutSessionInput {
   variant?: InputMaybe<SubscriptionVariant>;
 }
 
+export interface CreateDevelopmentBranchInput {
+  baseBranch: Scalars['String']['input'];
+  connectionId: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  repositoryId: Scalars['String']['input'];
+}
+
 export interface CreateDevelopmentIntegrationInput {
   baseUrl: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -915,6 +922,15 @@ export interface CreateDevelopmentIntegrationInput {
   username?: InputMaybe<Scalars['String']['input']>;
   webhookSecret?: InputMaybe<Scalars['String']['input']>;
   workspaceId: Scalars['String']['input'];
+}
+
+export interface CreateDevelopmentMergeRequestInput {
+  connectionId: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  repositoryId: Scalars['String']['input'];
+  sourceBranch: Scalars['String']['input'];
+  targetBranch: Scalars['String']['input'];
+  title: Scalars['String']['input'];
 }
 
 export interface CreateUserInput {
@@ -986,6 +1002,12 @@ export interface DevelopmentBranch {
   url: Scalars['String']['output'];
 }
 
+export interface DevelopmentBranchCreated {
+  __typename?: 'DevelopmentBranchCreated';
+  name: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+}
+
 export interface DevelopmentCommit {
   __typename?: 'DevelopmentCommit';
   authorName: Scalars['String']['output'];
@@ -1013,6 +1035,7 @@ export interface DevelopmentIntegrationConnection {
   id: Scalars['String']['output'];
   name: Scalars['String']['output'];
   provider: Scalars['String']['output'];
+  repositories: Array<DevelopmentRepository>;
   updatedAt: Scalars['DateTime']['output'];
   webhookUrl: Scalars['String']['output'];
   workspaceId: Scalars['String']['output'];
@@ -1026,6 +1049,12 @@ export interface DevelopmentMergeRequest {
   status: Scalars['String']['output'];
   targetBranch: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+}
+
+export interface DevelopmentMergeRequestCreated {
+  __typename?: 'DevelopmentMergeRequestCreated';
+  iid: Scalars['String']['output'];
   url: Scalars['String']['output'];
 }
 
@@ -1955,7 +1984,9 @@ export interface Mutation {
   createCopilotSessionWithHistory: CopilotHistories;
   /** Create a stripe customer portal to manage payment methods */
   createCustomerPortal: Scalars['String']['output'];
+  createDevelopmentBranch: DevelopmentBranchCreated;
   createDevelopmentIntegration: DevelopmentIntegrationConnection;
+  createDevelopmentMergeRequest: DevelopmentMergeRequestCreated;
   createInviteLink: InviteLink;
   createReply: ReplyObjectType;
   createSelfhostWorkspaceCustomerPortal: Scalars['String']['output'];
@@ -2208,8 +2239,16 @@ export interface MutationCreateCopilotSessionWithHistoryArgs {
   options: CreateChatSessionInput;
 }
 
+export interface MutationCreateDevelopmentBranchArgs {
+  input: CreateDevelopmentBranchInput;
+}
+
 export interface MutationCreateDevelopmentIntegrationArgs {
   input: CreateDevelopmentIntegrationInput;
+}
+
+export interface MutationCreateDevelopmentMergeRequestArgs {
+  input: CreateDevelopmentMergeRequestInput;
 }
 
 export interface MutationCreateInviteLinkArgs {
@@ -7351,6 +7390,19 @@ export type IndexerSearchQuery = {
   };
 };
 
+export type CreateDevelopmentBranchMutationVariables = Exact<{
+  input: CreateDevelopmentBranchInput;
+}>;
+
+export type CreateDevelopmentBranchMutation = {
+  __typename?: 'Mutation';
+  createDevelopmentBranch: {
+    __typename?: 'DevelopmentBranchCreated';
+    name: string;
+    url: string;
+  };
+};
+
 export type CreateDevelopmentIntegrationMutationVariables = Exact<{
   input: CreateDevelopmentIntegrationInput;
 }>;
@@ -7370,6 +7422,19 @@ export type CreateDevelopmentIntegrationMutation = {
     webhookUrl: string;
     createdAt: string;
     updatedAt: string;
+  };
+};
+
+export type CreateDevelopmentMergeRequestMutationVariables = Exact<{
+  input: CreateDevelopmentMergeRequestInput;
+}>;
+
+export type CreateDevelopmentMergeRequestMutation = {
+  __typename?: 'Mutation';
+  createDevelopmentMergeRequest: {
+    __typename?: 'DevelopmentMergeRequestCreated';
+    iid: string;
+    url: string;
   };
 };
 
@@ -7403,6 +7468,16 @@ export type DevelopmentIntegrationsQuery = {
       webhookUrl: string;
       createdAt: string;
       updatedAt: string;
+      repositories: Array<{
+        __typename?: 'DevelopmentRepository';
+        id: string;
+        externalId: string;
+        name: string;
+        fullName: string;
+        webUrl: string;
+        defaultBranch: string | null;
+        enabled: boolean;
+      }>;
     }>;
   };
 };
@@ -9328,9 +9403,19 @@ export type Mutations =
       response: GrantDocUserRolesMutation;
     }
   | {
+      name: 'createDevelopmentBranchMutation';
+      variables: CreateDevelopmentBranchMutationVariables;
+      response: CreateDevelopmentBranchMutation;
+    }
+  | {
       name: 'createDevelopmentIntegrationMutation';
       variables: CreateDevelopmentIntegrationMutationVariables;
       response: CreateDevelopmentIntegrationMutation;
+    }
+  | {
+      name: 'createDevelopmentMergeRequestMutation';
+      variables: CreateDevelopmentMergeRequestMutationVariables;
+      response: CreateDevelopmentMergeRequestMutation;
     }
   | {
       name: 'deleteDevelopmentIntegrationMutation';

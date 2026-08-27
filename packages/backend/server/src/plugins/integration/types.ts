@@ -156,6 +156,24 @@ export interface ScmProvider {
   }): Promise<boolean>;
 
   parseWebhook(input: { body: unknown }): Promise<DevelopmentEvent[]>;
+
+  createBranch(input: {
+    baseUrl: string;
+    token: string;
+    repositoryId: string;
+    baseBranch: string;
+    name: string;
+  }): Promise<{ name: string; url: string }>;
+
+  createMergeRequest(input: {
+    baseUrl: string;
+    token: string;
+    repositoryId: string;
+    sourceBranch: string;
+    targetBranch: string;
+    title: string;
+    description?: string;
+  }): Promise<{ iid: string; url: string }>;
 }
 
 export interface CiProvider {
@@ -184,6 +202,9 @@ export type ScmWebhookJobData = {
 };
 @ObjectType('DevelopmentIntegrationConnection')
 export class DevelopmentIntegrationConnectionType {
+  @Field(() => [DevelopmentRepositoryType])
+  repositories!: DevelopmentRepositoryType[];
+
   @Field()
   id!: string;
 
@@ -492,4 +513,58 @@ export class DevelopmentTaskKeyMigrationResultType {
 
   @Field()
   skipped!: number;
+}
+
+@ObjectType('DevelopmentBranchCreated')
+export class DevelopmentBranchCreatedType {
+  @Field()
+  name!: string;
+
+  @Field()
+  url!: string;
+}
+
+@ObjectType('DevelopmentMergeRequestCreated')
+export class DevelopmentMergeRequestCreatedType {
+  @Field()
+  iid!: string;
+
+  @Field()
+  url!: string;
+}
+
+@InputType()
+export class CreateDevelopmentBranchInput {
+  @Field()
+  connectionId!: string;
+
+  @Field()
+  repositoryId!: string;
+
+  @Field()
+  baseBranch!: string;
+
+  @Field()
+  name!: string;
+}
+
+@InputType()
+export class CreateDevelopmentMergeRequestInput {
+  @Field()
+  connectionId!: string;
+
+  @Field()
+  repositoryId!: string;
+
+  @Field()
+  sourceBranch!: string;
+
+  @Field()
+  targetBranch!: string;
+
+  @Field()
+  title!: string;
+
+  @Field({ nullable: true })
+  description?: string;
 }
