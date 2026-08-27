@@ -1423,3 +1423,25 @@ export const pipelineStatusSuccess = style({ color: '#216e4e' });
 export const pipelineStatusFailed = style({ color: '#ae2a19' });
 export const pipelineStatusUnstable = style({ color: '#a15c00' });
 export const pipelineStatusRunning = style({ color: '#0c66e4' });
+
+export const activityList = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+});
+
+export const activityItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  fontSize: 13,
+  lineHeight: '20px',
+  minWidth: 0,
+});
+
+export const activityItemType = style({
+  flexShrink: 0,
+  fontSize: 12,
+  lineHeight: '16px',
+  color: '#6b7280',
+});

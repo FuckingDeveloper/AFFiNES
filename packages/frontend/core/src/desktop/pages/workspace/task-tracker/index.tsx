@@ -20,7 +20,10 @@ import {
   type TaskTrackerTranslator,
   useTaskTrackerI18n,
 } from '@affine/core/utils/task-tracker-i18n';
-import { trackWorkTaskDevelopmentQuery } from '@affine/graphql';
+import {
+  trackWorkActivityQuery,
+  trackWorkTaskDevelopmentQuery,
+} from '@affine/graphql';
 import {
   formatTaskKey,
   nextTaskNumber,
@@ -1288,6 +1291,19 @@ const TaskDetailPanel = ({
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>
+            {t('developmentActivity')}
+          </span>
+        </div>
+        <TaskActivitySection
+          workspaceId={workspace?.id ?? ''}
+          taskKey={task.number}
+          t={t}
+        />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
           <span className={styles.sectionTitle}>{t('history')}</span>
         </div>
         {task.history.length > 0 ? (
@@ -1457,6 +1473,75 @@ const TaskDevelopmentSection = ({
           ))}
         </div>
       ) : null}
+    </div>
+  );
+};
+
+const activityEventLabel = (
+  t: TaskTrackerTranslator,
+  eventType: string
+): string => {
+  const key = `activity${eventType
+    .split('.')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')}` as TaskTrackerTranslationKey;
+  return t(key);
+};
+
+const TaskActivitySection = ({
+  workspaceId,
+  taskKey,
+  t,
+}: {
+  workspaceId: string;
+  taskKey: string;
+  t: TaskTrackerTranslator;
+}) => {
+  const { data, isLoading, error } = useQuery({
+    query: trackWorkActivityQuery,
+    variables: { workspaceId, taskKey, first: 20 },
+  });
+
+  const items = data?.trackWorkActivity?.items;
+
+  if (isLoading || error || !items || !workspaceId) {
+    return (
+      <div className={styles.editorEmptyState}>
+        {error ? `${t('developmentActivityError')}. ` : ''}
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className={styles.editorEmptyState}>
+        {t('developmentActivityEmpty')}
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.activityList}>
+      {items.map(item => (
+        <div key={item.id} className={styles.activityItem}>
+          <span className={styles.activityItemType}>
+            {activityEventLabel(t, item.eventType)}
+          </span>
+          <a
+            className={styles.developmentLink}
+            href={item.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {item.title}
+          </a>
+          {item.authorName ? (
+            <span className={styles.developmentItemMeta}>
+              {item.authorName}
+            </span>
+          ) : null}
+        </div>
+      ))}
     </div>
   );
 };
