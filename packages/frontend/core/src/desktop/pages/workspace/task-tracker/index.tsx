@@ -2,6 +2,7 @@ import { Button, notify, useDraggable, useDropTarget } from '@affine/component';
 import { useQuery } from '@affine/core/components/hooks/use-query';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { DocsService } from '@affine/core/modules/doc';
+import { DocsSearchService } from '@affine/core/modules/docs-search';
 import { TagService } from '@affine/core/modules/tag';
 import {
   ViewBody,
@@ -42,6 +43,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { Observable } from 'rxjs';
 
 import { applyAutomationRules } from './automation';
 import {
@@ -52,11 +54,13 @@ import {
   DEFAULT_FLOW,
   parseAttachments,
   parseHistoryEntries,
+  parseRelatedDocs,
   parseSubtasks,
   resolveTaskTrackerBoards,
   sanitizeAutomationRules,
   stringifyAttachments,
   stringifyHistoryEntries,
+  stringifyRelatedDocs,
   stringifySubtasks,
   TASK_ASSIGNEE_PROPERTY,
   TASK_ATTACHMENTS_PROPERTY,
@@ -70,6 +74,7 @@ import {
   TASK_NUMBER_PROPERTY,
   TASK_ORDER_PROPERTY,
   TASK_PRIORITY_PROPERTY,
+  TASK_RELATED_DOCS_PROPERTY,
   TASK_STATUS_PROPERTY,
   TASK_SUBTASKS_PROPERTY,
   TASK_TRACKER_FLAG_PROPERTY,
@@ -106,6 +111,7 @@ type TaskCard = {
   complexity: TaskComplexity;
   subtasks: TaskSubtask[];
   history: TaskHistoryEntry[];
+  relatedDocs: string[];
 };
 
 type DocTitleItem = {
@@ -1008,6 +1014,7 @@ const InlineAttachmentUploader = ({
 const TaskDetailPanel = ({
   task,
   workspace,
+  taskIds,
   tagNameMap,
   uploading,
   onClose,
@@ -1031,6 +1038,7 @@ const TaskDetailPanel = ({
   workspace: WorkspaceService['workspace'] | null;
   tagNameMap: Map<string, string>;
   uploading: boolean;
+  taskIds: string[];
   onClose: () => void;
   onRenameTask: (taskId: string, title: string) => void;
   onOpenTaskDoc: (taskId: string) => void;
@@ -1307,6 +1315,24 @@ const TaskDetailPanel = ({
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>{t('relatedDocs')}</span>
+        </div>
+        <TaskRelatedDocsSection task={task} t={t} />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>{t('references')}</span>
+        </div>
+        <TaskReferencesSection
+          taskKey={task.number}
+          excludeDocIds={taskIds}
+          t={t}
+        />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
           <span className={styles.sectionTitle}>{t('history')}</span>
         </div>
         {task.history.length > 0 ? (
@@ -1549,6 +1575,206 @@ const TaskActivitySection = ({
   );
 };
 
+const TaskRelatedDocsSection = ({
+  task,
+  t,
+}: {
+  task: TaskCard;
+  t: TaskTrackerTranslator;
+}) => {
+  const docsService = useService(DocsService);
+  const docsSearch = useService(DocsSearchService);
+  const workbench = useService(WorkbenchService).workbench;
+  const [query, setQuery] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const queryTrimmed = query.trim();
+
+  const searchResults = useLiveData(
+    useMemo(() => {
+      if (!queryTrimmed) {
+        return LiveData.from(new Observable<string[]>(() => {}), []);
+      }
+
+      return LiveData.from(
+        docsSearch.searchTitle$(queryTrimmed),
+        [] as string[]
+      ).map(results =>
+        results.filter(
+          docId => docId !== task.id && !task.relatedDocs.includes(docId)
+        )
+      );
+    }, [docsSearch, queryTrimmed, task.id, task.relatedDocs])
+  );
+
+  const handleAdd = useCallback(
+    (docId: string) => {
+      const doc = docsService.list.doc$(docId).value;
+      if (!doc) {
+        return;
+      }
+      doc.setCustomProperty(
+        TASK_RELATED_DOCS_PROPERTY,
+        stringifyRelatedDocs([...task.relatedDocs, docId])
+      );
+      setQuery('');
+      setAdding(false);
+    },
+    [docsService.list, task.relatedDocs]
+  );
+
+  const handleRemove = useCallback(
+    (docId: string) => {
+      const doc = docsService.list.doc$(task.id).value;
+      if (!doc) {
+        return;
+      }
+      doc.setCustomProperty(
+        TASK_RELATED_DOCS_PROPERTY,
+        stringifyRelatedDocs(task.relatedDocs.filter(id => id !== docId))
+      );
+    },
+    [docsService.list, task.id, task.relatedDocs]
+  );
+
+  return (
+    <div>
+      {task.relatedDocs.length > 0 ? (
+        <div className={styles.developmentGroup}>
+          {task.relatedDocs.map(docId => (
+            <div key={docId} className={styles.developmentItem}>
+              <RelatedDocTitle docId={docId} onOpen={workbench.openDoc} />
+              <button
+                type="button"
+                className={styles.textButton}
+                onClick={() => {
+                  handleRemove(docId);
+                }}
+              >
+                {t('relatedDocsRemoved')}
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className={styles.editorEmptyState}>{t('relatedDocsEmpty')}</div>
+      )}
+
+      {adding ? (
+        <div className={styles.developmentGroup}>
+          <input
+            className={styles.fieldInput}
+            value={query}
+            placeholder={t('relatedDocsSearchPlaceholder')}
+            onChange={event => {
+              setQuery(event.target.value);
+            }}
+          />
+          {searchResults.map(docId => (
+            <div key={docId} className={styles.developmentItem}>
+              <button
+                type="button"
+                className={styles.textButton}
+                onClick={() => {
+                  handleAdd(docId);
+                }}
+              >
+                <RelatedDocTitle docId={docId} onOpen={() => undefined} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <Button
+        variant="plain"
+        onClick={() => {
+          setAdding(current => !current);
+        }}
+      >
+        <PlusIcon />
+        {t('relatedDocsAdd')}
+      </Button>
+    </div>
+  );
+};
+
+const TaskReferencesSection = ({
+  taskKey,
+  excludeDocIds,
+  t,
+}: {
+  taskKey: string;
+  excludeDocIds: string[];
+  t: TaskTrackerTranslator;
+}) => {
+  const docsSearch = useService(DocsSearchService);
+  const workbench = useService(WorkbenchService).workbench;
+
+  const results = useLiveData(
+    useMemo(
+      () =>
+        LiveData.from(
+          docsSearch.search$(taskKey),
+          [] as Array<{
+            docId: string;
+            title: string;
+          }>
+        ).map(items =>
+          items.filter(item => !excludeDocIds.includes(item.docId))
+        ),
+      [docsSearch, excludeDocIds, taskKey]
+    )
+  );
+
+  if (results.length === 0) {
+    return (
+      <div className={styles.editorEmptyState}>{t('referencesEmpty')}</div>
+    );
+  }
+
+  return (
+    <div className={styles.developmentGroup}>
+      {results.slice(0, 10).map(item => (
+        <div key={item.docId} className={styles.developmentItem}>
+          <RelatedDocTitle docId={item.docId} onOpen={workbench.openDoc} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const RelatedDocTitle = ({
+  docId,
+  onOpen,
+}: {
+  docId: string;
+  onOpen: (docId: string) => void;
+}) => {
+  const docsService = useService(DocsService);
+  const doc = docsService.list.doc$(docId).value;
+  const title = useLiveData(
+    useMemo(
+      () =>
+        doc?.meta$?.map(meta => meta.title) ??
+        LiveData.from(new Observable<string>(() => {}), 'Untitled'),
+      [doc]
+    )
+  );
+
+  return (
+    <button
+      type="button"
+      className={styles.textButton}
+      onClick={() => {
+        onOpen(docId);
+      }}
+    >
+      {title}
+    </button>
+  );
+};
+
 const TaskTrackerPage = () => {
   const { t, locale } = useTaskTrackerI18n();
   const docsService = useService(DocsService);
@@ -1697,6 +1923,17 @@ const TaskTrackerPage = () => {
           docsService.propertyValues$(
             `custom:${TASK_AUTOMATION_APPLIED_PROPERTY}`
           ),
+          new Map<string, string | undefined>()
+        ),
+      [docsService]
+    )
+  );
+
+  const relatedDocsValues = useLiveData(
+    useMemo(
+      () =>
+        LiveData.from(
+          docsService.propertyValues$(`custom:${TASK_RELATED_DOCS_PROPERTY}`),
           new Map<string, string | undefined>()
         ),
       [docsService]
@@ -2119,6 +2356,7 @@ const TaskTrackerPage = () => {
             workspaceTaskKey,
             parseTaskNumber(numberValues.get(docId))
           ),
+          relatedDocs: parseRelatedDocs(relatedDocsValues.get(docId)),
           title: titleMap.get(docId) ?? '',
           boardId: boardValues.get(docId) || DEFAULT_BOARD_ID,
           status: statusValues.get(docId) || fallbackStatus,
@@ -2149,6 +2387,7 @@ const TaskTrackerPage = () => {
     numberValues,
     orderValues,
     priorityValues,
+    relatedDocsValues,
     statusValues,
     subtaskValues,
     typeValues,
@@ -3482,6 +3721,7 @@ const TaskTrackerPage = () => {
               <TaskDetailPanel
                 task={selectedTask}
                 workspace={workspace}
+                taskIds={tasks.map(task => task.id)}
                 tagNameMap={tagNameMap}
                 uploading={uploadingTaskId === selectedTask.id}
                 onClose={() => {

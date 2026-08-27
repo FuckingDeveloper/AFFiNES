@@ -369,3 +369,23 @@ export const sanitizeAutomationRules = (
       enabled: rule.enabled !== false,
     }));
 };
+
+export const TASK_RELATED_DOCS_PROPERTY = 'taskRelatedDocs';
+
+export const parseRelatedDocs = (value: string | undefined): string[] => {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+export const stringifyRelatedDocs = (docIds: string[]): string =>
+  JSON.stringify([...new Set(docIds)]);
