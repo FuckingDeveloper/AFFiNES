@@ -43,6 +43,7 @@ import {
   useState,
 } from 'react';
 
+import { applyAutomationRules } from './automation';
 import {
   buildDefaultTransitions,
   buildDefaultTypeTransitions,
@@ -53,11 +54,13 @@ import {
   parseHistoryEntries,
   parseSubtasks,
   resolveTaskTrackerBoards,
+  sanitizeAutomationRules,
   stringifyAttachments,
   stringifyHistoryEntries,
   stringifySubtasks,
   TASK_ASSIGNEE_PROPERTY,
   TASK_ATTACHMENTS_PROPERTY,
+  TASK_AUTOMATION_APPLIED_PROPERTY,
   TASK_BOARD_PROPERTY,
   TASK_COMPLEXITY_PROPERTY,
   TASK_DESCRIPTION_PROPERTY,
@@ -1687,6 +1690,19 @@ const TaskTrackerPage = () => {
     )
   );
 
+  const appliedEventsByDoc = useLiveData(
+    useMemo(
+      () =>
+        LiveData.from(
+          docsService.propertyValues$(
+            `custom:${TASK_AUTOMATION_APPLIED_PROPERTY}`
+          ),
+          new Map<string, string | undefined>()
+        ),
+      [docsService]
+    )
+  );
+
   const complexityValues = useLiveData(
     useMemo(
       () =>
@@ -2467,6 +2483,103 @@ const TaskTrackerPage = () => {
     },
     [docsService.list, tasks]
   );
+
+  const automationRules = useMemo(
+    () =>
+      sanitizeAutomationRules(
+        statusPropertyInfo?.additionalData?.taskTrackerAutomationRules
+      ),
+    [statusPropertyInfo]
+  );
+
+  const { data: automationActivity } = useQuery({
+    query: trackWorkActivityQuery,
+    variables: { workspaceId: workspace.id, taskKey: undefined, first: 100 },
+  });
+
+  useEffect(() => {
+    if (automationRules.length === 0) {
+      return;
+    }
+
+    const events = automationActivity?.trackWorkActivity?.items ?? [];
+
+    if (events.length === 0) {
+      return;
+    }
+
+    const taskByKey = new Map<
+      string,
+      { docId: string; board?: TaskTrackerBoard }
+    >();
+    for (const task of tasks) {
+      const board = boardMap.get(task.boardId);
+      taskByKey.set(task.number, { docId: task.id, board });
+    }
+
+    for (const task of tasks) {
+      const appliedIds = new Set<string>(
+        JSON.parse(appliedEventsByDoc.get(task.id) ?? '[]') as string[]
+      );
+
+      const result = applyAutomationRules(
+        automationRules,
+        events.filter(event => event.taskKey === task.number),
+        appliedIds,
+        taskByKey
+      );
+
+      if (
+        result.statusUpdates.length === 0 &&
+        result.warningEvents.length === 0
+      ) {
+        continue;
+      }
+
+      const doc = docsService.list.doc$(task.id).value;
+      if (!doc) {
+        continue;
+      }
+
+      for (const update of result.statusUpdates) {
+        doc.setCustomProperty(TASK_STATUS_PROPERTY, update.stageId);
+        const stage = boardMap
+          .get(task.boardId)
+          ?.flow.find(column => column.id === update.stageId);
+        appendTaskHistory(
+          task.id,
+          buildHistoryEntry(
+            'edited',
+            `${t('automationStatusChanged')}: ${
+              stage ? localizeTaskTrackerStageTitle(stage, t) : update.stageId
+            }`
+          ),
+          task.history
+        );
+      }
+
+      for (const warning of result.warningEvents) {
+        notify.error({
+          title: `${t('automationWarningTitle')}: ${warning.eventType}`,
+        });
+      }
+
+      const nextApplied = [...appliedIds, ...result.appliedEventIds];
+      doc.setCustomProperty(
+        TASK_AUTOMATION_APPLIED_PROPERTY,
+        JSON.stringify(nextApplied)
+      );
+    }
+  }, [
+    appendTaskHistory,
+    appliedEventsByDoc,
+    automationActivity,
+    automationRules,
+    boardMap,
+    docsService.list,
+    t,
+    tasks,
+  ]);
 
   const handleCreateTask = useCallback(() => {
     const targetColumn = flow[0];

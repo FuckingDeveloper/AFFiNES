@@ -23,10 +23,30 @@ export type TaskTrackerBoard = {
   typeTransitions: TaskTypeTransitions;
 };
 
+export type TaskTrackerAutomationEventType =
+  | 'merge_request.opened'
+  | 'merge_request.updated'
+  | 'merge_request.merged'
+  | 'pipeline.success'
+  | 'pipeline.failed'
+  | 'pipeline.unstable'
+  | 'commit.pushed';
+
+export type TaskTrackerAutomationAction = 'set-status' | 'warning';
+
+export type TaskTrackerAutomationRule = {
+  id: string;
+  eventType: TaskTrackerAutomationEventType;
+  action: TaskTrackerAutomationAction;
+  stageId?: string;
+  enabled: boolean;
+};
+
 export type TaskTrackerPropertyAdditionalData = {
   taskTrackerBoards?: TaskTrackerBoardConfig[];
   taskTrackerFlow?: TaskFlowColumn[];
   taskTrackerTransitions?: TaskFlowTransitions;
+  taskTrackerAutomationRules?: TaskTrackerAutomationRule[];
 };
 
 export type TaskAttachment = {
@@ -64,6 +84,7 @@ export const TASK_DESCRIPTION_PROPERTY = 'taskDescription';
 export const TASK_EXTRA_INFO_PROPERTY = 'taskExtraInfo';
 export const TASK_ATTACHMENTS_PROPERTY = 'taskAttachments';
 export const TASK_NUMBER_PROPERTY = 'taskNumber';
+export const TASK_AUTOMATION_APPLIED_PROPERTY = 'taskAutomationAppliedEvents';
 export const TASK_COMPLEXITY_PROPERTY = 'taskComplexity';
 export const TASK_SUBTASKS_PROPERTY = 'taskSubtasks';
 export const TASK_HISTORY_PROPERTY = 'taskHistory';
@@ -308,4 +329,43 @@ export const resolveTaskTrackerBoards = (
     });
 
   return boards.length > 0 ? boards : [fallbackBoard];
+};
+
+export const AUTOMATION_EVENT_TYPES: TaskTrackerAutomationEventType[] = [
+  'merge_request.opened',
+  'merge_request.updated',
+  'merge_request.merged',
+  'pipeline.success',
+  'pipeline.failed',
+  'pipeline.unstable',
+  'commit.pushed',
+];
+
+export const sanitizeAutomationRules = (
+  rules: TaskTrackerAutomationRule[] | undefined
+): TaskTrackerAutomationRule[] => {
+  if (!Array.isArray(rules)) {
+    return [];
+  }
+
+  const seenIds = new Set<string>();
+
+  return rules
+    .filter(rule => rule?.id)
+    .filter(rule => AUTOMATION_EVENT_TYPES.includes(rule.eventType))
+    .filter(rule => rule.action === 'set-status' || rule.action === 'warning')
+    .filter(rule => {
+      if (seenIds.has(rule.id)) {
+        return false;
+      }
+      seenIds.add(rule.id);
+      return true;
+    })
+    .map(rule => ({
+      id: rule.id,
+      eventType: rule.eventType,
+      action: rule.action,
+      stageId: rule.action === 'set-status' ? rule.stageId : undefined,
+      enabled: rule.enabled !== false,
+    }));
 };
