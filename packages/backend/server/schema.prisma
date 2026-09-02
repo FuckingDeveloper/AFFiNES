@@ -62,13 +62,15 @@ model User {
 }
 
 model AdminAuditLog {
-  id         String   @id @default(cuid())
-  actorId    String   @map("actor_id") @db.VarChar
-  actorEmail String   @map("actor_email") @db.VarChar
-  action     String   @db.VarChar
-  targetType String   @map("target_type") @db.VarChar
-  targetId   String?  @map("target_id") @db.VarChar
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  id          String   @id @default(cuid())
+  actorId     String   @map("actor_id") @db.VarChar
+  actorEmail  String   @map("actor_email") @db.VarChar
+  workspaceId String?  @map("workspace_id") @db.VarChar
+  action      String   @db.VarChar
+  targetType  String   @map("target_type") @db.VarChar
+  targetId    String?  @map("target_id") @db.VarChar
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([createdAt])
   @@index([actorId, createdAt])
