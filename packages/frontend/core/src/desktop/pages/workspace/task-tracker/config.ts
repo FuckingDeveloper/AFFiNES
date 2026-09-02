@@ -1,3 +1,5 @@
+import { nanoid } from 'nanoid';
+
 export type TaskFlowColumn = {
   id: string;
   title: string;
@@ -65,12 +67,61 @@ export type TaskSubtask = {
   done: boolean;
 };
 
+export type TaskActivityOperation =
+  | 'task.created'
+  | 'task.renamed'
+  | 'task.trashed'
+  | 'task.status_changed'
+  | 'task.reordered'
+  | 'task.priority_changed'
+  | 'task.type_changed'
+  | 'task.assignee_changed'
+  | 'task.due_date_changed'
+  | 'task.labels_changed'
+  | 'task.description_changed'
+  | 'task.extra_info_changed'
+  | 'task.complexity_changed'
+  | 'task.subtasks_changed'
+  | 'task.subtask_toggled'
+  | 'task.attachments_changed'
+  | 'task.relation_changed'
+  | 'task.related_documents_changed';
+
+export type TaskActivitySource = 'user' | 'automation';
+
 export type TaskHistoryEntry = {
   id: string;
   type: 'created' | 'edited' | 'moved';
   message: string;
   createdAt: number;
+  operation?: TaskActivityOperation;
+  actorId?: string;
+  actorName?: string;
+  taskKey?: string;
+  source?: TaskActivitySource;
 };
+
+export const buildTaskActivityEntry = (
+  type: TaskHistoryEntry['type'],
+  message: string,
+  options: {
+    operation: TaskActivityOperation;
+    actorId?: string;
+    actorName?: string;
+    taskKey?: string;
+    source?: TaskActivitySource;
+  }
+): TaskHistoryEntry => ({
+  id: nanoid(),
+  type,
+  message,
+  createdAt: Date.now(),
+  operation: options.operation,
+  actorId: options.actorId,
+  actorName: options.actorName,
+  taskKey: options.taskKey,
+  source: options.source ?? 'user',
+});
 
 export const TASK_TRACKER_FLAG_PROPERTY = 'taskTrackerEnabled';
 export const TASK_BOARD_PROPERTY = 'taskBoardId';
@@ -265,6 +316,18 @@ export const parseHistoryEntries = (value?: string): TaskHistoryEntry[] => {
           message: String(next.message ?? '').trim(),
           createdAt:
             typeof next.createdAt === 'number' ? next.createdAt : Date.now(),
+          operation:
+            typeof next.operation === 'string'
+              ? (next.operation as TaskHistoryEntry['operation'])
+              : undefined,
+          actorId: typeof next.actorId === 'string' ? next.actorId : undefined,
+          actorName:
+            typeof next.actorName === 'string' ? next.actorName : undefined,
+          taskKey: typeof next.taskKey === 'string' ? next.taskKey : undefined,
+          source:
+            next.source === 'automation' || next.source === 'user'
+              ? next.source
+              : undefined,
         } as TaskHistoryEntry;
       })
       .filter(item => item.id.length > 0 && item.message.length > 0)
