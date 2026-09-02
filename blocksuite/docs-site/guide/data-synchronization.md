@@ -1,7 +1,7 @@
 # Data Synchronization
 
 ::: info
-🌐 This documentation has a [Chinese translation](https://insider.affine.pro/share/af3478a2-9c9c-4d16-864d-bffa1eb10eb6/xiObHbAC0yUb7HmX4-fjg).
+🌐 This documentation has a [Chinese translation](https://trackwork.mrhsoftware.com/share/af3478a2-9c9c-4d16-864d-bffa1eb10eb6/xiObHbAC0yUb7HmX4-fjg).
 :::
 
 This guide explores several optimal ways to synchronize (in other words, save and load) documents in BlockSuite.

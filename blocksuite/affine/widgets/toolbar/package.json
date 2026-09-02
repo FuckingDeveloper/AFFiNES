@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-toolbar",
-  "description": "Affine toolbar widget.",
+  "description": "TrackWork toolbar widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

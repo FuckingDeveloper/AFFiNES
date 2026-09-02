@@ -59,6 +59,16 @@ input AdminAllSharedLinksFilterInput {
   workspaceId: String
 }
 
+type AdminAuditLogType {
+  action: String!
+  actorEmail: String!
+  actorId: String!
+  createdAt: DateTime!
+  id: String!
+  targetId: String
+  targetType: String!
+}
+
 type AdminDashboard {
   blobStorageBytes: SafeInt!
   blobStorageHistory: [AdminDashboardValueDayPoint!]!
@@ -230,6 +240,14 @@ enum AiJobStatus {
   finished
   pending
   running
+}
+
+input AllocateTrackWorkTaskInput {
+  docId: String!
+  legacyTasks: [TrackWorkLegacyTaskInput!]! = []
+  prefix: String!
+  relatedDocumentIds: [String!]! = []
+  workspaceId: String!
 }
 
 type AlreadyInSpaceDataType {
@@ -757,10 +775,39 @@ input CreateCheckoutSessionInput {
   variant: SubscriptionVariant
 }
 
+input CreateDevelopmentBranchInput {
+  baseBranch: String!
+  connectionId: String!
+  name: String!
+  repositoryId: String!
+  taskKey: String!
+}
+
+input CreateDevelopmentIntegrationInput {
+  baseUrl: String!
+  name: String!
+  provider: String!
+  token: String!
+  username: String
+  webhookSecret: String
+  workspaceId: String!
+}
+
+input CreateDevelopmentMergeRequestInput {
+  connectionId: String!
+  description: String
+  repositoryId: String!
+  sourceBranch: String!
+  targetBranch: String!
+  taskKey: String!
+  title: String!
+}
+
 input CreateUserInput {
   email: String!
   name: String
   password: String
+  username: String
 }
 
 input CreateWorkspaceByokLocalLeaseInput {
@@ -800,6 +847,111 @@ input DeleteSessionInput {
   docId: String
   sessionIds: [String!]!
   workspaceId: String!
+}
+
+type DevelopmentActivity {
+  authorName: String
+  createdAt: DateTime!
+  eventType: String!
+  id: String!
+  repositoryName: String
+  taskKey: String!
+  title: String!
+  url: String!
+}
+
+type DevelopmentActivityConnection {
+  hasNextPage: Boolean!
+  items: [DevelopmentActivity!]!
+  nextCursor: String
+}
+
+type DevelopmentBranch {
+  name: String!
+  url: String!
+}
+
+type DevelopmentBranchCreated {
+  name: String!
+  url: String!
+}
+
+type DevelopmentCommit {
+  authorName: String!
+  branch: String
+  committedAt: DateTime
+  externalId: String!
+  shortSha: String!
+  title: String!
+  url: String!
+}
+
+type DevelopmentConnectionTestResult {
+  message: String
+  ok: Boolean!
+}
+
+type DevelopmentIntegrationConnection {
+  baseUrl: String!
+  createdAt: DateTime!
+  enabled: Boolean!
+  hasToken: Boolean!
+  hasWebhookSecret: Boolean!
+  id: String!
+  name: String!
+  provider: String!
+  repositories: [DevelopmentRepository!]!
+  updatedAt: DateTime!
+  username: String
+  webhookUrl: String!
+  workspaceId: String!
+}
+
+type DevelopmentMergeRequest {
+  externalId: String!
+  iid: String!
+  sourceBranch: String
+  status: String!
+  targetBranch: String
+  title: String!
+  url: String!
+}
+
+type DevelopmentMergeRequestCreated {
+  iid: String!
+  url: String!
+}
+
+type DevelopmentPipeline {
+  externalId: String!
+  finishedAt: DateTime
+  name: String!
+  number: String!
+  startedAt: DateTime
+  status: String!
+  url: String!
+}
+
+type DevelopmentRepository {
+  connectionId: String!
+  createdAt: DateTime!
+  defaultBranch: String
+  enabled: Boolean!
+  externalId: String!
+  fullName: String!
+  id: String!
+  name: String!
+  webUrl: String!
+}
+
+type DevelopmentRepositoryInfo {
+  defaultBranch: String
+  enabled: Boolean!
+  externalId: String!
+  fullName: String!
+  imported: Boolean!
+  name: String!
+  webUrl: String!
 }
 
 type DocActionDeniedDataType {
@@ -1171,6 +1323,15 @@ type ImageFormatNotSupportedDataType {
   format: String!
 }
 
+input ImportDevelopmentRepositoryInput {
+  connectionId: String!
+  defaultBranch: String
+  externalId: String!
+  fullName: String!
+  name: String!
+  webUrl: String!
+}
+
 input ImportUsersInput {
   users: [CreateUserInput!]!
 }
@@ -1379,6 +1540,9 @@ type InviteUserType {
 
   """Member invite status in workspace"""
   status: WorkspaceMemberStatus!
+
+  """Unique user login"""
+  username: String
 }
 
 enum InvoiceStatus {
@@ -1475,6 +1639,9 @@ input ManageUserInput {
 
   """User name"""
   name: String
+
+  """Unique user login"""
+  username: String
 }
 
 type MeetingActionItemType {
@@ -1566,6 +1733,7 @@ type Mutation {
 
   """Update workspace flags and features for admin"""
   adminUpdateWorkspace(input: AdminUpdateWorkspaceInput!): AdminWorkspace
+  allocateTrackWorkTask(input: AllocateTrackWorkTaskInput!): TrackWorkTask!
   approveMember(userId: String!, workspaceId: String!): Boolean!
 
   """Ban an user"""
@@ -1601,6 +1769,9 @@ type Mutation {
 
   """Create a stripe customer portal to manage payment methods"""
   createCustomerPortal: String!
+  createDevelopmentBranch(input: CreateDevelopmentBranchInput!): DevelopmentBranchCreated!
+  createDevelopmentIntegration(input: CreateDevelopmentIntegrationInput!): DevelopmentIntegrationConnection!
+  createDevelopmentMergeRequest(input: CreateDevelopmentMergeRequestInput!): DevelopmentMergeRequestCreated!
   createInviteLink(expireTime: WorkspaceInviteLinkExpireTime!, workspaceId: String!): InviteLink!
   createReply(input: ReplyCreateInput!): ReplyObjectType!
   createSelfhostWorkspaceCustomerPortal(workspaceId: String!): String!
@@ -1617,6 +1788,7 @@ type Mutation {
 
   """Delete a comment"""
   deleteComment(id: String!): Boolean!
+  deleteDevelopmentIntegration(connectionId: String!): Boolean!
 
   """Delete a reply"""
   deleteReply(id: String!): Boolean!
@@ -1625,6 +1797,7 @@ type Mutation {
   deleteUser(id: String!): DeleteAccount!
   deleteWorkspace(id: String!): Boolean!
   deleteWorkspaceByokConfig(id: ID!, workspaceId: String!): Boolean!
+  developmentRepositories(connectionId: String!): [DevelopmentRepositoryInfo!]!
 
   """Reenable an banned user"""
   enableUser(id: String!): UserType!
@@ -1635,6 +1808,7 @@ type Mutation {
   generateUserAccessToken(input: GenerateAccessTokenInput!): RevealedAccessToken!
   grantDocUserRoles(input: GrantDocUserRolesInput!): Boolean!
   grantMember(permission: Permission!, userId: String!, workspaceId: String!): Boolean!
+  importDevelopmentRepository(input: ImportDevelopmentRepositoryInput!): DevelopmentRepository!
 
   """import users"""
   importUsers(input: ImportUsersInput!): [UserImportResultType!]!
@@ -1658,6 +1832,7 @@ type Mutation {
   """mark notification as read"""
   readNotification(id: String!): Boolean!
   recoverDoc(guid: String!, timestamp: DateTime!, workspaceId: String!): DateTime!
+  refreshDevelopmentPipelines(connectionId: String!): [DevelopmentPipeline!]!
 
   """Refresh current user subscriptions and return latest."""
   refreshUserSubscriptions: [SubscriptionType!]!
@@ -1695,6 +1870,7 @@ type Mutation {
   revokeMember(userId: String!, workspaceId: String!): Boolean!
   revokePublicDoc(docId: String!, workspaceId: String!): DocType!
   revokeUserAccessToken(id: String!): Boolean!
+  rotateDevelopmentIntegrationCredentials(input: RotateDevelopmentCredentialsInput!): DevelopmentIntegrationConnection!
   sendChangeEmail(callbackUrl: String!, email: String): Boolean!
   sendChangePasswordEmail(callbackUrl: String!, email: String @deprecated(reason: "fetched from signed in user")): Boolean!
   sendSetPasswordEmail(callbackUrl: String!, email: String @deprecated(reason: "fetched from signed in user")): Boolean!
@@ -1702,8 +1878,12 @@ type Mutation {
   sendVerifyChangeEmail(callbackUrl: String!, email: String!, token: String!): Boolean!
   sendVerifyEmail(callbackUrl: String!): Boolean!
   setBlob(blob: Upload!, workspaceId: String!): String!
+  setDevelopmentRepositoryEnabled(enabled: Boolean!, repositoryId: String!): DevelopmentRepository!
+  setTrackWorkTaskDocumentLinks(input: SetTrackWorkTaskDocumentLinksInput!): TrackWorkTask!
   settleTranscriptTask(taskId: String!, workspaceId: String!): TranscriptionResultType
   submitTranscriptTask(blob: Upload, blobId: String!, blobs: [Upload!], input: SubmitAudioTranscriptionInput, workspaceId: String!): TranscriptionResultType
+  syncTrackWorkTasks(input: SyncTrackWorkTasksInput!): [TrackWorkTask!]!
+  testDevelopmentIntegration(connectionId: String!): DevelopmentConnectionTestResult!
   testWorkspaceByokConfig(input: TestWorkspaceByokConfigInput!): TestWorkspaceByokConfigResultType!
   unlinkCalendarAccount(accountId: String!): Boolean!
 
@@ -1716,6 +1896,7 @@ type Mutation {
 
   """Update a chat session"""
   updateCopilotSession(options: UpdateChatSessionInput!): String!
+  updateDevelopmentIntegration(input: UpdateDevelopmentIntegrationInput!): DevelopmentIntegrationConnection!
   updateDocDefaultRole(input: UpdateDocDefaultRoleInput!): Boolean!
   updateDocUserRole(input: UpdateDocUserRoleInput!): Boolean!
   updateProfile(input: UpdateUserInput!): UserType!
@@ -1948,6 +2129,9 @@ type Query {
   """List all shared links across workspaces for admin panel"""
   adminAllSharedLinks(filter: AdminAllSharedLinksFilterInput, pagination: PaginationInput!): PaginatedAdminAllSharedLink!
 
+  """List recent administrative actions"""
+  adminAuditLogs(first: Int! = 50, skip: Int! = 0): [AdminAuditLogType!]!
+
   """Get aggregated dashboard metrics for admin panel"""
   adminDashboard(input: AdminDashboardInput): AdminDashboard!
 
@@ -1980,6 +2164,10 @@ type Query {
 
   """server config"""
   serverConfig: ServerConfigType!
+  trackWorkActivity(after: String, first: Int = 20, taskKey: String, workspaceId: String!): DevelopmentActivityConnection!
+  trackWorkDocumentBacklinks(documentId: String!, workspaceId: String!): [TrackWorkTask!]!
+  trackWorkTask(taskKey: String!, workspaceId: String!): TrackWorkTask
+  trackWorkTaskDevelopment(taskKey: String!, workspaceId: String!): TrackWorkDevelopmentInfo!
 
   """Get user by email"""
   user(email: String!): UserOrLimitedUser
@@ -2125,6 +2313,12 @@ input RevokeDocUserRoleInput {
   workspaceId: String!
 }
 
+input RotateDevelopmentCredentialsInput {
+  id: String!
+  token: String
+  webhookSecret: String
+}
+
 type RuntimeConfigNotFoundDataType {
   key: String!
 }
@@ -2231,7 +2425,16 @@ enum SearchTable {
   doc
 }
 
+enum ServerAuthMode {
+  LDAP
+  Password
+  RADIUS
+}
+
 type ServerConfigType {
+  """active sign-in method"""
+  authMode: ServerAuthMode!
+
   """fetch latest available upgradable release of server"""
   availableUpgrade: ReleaseVersionType
 
@@ -2280,6 +2483,12 @@ enum ServerFeature {
   LocalWorkspace
   OAuth
   Payment
+}
+
+input SetTrackWorkTaskDocumentLinksInput {
+  documentIds: [String!]!
+  taskDocId: String!
+  workspaceId: String!
 }
 
 type SpaceAccessDeniedDataType {
@@ -2403,6 +2612,12 @@ enum SubscriptionVariant {
   Onetime
 }
 
+input SyncTrackWorkTasksInput {
+  prefix: String!
+  tasks: [TrackWorkLegacyTaskInput!]!
+  workspaceId: String!
+}
+
 input TestWorkspaceByokConfigInput {
   apiKey: String
   configId: ID
@@ -2430,6 +2645,28 @@ type TimeWindow {
   requestedSize: Int!
   timezone: String!
   to: DateTime!
+}
+
+type TrackWorkDevelopmentInfo {
+  branches: [DevelopmentBranch!]!
+  commits: [DevelopmentCommit!]!
+  mergeRequests: [DevelopmentMergeRequest!]!
+  pipelines: [DevelopmentPipeline!]!
+  repositories: [String!]!
+}
+
+input TrackWorkLegacyTaskInput {
+  docId: String!
+  relatedDocumentIds: [String!]! = []
+  taskKey: String!
+}
+
+type TrackWorkTask {
+  createdAt: DateTime!
+  docId: String!
+  number: Int!
+  relatedDocumentIds: [String!]!
+  taskKey: String!
 }
 
 type TranscriptProviderMetaType {
@@ -2518,6 +2755,14 @@ input UpdateChatSessionInput {
   """The prompt name to use for the session"""
   promptName: String
   sessionId: String!
+}
+
+input UpdateDevelopmentIntegrationInput {
+  baseUrl: String
+  enabled: Boolean
+  id: String!
+  name: String
+  username: String
 }
 
 input UpdateDocDefaultRoleInput {
@@ -2680,6 +2925,9 @@ type UserType {
   settings: UserSettingsType!
   subscriptions: [SubscriptionType!]!
   token: tokenType! @deprecated(reason: "use [/api/auth/sign-in?native=true] instead")
+
+  """Unique user login"""
+  username: String!
 }
 
 type ValidationErrorDataType {
@@ -2868,6 +3116,7 @@ type WorkspaceType {
 
   """Workspace created date"""
   createdAt: DateTime!
+  developmentIntegrations: [DevelopmentIntegrationConnection!]!
 
   """Get get with given id"""
   doc(docId: String!): DocType!

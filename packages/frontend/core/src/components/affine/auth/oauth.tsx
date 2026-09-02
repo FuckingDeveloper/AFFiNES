@@ -6,35 +6,20 @@ import { UrlService } from '@affine/core/modules/url';
 import { UserFriendlyError } from '@affine/error';
 import { OAuthProviderType } from '@affine/graphql';
 import track from '@affine/track';
-import {
-  AppleIcon,
-  GithubIcon,
-  GoogleIcon,
-  LockIcon,
-} from '@blocksuite/icons/rc';
+import { LockIcon } from '@blocksuite/icons/rc';
 import { useLiveData, useService } from '@toeverything/infra';
 import { type ReactElement, type SVGAttributes, useCallback } from 'react';
 
-const OAuthProviderMap: Record<
-  OAuthProviderType,
-  {
-    icon: ReactElement<SVGAttributes<SVGElement>>;
-  }
+const OAuthProviderMap: Partial<
+  Record<
+    OAuthProviderType,
+    {
+      icon: ReactElement<SVGAttributes<SVGElement>>;
+    }
+  >
 > = {
-  [OAuthProviderType.Google]: {
-    icon: <GoogleIcon />,
-  },
-
-  [OAuthProviderType.GitHub]: {
-    icon: <GithubIcon />,
-  },
-
   [OAuthProviderType.OIDC]: {
     icon: <LockIcon />,
-  },
-
-  [OAuthProviderType.Apple]: {
-    icon: <AppleIcon />,
   },
 };
 
@@ -95,15 +80,17 @@ export function OAuth({ redirectUrl }: { redirectUrl?: string }) {
     return null;
   }
 
-  return oauthProviders?.map(provider => {
-    return (
-      <OAuthProvider
-        key={provider}
-        provider={provider}
-        onContinue={onContinue}
-      />
-    );
-  });
+  return oauthProviders
+    ?.filter(provider => provider === OAuthProviderType.OIDC)
+    .map(provider => {
+      return (
+        <OAuthProvider
+          key={provider}
+          provider={provider}
+          onContinue={onContinue}
+        />
+      );
+    });
 }
 
 interface OauthProviderProps {
@@ -112,10 +99,7 @@ interface OauthProviderProps {
 }
 
 function OAuthProvider({ onContinue, provider }: OauthProviderProps) {
-  const { icon } =
-    provider in OAuthProviderMap
-      ? OAuthProviderMap[provider]
-      : { icon: undefined };
+  const icon = OAuthProviderMap[provider]?.icon;
 
   const onClick = useCallback(() => {
     onContinue(provider);
@@ -123,7 +107,7 @@ function OAuthProvider({ onContinue, provider }: OauthProviderProps) {
 
   return (
     <Button
-      variant={provider === OAuthProviderType.Apple ? 'custom' : 'primary'}
+      variant="primary"
       block
       size="extraLarge"
       style={{ width: '100%' }}

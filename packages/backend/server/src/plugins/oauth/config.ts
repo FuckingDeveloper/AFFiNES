@@ -50,24 +50,25 @@ const schema: JSONSchema = {
 };
 
 defineModuleConfig('oauth', {
-  'providers.google': {
-    desc: 'Google OAuth provider config',
-    default: {
-      clientId: '',
-      clientSecret: '',
-    },
-    schema,
-    link: 'https://developers.google.com/identity/protocols/oauth2/web-server',
-  },
-  'providers.github': {
-    desc: 'GitHub OAuth provider config',
-    default: {
-      clientId: '',
-      clientSecret: '',
-    },
-    schema,
-    link: 'https://docs.github.com/en/apps/oauth-apps',
-  },
+  ...(env.testing
+    ? {
+        'providers.google': {
+          desc: 'Google OAuth provider config',
+          default: { clientId: '', clientSecret: '' },
+          schema,
+        },
+        'providers.github': {
+          desc: 'GitHub OAuth provider config',
+          default: { clientId: '', clientSecret: '' },
+          schema,
+        },
+        'providers.apple': {
+          desc: 'Apple OAuth provider config',
+          default: { clientId: '', clientSecret: '' },
+          schema,
+        },
+      }
+    : {}),
   'providers.oidc': {
     desc: 'OIDC OAuth provider config',
     default: {
@@ -92,14 +93,5 @@ defineModuleConfig('oauth', {
         claim_email_verified: z.string().optional(),
       }),
     }),
-  },
-  'providers.apple': {
-    desc: 'Apple OAuth provider config',
-    default: {
-      clientId: '',
-      clientSecret: '',
-    },
-    schema,
-    link: 'https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_js/implementing_sign_in_with_apple_in_your_app',
   },
 });

@@ -1,8 +1,8 @@
-# AFFiNE Electron App
+# TrackWork Electron App
 
 ## Development
 
-To run AFFiNE Desktop Client Application locally, run the following commands:
+To run TrackWork Desktop Client Application locally, run the following commands:
 
 ```sh
 # in repo root

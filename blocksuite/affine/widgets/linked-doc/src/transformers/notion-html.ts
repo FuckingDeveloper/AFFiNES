@@ -328,7 +328,7 @@ async function importNotionZip({
       }
       if (index === 0 && fileName.endsWith('.csv')) {
         window.open(
-          'https://affine.pro/blog/import-your-data-from-notion-into-affine',
+          'https://trackwork.mrhsoftware.com/blog/import-your-data-from-notion-into-affine',
           '_blank'
         );
         continue;

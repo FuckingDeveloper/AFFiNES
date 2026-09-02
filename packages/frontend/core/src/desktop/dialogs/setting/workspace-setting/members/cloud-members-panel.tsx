@@ -8,7 +8,6 @@ import { SettingRow } from '@affine/component/setting-components';
 import { useAsyncCallback } from '@affine/core/components/hooks/affine-async-hooks';
 import { Upload } from '@affine/core/components/pure/file-upload';
 import {
-  ServerService,
   SubscriptionService,
   WorkspaceSubscriptionService,
 } from '@affine/core/modules/cloud';
@@ -22,9 +21,8 @@ import { copyTextToClipboard } from '@affine/core/utils/clipboard';
 import { emailRegex } from '@affine/core/utils/email-regex';
 import { UserFriendlyError } from '@affine/error';
 import type { WorkspaceInviteLinkExpireTime } from '@affine/graphql';
-import { ServerDeploymentType, SubscriptionPlan } from '@affine/graphql';
+import { SubscriptionPlan } from '@affine/graphql';
 import { useI18n } from '@affine/i18n';
-import { track } from '@affine/track';
 import { ExportIcon } from '@blocksuite/icons/rc';
 import { useLiveData, useService } from '@toeverything/infra';
 import { nanoid } from 'nanoid';
@@ -61,15 +59,6 @@ export const CloudWorkspaceMembersPanel = ({
   const workspaceSubscription = useLiveData(subscription.subscription$);
   const inviteLink = useLiveData(
     workspaceShareSettingService.sharePreview.inviteLink$
-  );
-  const serverService = useService(ServerService);
-  const hasPaymentFeature = useLiveData(
-    serverService.server.features$.map(f => f?.payment)
-  );
-  const isSelfhosted = useLiveData(
-    serverService.server.config$.selector(
-      c => c.type === ServerDeploymentType.Selfhosted
-    )
   );
   const membersService = useService(WorkspaceMembersService);
   const permissionService = useService(WorkspacePermissionService);
@@ -112,9 +101,9 @@ export const CloudWorkspaceMembersPanel = ({
   const { openConfirmModal, closeConfirmModal } = useConfirmModal();
   const goToTeamBilling = useCallback(() => {
     onChangeSettingState({
-      activeTab: isSelfhosted ? 'workspace:license' : 'workspace:billing',
+      activeTab: 'workspace:members',
     });
-  }, [isSelfhosted, onChangeSettingState]);
+  }, [onChangeSettingState]);
   const [idempotencyKey, setIdempotencyKey] = useState(nanoid());
   const resume = useAsyncCallback(async () => {
     try {
@@ -250,50 +239,18 @@ export const CloudWorkspaceMembersPanel = ({
 
   const handleUpgradeConfirm = useCallback(() => {
     onChangeSettingState({
-      activeTab: 'plans',
-      scrollAnchor: 'cloudPricingPlan',
-    });
-    track.$.settingsPanel.workspace.viewPlans({
-      control: 'inviteMember',
+      activeTab: 'workspace:members',
     });
   }, [onChangeSettingState]);
 
   const desc = useMemo(() => {
     if (!workspaceQuota) return null;
-
-    if (isTeam) {
-      return <span>{t['com.affine.payment.member.team.description']()}</span>;
-    }
-    return (
-      <span>
-        {t['com.affine.payment.member.description2']()}
-        {hasPaymentFeature && isOwner ? (
-          <div
-            className={styles.goUpgradeWrapper}
-            onClick={handleUpgradeConfirm}
-          >
-            <span className={styles.goUpgrade}>
-              {t['com.affine.payment.member.description.choose-plan']()}
-            </span>
-          </div>
-        ) : null}
-      </span>
-    );
-  }, [
-    handleUpgradeConfirm,
-    hasPaymentFeature,
-    isOwner,
-    isTeam,
-    t,
-    workspaceQuota,
-  ]);
+    return <span>{t['com.affine.payment.member.team.description']()}</span>;
+  }, [t, workspaceQuota]);
 
   const title = useMemo(() => {
-    if (isTeam) {
-      return `${t['Members']()} (${workspaceQuota?.memberCount})`;
-    }
-    return `${t['Members']()} (${workspaceQuota?.memberCount}/${workspaceQuota?.memberLimit})`;
-  }, [isTeam, t, workspaceQuota?.memberCount, workspaceQuota?.memberLimit]);
+    return `${t['Members']()} (${workspaceQuota?.memberCount})`;
+  }, [t, workspaceQuota?.memberCount]);
 
   if (workspaceQuota === null) {
     if (isLoading) {

@@ -574,7 +574,7 @@ const importConfigs: Record<ImportType, ImportConfig> = {
           : new Error(String(err) || 'Bear import failed');
       }
 
-      // Create AFFiNE tags from Bear tags
+      // Create TrackWork tags from Bear tags
       if (tagService && tags.size > 0) {
         try {
           // Get existing tags for deduplication
@@ -588,7 +588,7 @@ const importConfigs: Record<ImportType, ImportConfig> = {
           // Consolidate tags by root segment (e.g., "privat/bike" → "privat").
           // Keyed by lowercase root for case-insensitive dedup, but the
           // original capitalization of the first occurrence is preserved
-          // so new AFFiNE tags are created with the user's casing.
+          // so new TrackWork tags are created with the user's casing.
           const rootTagDocMap = new Map<
             string,
             { displayName: string; docs: Set<string> }

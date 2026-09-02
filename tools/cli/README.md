@@ -1,4 +1,4 @@
-# AFFiNE Monorepo Cli
+# TrackWork Monorepo Cli
 
 ## Start
 
@@ -82,7 +82,7 @@ yarn af web build
 
 > personally, I use 'af'
 
-create file `af` in the root of AFFiNE project with the following content
+create file `af` in the root of TrackWork project with the following content
 
 ```bash
 #!/usr/bin/env sh

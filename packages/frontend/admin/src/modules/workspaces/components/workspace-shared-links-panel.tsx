@@ -38,13 +38,13 @@ export function WorkspaceSharedLinksPanel({
     return (
       <div className="flex flex-col h-full">
         <RightPanelHeader
-          title="Shared Links"
+          title="Общие ссылки"
           handleClose={onClose}
           handleConfirm={onClose}
           canSave={false}
         />
         <div className="p-6 text-sm text-muted-foreground">
-          Workspace not found.
+          Рабочее пространство не найдено.
         </div>
       </div>
     );
@@ -53,14 +53,14 @@ export function WorkspaceSharedLinksPanel({
   return (
     <div className="flex h-full flex-col bg-background">
       <RightPanelHeader
-        title="Shared Links"
+        title="Общие ссылки"
         handleClose={onClose}
         handleConfirm={onClose}
         canSave={false}
       />
       <div className="flex flex-col gap-3 overflow-y-auto p-4">
         {sharedLinks.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No shared links.</div>
+          <div className="text-sm text-muted-foreground">Общих ссылок нет.</div>
         ) : (
           <div className="flex flex-col divide-y rounded-xl border border-border/60 bg-card shadow-sm">
             {sharedLinks.map(link => (
@@ -82,7 +82,7 @@ function SharedLinkItem({ link }: { link: WorkspaceSharedLink }) {
       <div className="text-sm font-medium truncate">{title}</div>
       <div className="flex items-center gap-2 text-xs">
         <Separator className="h-3" orientation="vertical" />
-        <span className="text-muted-foreground">Shared on {sharedDate}</span>
+        <span className="text-muted-foreground">Опубликовано {sharedDate}</span>
       </div>
     </div>
   );
@@ -90,12 +90,12 @@ function SharedLinkItem({ link }: { link: WorkspaceSharedLink }) {
 
 function formatSharedDate(publishedAt?: string | null) {
   if (!publishedAt) {
-    return 'Unknown';
+    return 'Неизвестно';
   }
 
   const date = new Date(publishedAt);
   if (Number.isNaN(date.getTime())) {
-    return 'Unknown';
+    return 'Неизвестно';
   }
   return date.toISOString().slice(0, 10);
 }

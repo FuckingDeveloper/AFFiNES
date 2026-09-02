@@ -70,6 +70,7 @@ export const SignIn = ({
           onAuthenticated={handleAuthenticated}
           initStep={initStep}
           server={server}
+          allowSkip={false}
         />
       </div>
     </SignInPageContainer>

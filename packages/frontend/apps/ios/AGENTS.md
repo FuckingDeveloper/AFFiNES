@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the AFFiNE iOS application built with Capacitor, React, and TypeScript. It's a hybrid mobile app that wraps a React web application in a native iOS shell.
+This is the MRH ManSys iOS application built with Capacitor, React, and TypeScript. It's a hybrid mobile app that wraps a React web application in a native iOS shell.
 
 ## Development Commands
 

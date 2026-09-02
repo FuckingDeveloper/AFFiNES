@@ -38,8 +38,7 @@ export const AIUsage = () => {
 
   const goToAIPlanPage = useCallback(() => {
     workspaceDialogService.open('setting', {
-      activeTab: 'plans',
-      scrollAnchor: 'aiPricingPlan',
+      activeTab: 'account',
     });
   }, [workspaceDialogService]);
 

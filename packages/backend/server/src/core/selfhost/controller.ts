@@ -7,6 +7,7 @@ import {
   InternalServerError,
   Mutex,
   PasswordRequired,
+  Throttle,
   UseNamedGuard,
 } from '../../base';
 import { Models } from '../../models';
@@ -15,12 +16,14 @@ import { ServerService } from '../config';
 import { validators } from '../utils/validators';
 
 interface CreateUserInput {
+  username: string;
   name?: string;
   email: string;
   password: string;
 }
 
 @UseNamedGuard('selfhost')
+@Throttle('strict')
 @Controller('/api/setup')
 export class CustomSetupController {
   constructor(
@@ -42,6 +45,7 @@ export class CustomSetupController {
       throw new ActionForbidden('First user already created');
     }
 
+    const username = validators.normalizeUsername(input.username);
     validators.assertValidEmail(input.email);
 
     if (!input.password) {
@@ -58,9 +62,17 @@ export class CustomSetupController {
     if (!lock) {
       throw new InternalServerError();
     }
+
+    // Re-check while holding the distributed lock so two concurrent setup
+    // requests cannot create more than one initial administrator.
+    if (await this.server.initialized()) {
+      throw new ActionForbidden('First user already created');
+    }
+
     const user = await this.models.user.create({
-      name: input.name || undefined,
-      email: input.email,
+      username,
+      name: input.name?.trim() || undefined,
+      email: input.email.trim().toLowerCase(),
       password: input.password,
       registered: true,
     });
@@ -73,7 +85,12 @@ export class CustomSetupController {
       );
 
       await this.auth.setCookies(req, res, user.id);
-      res.send({ id: user.id, email: user.email, name: user.name });
+      res.send({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+      });
     } catch (e) {
       await this.models.user.delete(user.id);
       throw e;

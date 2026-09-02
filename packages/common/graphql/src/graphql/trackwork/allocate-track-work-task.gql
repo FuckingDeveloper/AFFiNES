@@ -1,0 +1,9 @@
+mutation allocateTrackWorkTask($input: AllocateTrackWorkTaskInput!) {
+  allocateTrackWorkTask(input: $input) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}

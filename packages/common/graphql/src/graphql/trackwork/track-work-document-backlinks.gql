@@ -1,0 +1,12 @@
+query trackWorkDocumentBacklinks($workspaceId: String!, $documentId: String!) {
+  trackWorkDocumentBacklinks(
+    workspaceId: $workspaceId
+    documentId: $documentId
+  ) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}

@@ -182,6 +182,22 @@ export const adminAllSharedLinksQuery = {
 }`,
 };
 
+export const adminAuditLogsQuery = {
+  id: 'adminAuditLogsQuery' as const,
+  op: 'adminAuditLogs',
+  query: `query adminAuditLogs($first: Int, $skip: Int) {
+  adminAuditLogs(first: $first, skip: $skip) {
+    id
+    actorId
+    actorEmail
+    action
+    targetType
+    targetId
+    createdAt
+  }
+}`,
+};
+
 export const adminDashboardQuery = {
   id: 'adminDashboardQuery' as const,
   op: 'adminDashboard',
@@ -2501,6 +2517,252 @@ export const indexerSearchQuery = {
 }`,
 };
 
+export const createDevelopmentBranchMutation = {
+  id: 'createDevelopmentBranchMutation' as const,
+  op: 'createDevelopmentBranch',
+  query: `mutation createDevelopmentBranch($input: CreateDevelopmentBranchInput!) {
+  createDevelopmentBranch(input: $input) {
+    name
+    url
+  }
+}`,
+};
+
+export const createDevelopmentIntegrationMutation = {
+  id: 'createDevelopmentIntegrationMutation' as const,
+  op: 'createDevelopmentIntegration',
+  query: `mutation createDevelopmentIntegration($input: CreateDevelopmentIntegrationInput!) {
+  createDevelopmentIntegration(input: $input) {
+    id
+    workspaceId
+    provider
+    name
+    baseUrl
+    enabled
+    hasToken
+    hasWebhookSecret
+    webhookUrl
+    createdAt
+    updatedAt
+  }
+}`,
+};
+
+export const createDevelopmentMergeRequestMutation = {
+  id: 'createDevelopmentMergeRequestMutation' as const,
+  op: 'createDevelopmentMergeRequest',
+  query: `mutation createDevelopmentMergeRequest($input: CreateDevelopmentMergeRequestInput!) {
+  createDevelopmentMergeRequest(input: $input) {
+    iid
+    url
+  }
+}`,
+};
+
+export const deleteDevelopmentIntegrationMutation = {
+  id: 'deleteDevelopmentIntegrationMutation' as const,
+  op: 'deleteDevelopmentIntegration',
+  query: `mutation deleteDevelopmentIntegration($connectionId: String!) {
+  deleteDevelopmentIntegration(connectionId: $connectionId)
+}`,
+};
+
+export const developmentIntegrationsQuery = {
+  id: 'developmentIntegrationsQuery' as const,
+  op: 'developmentIntegrations',
+  query: `query developmentIntegrations($workspaceId: String!) {
+  workspace(id: $workspaceId) {
+    developmentIntegrations {
+      id
+      workspaceId
+      provider
+      name
+      baseUrl
+      username
+      enabled
+      hasToken
+      hasWebhookSecret
+      webhookUrl
+      createdAt
+      updatedAt
+      repositories {
+        id
+        externalId
+        name
+        fullName
+        webUrl
+        defaultBranch
+        enabled
+      }
+    }
+  }
+}`,
+};
+
+export const developmentRepositoriesMutation = {
+  id: 'developmentRepositoriesMutation' as const,
+  op: 'developmentRepositories',
+  query: `mutation developmentRepositories($connectionId: String!) {
+  developmentRepositories(connectionId: $connectionId) {
+    externalId
+    name
+    fullName
+    webUrl
+    defaultBranch
+    imported
+    enabled
+  }
+}`,
+};
+
+export const importDevelopmentRepositoryMutation = {
+  id: 'importDevelopmentRepositoryMutation' as const,
+  op: 'importDevelopmentRepository',
+  query: `mutation importDevelopmentRepository($input: ImportDevelopmentRepositoryInput!) {
+  importDevelopmentRepository(input: $input) {
+    id
+    connectionId
+    externalId
+    name
+    fullName
+    webUrl
+    defaultBranch
+    enabled
+  }
+}`,
+};
+
+export const refreshDevelopmentPipelinesMutation = {
+  id: 'refreshDevelopmentPipelinesMutation' as const,
+  op: 'refreshDevelopmentPipelines',
+  query: `mutation refreshDevelopmentPipelines($connectionId: String!) {
+  refreshDevelopmentPipelines(connectionId: $connectionId) {
+    externalId
+    number
+    name
+    status
+    url
+    startedAt
+    finishedAt
+  }
+}`,
+};
+
+export const rotateDevelopmentIntegrationCredentialsMutation = {
+  id: 'rotateDevelopmentIntegrationCredentialsMutation' as const,
+  op: 'rotateDevelopmentIntegrationCredentials',
+  query: `mutation rotateDevelopmentIntegrationCredentials($input: RotateDevelopmentCredentialsInput!) {
+  rotateDevelopmentIntegrationCredentials(input: $input) {
+    id
+    hasToken
+    hasWebhookSecret
+    updatedAt
+  }
+}`,
+};
+
+export const setDevelopmentRepositoryEnabledMutation = {
+  id: 'setDevelopmentRepositoryEnabledMutation' as const,
+  op: 'setDevelopmentRepositoryEnabled',
+  query: `mutation setDevelopmentRepositoryEnabled($repositoryId: String!, $enabled: Boolean!) {
+  setDevelopmentRepositoryEnabled(repositoryId: $repositoryId, enabled: $enabled) {
+    id
+    enabled
+  }
+}`,
+};
+
+export const testDevelopmentIntegrationMutation = {
+  id: 'testDevelopmentIntegrationMutation' as const,
+  op: 'testDevelopmentIntegration',
+  query: `mutation testDevelopmentIntegration($connectionId: String!) {
+  testDevelopmentIntegration(connectionId: $connectionId) {
+    ok
+    message
+  }
+}`,
+};
+
+export const trackWorkActivityQuery = {
+  id: 'trackWorkActivityQuery' as const,
+  op: 'trackWorkActivity',
+  query: `query trackWorkActivity($workspaceId: String!, $taskKey: String, $first: Int = 20, $after: String) {
+  trackWorkActivity(
+    workspaceId: $workspaceId
+    taskKey: $taskKey
+    first: $first
+    after: $after
+  ) {
+    items {
+      id
+      taskKey
+      eventType
+      title
+      url
+      authorName
+      repositoryName
+      createdAt
+    }
+    nextCursor
+    hasNextPage
+  }
+}`,
+};
+
+export const trackWorkTaskDevelopmentQuery = {
+  id: 'trackWorkTaskDevelopmentQuery' as const,
+  op: 'trackWorkTaskDevelopment',
+  query: `query trackWorkTaskDevelopment($workspaceId: String!, $taskKey: String!) {
+  trackWorkTaskDevelopment(workspaceId: $workspaceId, taskKey: $taskKey) {
+    repositories
+    commits {
+      externalId
+      title
+      url
+      shortSha
+      authorName
+      committedAt
+      branch
+    }
+    branches {
+      name
+      url
+    }
+    mergeRequests {
+      externalId
+      iid
+      title
+      url
+      status
+      sourceBranch
+      targetBranch
+    }
+    pipelines {
+      externalId
+      number
+      name
+      status
+      url
+      startedAt
+      finishedAt
+    }
+  }
+}`,
+};
+
+export const updateDevelopmentIntegrationMutation = {
+  id: 'updateDevelopmentIntegrationMutation' as const,
+  op: 'updateDevelopmentIntegration',
+  query: `mutation updateDevelopmentIntegration($input: UpdateDevelopmentIntegrationInput!) {
+  updateDevelopmentIntegration(input: $input) {
+    id
+    name
+    enabled
+    updatedAt
+  }
+}`,
+};
+
 export const getInvoicesCountQuery = {
   id: 'getInvoicesCountQuery' as const,
   op: 'getInvoicesCount',
@@ -2834,6 +3096,7 @@ export const serverConfigQuery = {
     baseUrl
     name
     features
+    authMode
     type
     initialized
     calendarProviders
@@ -2914,6 +3177,76 @@ export const subscriptionQuery = {
   }
 }`,
   deprecations: ["'id' is deprecated: removed"],
+};
+
+export const allocateTrackWorkTaskMutation = {
+  id: 'allocateTrackWorkTaskMutation' as const,
+  op: 'allocateTrackWorkTask',
+  query: `mutation allocateTrackWorkTask($input: AllocateTrackWorkTaskInput!) {
+  allocateTrackWorkTask(input: $input) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}`,
+};
+
+export const setTrackWorkTaskDocumentLinksMutation = {
+  id: 'setTrackWorkTaskDocumentLinksMutation' as const,
+  op: 'setTrackWorkTaskDocumentLinks',
+  query: `mutation setTrackWorkTaskDocumentLinks($input: SetTrackWorkTaskDocumentLinksInput!) {
+  setTrackWorkTaskDocumentLinks(input: $input) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}`,
+};
+
+export const syncTrackWorkTasksMutation = {
+  id: 'syncTrackWorkTasksMutation' as const,
+  op: 'syncTrackWorkTasks',
+  query: `mutation syncTrackWorkTasks($input: SyncTrackWorkTasksInput!) {
+  syncTrackWorkTasks(input: $input) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}`,
+};
+
+export const trackWorkDocumentBacklinksQuery = {
+  id: 'trackWorkDocumentBacklinksQuery' as const,
+  op: 'trackWorkDocumentBacklinks',
+  query: `query trackWorkDocumentBacklinks($workspaceId: String!, $documentId: String!) {
+  trackWorkDocumentBacklinks(workspaceId: $workspaceId, documentId: $documentId) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}`,
+};
+
+export const trackWorkTaskQuery = {
+  id: 'trackWorkTaskQuery' as const,
+  op: 'trackWorkTask',
+  query: `query trackWorkTask($workspaceId: String!, $taskKey: String!) {
+  trackWorkTask(workspaceId: $workspaceId, taskKey: $taskKey) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}`,
 };
 
 export const updateDocDefaultRoleMutation = {

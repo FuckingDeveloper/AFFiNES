@@ -58,6 +58,7 @@ export function configureDefaultAuthProvider(framework: Framework) {
       async signInPassword(credential: {
         email: string;
         password: string;
+        twoFactorCode?: string;
         verifyToken?: string;
         challenge?: string;
       }) {

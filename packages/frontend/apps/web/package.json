@@ -1,7 +1,7 @@
 {
   "name": "@affine/web",
   "version": "0.26.3",
-  "description": "AFFiNE Desktop Web application",
+  "description": "TrackWork Desktop Web application",
   "private": true,
   "browser": "src/index.tsx",
   "scripts": {

@@ -1,7 +1,7 @@
 @import '@queuedash/ui/dist/styles.css' layer(queuedash);
 
 /*
- * QueueDash UI is built with Tailwind v3 (translate via `transform`), while AFFiNE Admin
+ * QueueDash UI is built with Tailwind v3 (translate via `transform`), while TrackWork Admin
  * uses Tailwind v4 (translate via the individual `translate` property). When QueueDash
  * overlays are portaled to `document.body`, both utility sets can apply at once and
  * result in double transforms (mis-centered dialogs, etc). Reset individual transform

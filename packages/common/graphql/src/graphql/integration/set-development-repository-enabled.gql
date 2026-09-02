@@ -1,0 +1,6 @@
+mutation setDevelopmentRepositoryEnabled($repositoryId: String!, $enabled: Boolean!) {
+  setDevelopmentRepositoryEnabled(repositoryId: $repositoryId, enabled: $enabled) {
+    id
+    enabled
+  }
+}

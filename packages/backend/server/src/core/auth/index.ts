@@ -7,6 +7,7 @@ import { MailModule } from '../mail';
 import { QuotaModule } from '../quota';
 import { UserModule } from '../user';
 import { AuthController } from './controller';
+import { EnterpriseAuthService } from './enterprise-auth';
 import { AuthGuard, AuthWebsocketOptionsProvider } from './guard';
 import { AuthCronJob } from './job';
 import { AuthResolver } from './resolver';
@@ -16,6 +17,7 @@ import { AuthService } from './service';
   imports: [FeatureModule, UserModule, QuotaModule, MailModule],
   providers: [
     AuthService,
+    EnterpriseAuthService,
     AuthResolver,
     AuthGuard,
     AuthCronJob,

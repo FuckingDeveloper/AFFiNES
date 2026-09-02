@@ -188,13 +188,13 @@ mod tests {
     let rendered = render_tokens(
       &tokens,
       &[&json!({
-        "links": ["https://affine.pro", "https://github.com/toeverything/affine"]
+        "links": ["https://trackwork.mrhsoftware.com", "https://github.com/toeverything/affine"]
       })],
     );
 
     assert_eq!(
       rendered,
-      "- https://affine.pro\n- https://github.com/toeverything/affine\n"
+      "- https://trackwork.mrhsoftware.com\n- https://github.com/toeverything/affine\n"
     );
   }
 
@@ -214,7 +214,7 @@ mod tests {
         ],
         "templateParams": { "tone": ["formal", "casual"] },
         "renderParams": {
-          "attachments": ["https://affine.pro/example.jpg"],
+          "attachments": ["https://trackwork.mrhsoftware.com/example.jpg"],
           "content": "hello world"
         }
       }))
@@ -231,7 +231,7 @@ mod tests {
             "role": "system",
             "content": "tone=formal",
             "params": {
-              "attachments": ["https://affine.pro/example.jpg"],
+              "attachments": ["https://trackwork.mrhsoftware.com/example.jpg"],
               "content": "hello world",
               "tone": "formal"
             }
@@ -239,9 +239,9 @@ mod tests {
           {
             "role": "user",
             "content": "hello world",
-            "attachments": ["https://affine.pro/example.jpg"],
+            "attachments": ["https://trackwork.mrhsoftware.com/example.jpg"],
             "params": {
-              "attachments": ["https://affine.pro/example.jpg"],
+              "attachments": ["https://trackwork.mrhsoftware.com/example.jpg"],
               "content": "hello world",
               "tone": "formal"
             }
@@ -266,7 +266,7 @@ mod tests {
         "renderParams": {
           "language": "French",
           "affine::language": "ignored",
-          "links": ["https://affine.pro", "https://github.com/toeverything/affine"],
+          "links": ["https://trackwork.mrhsoftware.com", "https://github.com/toeverything/affine"],
           "obj": { "hello": "world" },
           "tags": ["a", "b"]
         }
@@ -282,11 +282,11 @@ mod tests {
         "messages": [
           {
             "role": "system",
-            "content": "French|a,b|[object Object]|- https://affine.pro\n- https://github.com/toeverything/affine\n",
+            "content": "French|a,b|[object Object]|- https://trackwork.mrhsoftware.com\n- https://github.com/toeverything/affine\n",
             "params": {
               "language": "French",
               "affine::language": "ignored",
-              "links": ["https://affine.pro", "https://github.com/toeverything/affine"],
+              "links": ["https://trackwork.mrhsoftware.com", "https://github.com/toeverything/affine"],
               "obj": { "hello": "world" },
               "tags": ["a", "b"]
             }
@@ -347,7 +347,7 @@ mod tests {
           ]
         },
         "turns": [
-          { "role": "user", "content": "hello", "attachments": ["https://affine.pro/hello.png"] }
+          { "role": "user", "content": "hello", "attachments": ["https://trackwork.mrhsoftware.com/hello.png"] }
         ],
         "renderParams": {},
         "maxTokenSize": 1000
@@ -365,7 +365,7 @@ mod tests {
           {
             "role": "user",
             "content": "hello",
-            "attachments": ["https://affine.pro/hello.png"],
+            "attachments": ["https://trackwork.mrhsoftware.com/hello.png"],
             "params": { "content": "hello" }
           }
         ],

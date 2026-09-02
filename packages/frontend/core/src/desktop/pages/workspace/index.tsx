@@ -2,6 +2,7 @@ import { DNDContext } from '@affine/component';
 import { AffineOtherPageLayout } from '@affine/component/affine-other-page-layout';
 import { workbenchRoutes } from '@affine/core/desktop/workbench-router';
 import {
+  AuthService,
   DefaultServerService,
   ServersService,
 } from '@affine/core/modules/cloud';
@@ -35,6 +36,10 @@ import { map } from 'rxjs';
 import * as _Y from 'yjs';
 
 import { AffineErrorBoundary } from '../../../components/affine/affine-error-boundary';
+import {
+  RouteLogic,
+  useNavigateHelper,
+} from '../../../components/hooks/use-navigate-helper';
 import { WorkbenchRoot } from '../../../modules/workbench';
 import { AppContainer } from '../../components/app-container';
 import { PageNotFound } from '../404';
@@ -67,17 +72,38 @@ export const Component = (): ReactElement => {
     serversService,
     defaultServerService,
     globalContextService,
+    authService,
   } = useServices({
     WorkspacesService,
     GlobalDialogService,
     ServersService,
     DefaultServerService,
     GlobalContextService,
+    AuthService,
   });
 
   const params = useParams();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const { jumpToSignIn } = useNavigateHelper();
+  const loginStatus = useLiveData(authService.session.status$);
+  const sessionRevalidating = useLiveData(authService.session.isRevalidating$);
+
+  useEffect(() => {
+    if (loginStatus !== 'unauthenticated' || sessionRevalidating) {
+      return;
+    }
+
+    const redirectUri = `${location.pathname}${location.search}${location.hash}`;
+    jumpToSignIn(redirectUri, RouteLogic.REPLACE);
+  }, [
+    jumpToSignIn,
+    location.hash,
+    location.pathname,
+    location.search,
+    loginStatus,
+    sessionRevalidating,
+  ]);
 
   // check if we are in detail doc route, if so, maybe render share page
   const detailDocRoute = useMemo(() => {
@@ -193,6 +219,10 @@ export const Component = (): ReactElement => {
     searchParams,
     serverFromSearchParams,
   ]);
+
+  if (loginStatus !== 'authenticated') {
+    return <AppContainer fallback />;
+  }
 
   if (workspaceNotFound) {
     if (detailDocRoute) {

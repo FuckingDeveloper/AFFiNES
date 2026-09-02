@@ -8,6 +8,14 @@ export const authMessage = style({
   lineHeight: '20px',
 });
 
+export const authModeHint = style({
+  color: cssVarV2('text/secondary'),
+  fontSize: cssVar('fontSm'),
+  fontWeight: 500,
+  lineHeight: '22px',
+  textAlign: 'center',
+});
+
 globalStyle(`${authMessage} a`, {
   color: cssVar('linkColor'),
 });
@@ -21,21 +29,6 @@ export const captchaWrapper = style({
   margin: 'auto',
   marginBottom: '4px',
   textAlign: 'center',
-});
-
-export const passwordButtonRow = style({
-  display: 'flex',
-  justifyContent: 'space-between',
-  marginBottom: '30px',
-});
-
-export const linkButton = style({
-  color: cssVar('linkColor'),
-  background: 'transparent',
-  borderColor: 'transparent',
-  fontSize: cssVar('fontXs'),
-  lineHeight: '22px',
-  userSelect: 'none',
 });
 
 export const addSelfhostedButton = style({

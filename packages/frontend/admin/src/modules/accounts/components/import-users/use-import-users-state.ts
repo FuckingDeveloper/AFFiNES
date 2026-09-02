@@ -62,10 +62,10 @@ export function useImportUsersState({
 
       if (failedCount > 0) {
         toast.info(
-          `Successfully imported ${successCount} users, ${failedCount} failed`
+          `Импортировано пользователей: ${successCount}, с ошибками: ${failedCount}`
         );
       } else {
-        toast.success(`Successfully imported ${successCount} users`);
+        toast.success(`Успешно импортировано пользователей: ${successCount}`);
       }
 
       const successfulUserEmails = new Set(
@@ -117,7 +117,7 @@ export function useImportUsersState({
           }
         );
       } catch (error) {
-        console.error('Failed to process file', error);
+        console.error('Не удалось обработать файл', error);
         setIsImporting(false);
         setIsFormatError(true);
       }
@@ -139,8 +139,8 @@ export function useImportUsersState({
 
       await importUsers({ users: validUsersToImport }, importUsersCallback);
     } catch (error) {
-      console.error('Failed to import users', error);
-      toast.error('Failed to import users');
+      console.error('Не удалось импортировать пользователей', error);
+      toast.error('Не удалось импортировать пользователей');
       setIsImporting(false);
     }
   }, [importUsers, importUsersCallback, parsedUsers]);

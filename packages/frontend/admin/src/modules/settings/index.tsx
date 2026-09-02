@@ -1,14 +1,15 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@affine/admin/components/ui/accordion';
 import { Button } from '@affine/admin/components/ui/button';
 import { ScrollArea } from '@affine/admin/components/ui/scroll-area';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@affine/admin/components/ui/tabs';
 import { get } from 'lodash-es';
 import { useCallback, useState } from 'react';
 
+import { useI18n } from '../../i18n';
 import { Header } from '../header';
 import {
   ALL_CONFIG_DESCRIPTORS,
@@ -29,14 +30,12 @@ export function SettingsPage() {
     isGroupSaving,
     getGroupVersion,
   } = useAppConfig();
-  const [expandedModules, setExpandedModules] = useState<string[]>([]);
+  const { t } = useI18n();
 
   return (
     <div className="flex h-dvh flex-1 flex-col bg-background">
-      <Header title="Settings" />
+      <Header title={t('settings.title')} />
       <AdminPanel
-        expandedModules={expandedModules}
-        onExpandedModulesChange={setExpandedModules}
         onUpdate={update}
         appConfig={appConfig}
         patchedAppConfig={patchedAppConfig}
@@ -51,8 +50,6 @@ export function SettingsPage() {
 }
 
 const AdminPanel = ({
-  expandedModules,
-  onExpandedModulesChange,
   appConfig,
   patchedAppConfig,
   onUpdate,
@@ -62,8 +59,6 @@ const AdminPanel = ({
   isGroupSaving,
   getGroupVersion,
 }: {
-  expandedModules: string[];
-  onExpandedModulesChange: (modules: string[]) => void;
   appConfig: AppConfig;
   patchedAppConfig: AppConfig;
   onUpdate: (path: string, value: any) => void;
@@ -73,9 +68,13 @@ const AdminPanel = ({
   isGroupSaving: (module: string) => boolean;
   getGroupVersion: (module: string) => number;
 }) => {
+  const { t } = useI18n();
   const [groupErrors, setGroupErrors] = useState<
     Record<string, Record<string, string>>
   >({});
+  const [activeModule, setActiveModule] = useState(
+    ALL_SETTING_GROUPS[0]?.module ?? ''
+  );
 
   const onFieldErrorChange = useCallback((field: string, error?: string) => {
     const [module] = field.split('/');
@@ -131,43 +130,79 @@ const AdminPanel = ({
     });
   }, []);
 
+  const getGroupLabel = (module: string, name: string): string => {
+    const key = `groups.${module}`;
+    const translated = t(key);
+    if (translated !== key) return translated;
+    return name;
+  };
+
   return (
     <ScrollArea className="h-full">
-      <div className="mx-auto flex w-full max-w-[900px] flex-col gap-4 px-6 py-5">
-        <Accordion
-          type="multiple"
-          className="w-full"
-          value={expandedModules}
-          onValueChange={onExpandedModulesChange}
+      <div className="mx-auto w-full max-w-[1120px] px-6 py-5">
+        <Tabs
+          value={activeModule}
+          onValueChange={setActiveModule}
+          orientation="vertical"
+          className="flex flex-col gap-5 md:flex-row md:items-start"
         >
-          {ALL_SETTING_GROUPS.map(group => {
-            const { name, module, fields, operations } = group;
-            const dirty = isGroupDirty(module);
-            const saving = isGroupSaving(module);
-            const sourceConfig = patchedAppConfig[module] ?? appConfig[module];
-            const version = getGroupVersion(module);
-            const hasValidationError = Boolean(
-              groupErrors[module] &&
-              Object.keys(groupErrors[module] ?? {}).length > 0
-            );
+          <TabsList className="sticky top-5 z-10 h-auto w-full shrink-0 justify-start overflow-x-auto rounded-xl border border-border/60 bg-card p-2 shadow-1 md:w-56 md:flex-col md:overflow-visible">
+            {ALL_SETTING_GROUPS.map(group => {
+              const dirty = isGroupDirty(group.module);
+              const hasValidationError = Boolean(
+                groupErrors[group.module] &&
+                Object.keys(groupErrors[group.module] ?? {}).length > 0
+              );
 
-            return (
-              <AccordionItem
-                key={module}
-                value={module}
-                id={`config-module-${module}`}
-                className="mb-4 rounded-xl border border-border/60 bg-card px-5 shadow-1"
-              >
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex flex-col items-start text-left gap-1">
-                    <div className="text-base font-semibold">{name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Manage {name.toLowerCase()} settings
-                    </div>
+              return (
+                <TabsTrigger
+                  key={group.module}
+                  value={group.module}
+                  className="h-10 w-auto min-w-max justify-start gap-2 px-3 text-left data-[state=active]:bg-primary data-[state=active]:text-primary-foreground md:w-full"
+                >
+                  <span className="truncate">
+                    {getGroupLabel(group.module, group.name)}
+                  </span>
+                  {hasValidationError ? (
+                    <span className="ml-auto h-2 w-2 rounded-full bg-destructive" />
+                  ) : dirty ? (
+                    <span className="ml-auto h-2 w-2 rounded-full bg-orange-500" />
+                  ) : null}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          <div className="min-w-0 flex-1">
+            {ALL_SETTING_GROUPS.map(group => {
+              const { name, module, fields, operations } = group;
+              const dirty = isGroupDirty(module);
+              const saving = isGroupSaving(module);
+              const sourceConfig =
+                patchedAppConfig[module] ?? appConfig[module];
+              const version = getGroupVersion(module);
+              const hasValidationError = Boolean(
+                groupErrors[module] &&
+                Object.keys(groupErrors[module] ?? {}).length > 0
+              );
+              const groupLabel = getGroupLabel(module, name);
+
+              return (
+                <TabsContent
+                  key={module}
+                  value={module}
+                  id={`config-module-${module}`}
+                  className="mt-0 rounded-xl border border-border/60 bg-card p-5 shadow-1"
+                >
+                  <div className="mb-6 flex flex-col gap-1">
+                    <h2 className="text-lg font-semibold">{groupLabel}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {t('settings.manageGroup', {
+                        group: groupLabel.toLowerCase(),
+                      })}
+                    </p>
                   </div>
-                </AccordionTrigger>
 
-                <AccordionContent className="pt-2 pb-2 px-1">
                   <div
                     className="flex flex-col gap-8"
                     key={`${module}-${version}`}
@@ -177,21 +212,34 @@ const AdminPanel = ({
                       if (typeof field === 'string') {
                         const descriptor =
                           ALL_CONFIG_DESCRIPTORS[module][field];
+                        const fieldKey = `${module}.${field}`;
+                        const translatedDesc = t(`fields.${fieldKey}.desc`);
                         props = {
                           field: `${module}/${field}`,
-                          desc: descriptor.desc,
-                          type: descriptor.type,
+                          desc:
+                            translatedDesc !== `fields.${fieldKey}.desc`
+                              ? translatedDesc
+                              : (descriptor?.desc ?? field),
+                          type: descriptor?.type ?? 'String',
                           options: [],
                           defaultValue: get(sourceConfig, field),
                           onChange: onUpdate,
+                          example: t(`fields.${fieldKey}.example`),
                         };
                       } else {
                         const descriptor =
                           ALL_CONFIG_DESCRIPTORS[module][field.key];
+                        const fieldKey = `${module}.${field.key}${field.sub ? `.${field.sub}` : ''}`;
+                        const translatedDesc = t(`fields.${fieldKey}.desc`);
                         props = {
                           field: `${module}/${field.key}${field.sub ? `/${field.sub}` : ''}`,
-                          desc: field.desc ?? descriptor.desc,
-                          type: field.type ?? descriptor.type,
+                          desc:
+                            field.desc ??
+                            (translatedDesc !== `fields.${fieldKey}.desc`
+                              ? translatedDesc
+                              : (descriptor?.desc ?? field.key)),
+                          type: field.type ?? descriptor?.type ?? 'String',
+                          sensitive: field.sensitive,
                           // @ts-expect-error for enum type
                           options: field.options,
                           defaultValue: get(
@@ -199,6 +247,7 @@ const AdminPanel = ({
                             field.key + (field.sub ? '.' + field.sub : '')
                           ),
                           onChange: onUpdate,
+                          example: t(`fields.${fieldKey}.example`),
                         };
                       }
 
@@ -230,7 +279,7 @@ const AdminPanel = ({
                           }}
                           disabled={saving}
                         >
-                          Cancel
+                          {t('settings.cancel')}
                         </Button>
                       ) : null}
                       <Button
@@ -243,15 +292,15 @@ const AdminPanel = ({
                         }}
                         disabled={!dirty || saving || hasValidationError}
                       >
-                        {saving ? 'Saving...' : 'Save'}
+                        {saving ? t('settings.saving') : t('settings.save')}
                       </Button>
                     </div>
                   </div>
-                </AccordionContent>
-              </AccordionItem>
-            );
-          })}
-        </Accordion>
+                </TabsContent>
+              );
+            })}
+          </div>
+        </Tabs>
       </div>
     </ScrollArea>
   );

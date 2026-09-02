@@ -206,9 +206,10 @@ export const LeftPanel = ({
           </Button>
         </SheetTrigger>
         <SheetHeader className="hidden">
-          <SheetTitle>AFFiNE</SheetTitle>
+          <SheetTitle>TrackWork</SheetTitle>
           <SheetDescription>
-            Admin panel for managing accounts, AI, config, and settings
+            Админ-панель для управления аккаунтами, AI, конфигурацией и
+            настройками
           </SheetDescription>
         </SheetHeader>
         <SheetContent
@@ -223,7 +224,7 @@ export const LeftPanel = ({
               )}
             >
               <Logo />
-              AFFiNE
+              TrackWork
             </div>
             <Separator />
             <Nav />
@@ -265,7 +266,7 @@ export const LeftPanel = ({
           >
             <Logo />
           </span>
-          {!isCollapsed && 'AFFiNE'}
+          {!isCollapsed && 'TrackWork'}
         </div>
         <Nav isCollapsed={isCollapsed} />
       </div>
@@ -294,7 +295,7 @@ export const RightPanel = ({
     return (
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
         <SheetHeader className="hidden">
-          <SheetTitle>Right Panel</SheetTitle>
+          <SheetTitle>Правая панель</SheetTitle>
           <SheetDescription>
             For displaying additional information
           </SheetDescription>

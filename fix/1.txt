@@ -1,0 +1,1107 @@
+Да. Для DeepSeek V4 Flash лучше дать не просто «почини», а жёсткий пошаговый план с ограничениями, чтобы он не начал переписывать половину AFFiNE и не сделал костыль вроде удаления `assertCloudOnly()`.
+
+Ниже готовый текст, который можно скормить ему как задачу.
+
+---
+
+# Задача: исправить self-hosted Admin Dashboard и i18n Task Tracker в AFFiNE
+
+Работа ведётся в репозитории AFFiNE.
+
+Базовая ветка:
+
+```text
+develop
+```
+
+Создать отдельную feature/fix-ветку, например:
+
+```text
+fix/selfhost-admin-dashboard-task-tracker-i18n
+```
+
+Не вносить изменения напрямую в `develop`.
+
+После реализации изменения должны быть подготовлены для Pull Request в:
+
+```text
+develop
+```
+
+## Общие требования
+
+Перед изменениями обязательно изучить существующую архитектуру проекта и переиспользовать уже имеющиеся паттерны AFFiNE.
+
+Не:
+
+* создавать отдельную самодельную систему локализации;
+* хардкодить русский язык;
+* отключать проверки backend без анализа зависимостей;
+* менять публичные GraphQL API без необходимости;
+* делать unrelated refactoring;
+* форматировать целиком большие файлы без необходимости;
+* менять поведение cloud-версии AFFiNE;
+* ломать пользовательские названия boards/stages;
+* подменять реальные ошибки пустыми `catch {}`.
+
+Исправление должно быть минимальным, но архитектурно корректным.
+
+---
+
+# Часть 1. Admin Dashboard в self-hosted
+
+## Проблема
+
+В self-hosted AFFiNE frontend выполняет GraphQL-запрос `adminDashboard`, однако backend запрещает его через cloud-only guard.
+
+В `AdminWorkspaceResolver` имеется логика вида:
+
+```ts
+private assertCloudOnly() {
+  if (env.selfhosted) {
+    throw new NotFoundException();
+  }
+}
+```
+
+А resolver:
+
+```ts
+async adminDashboard(...) {
+  this.assertCloudOnly();
+
+  // ...
+  return this.models.workspaceAnalytics.adminGetDashboard(...);
+}
+```
+
+В результате self-hosted получает GraphQL-ошибку:
+
+```json
+{
+  "path": ["adminDashboard"],
+  "status": 404,
+  "type": "RESOURCE_NOT_FOUND"
+}
+```
+
+Frontend при этом знает, что работает в self-hosted:
+
+```ts
+const shouldShowTopSharedLinks = !environment.isSelfHosted;
+```
+
+но основной запрос `adminDashboardOverviewQuery` всё равно выполняется.
+
+После ошибки frontend не имеет нормального error-state и может привести UI к белой странице.
+
+---
+
+# Цель
+
+Admin Dashboard должен нормально открываться в self-hosted.
+
+При этом нельзя просто удалить:
+
+```ts
+this.assertCloudOnly();
+```
+
+пока не подтверждено, что `adminGetDashboard()` полностью совместим с self-hosted.
+
+---
+
+# Шаг 1. Исследовать `adminGetDashboard`
+
+Найти реализацию:
+
+```ts
+workspaceAnalytics.adminGetDashboard(...)
+```
+
+и проследить все её зависимости.
+
+Особенно проверить использование таблиц/представлений вроде:
+
+```text
+sync_active_users_minutely
+workspace_admin_stats
+workspace_admin_stats_daily
+workspace_doc_view_daily
+ai_sessions_messages
+```
+
+Для каждой используемой таблицы определить:
+
+1. создаётся ли она миграциями self-hosted;
+2. существует ли она во всех поддерживаемых конфигурациях;
+3. наполняется ли она в self-hosted;
+4. зависит ли её наполнение от cloud-only analytics pipeline;
+5. может ли запрос падать при пустой таблице;
+6. может ли запрос падать при отсутствии таблицы.
+
+Не предполагать — проверить код, migrations/schema и collectors/jobs.
+
+---
+
+# Шаг 2. Разделить dashboard metrics по доступности
+
+Определить показатели dashboard, которые можно получить в self-hosted из основной БД.
+
+Например потенциально:
+
+* количество workspaces;
+* количество пользователей;
+* количество документов;
+* количество участников;
+* storage usage;
+* другие aggregate values, которые доступны без cloud analytics.
+
+Отдельно определить показатели, которые зависят от cloud-only analytics.
+
+Для cloud-only показателей выбрать один из двух вариантов.
+
+### Предпочтительный вариант
+
+Backend возвращает валидную структуру GraphQL, но значение отсутствующей аналитики становится:
+
+```ts
+0
+```
+
+или:
+
+```ts
+[]
+```
+
+или:
+
+```ts
+null
+```
+
+если GraphQL schema это допускает.
+
+### Альтернативный вариант
+
+Frontend скрывает конкретные карточки, которые физически невозможно рассчитать в self-hosted.
+
+Не скрывать весь Dashboard только потому, что один metric недоступен.
+
+---
+
+# Шаг 3. Сделать `adminDashboard` self-host-compatible
+
+После анализа переделать resolver/model так, чтобы:
+
+```graphql
+adminDashboard
+```
+
+работал в self-hosted.
+
+Cloud-режим должен сохранить прежнее поведение.
+
+Рекомендуемая архитектура:
+
+```ts
+if (env.selfhosted) {
+  return selfHostedDashboard;
+}
+
+return cloudDashboard;
+```
+
+или equivalent разделение непосредственно в analytics model/service.
+
+Не размазывать проверки:
+
+```ts
+if (selfhosted)
+```
+
+по десяткам frontend-компонентов, если можно централизовать различие на backend/service уровне.
+
+---
+
+# Шаг 4. Не затронуть остальные cloud-only endpoints
+
+Если:
+
+```ts
+assertCloudOnly()
+```
+
+используется другими resolver-методами, не удалять сам guard глобально.
+
+Нужно снять cloud-only ограничение только с того функционала, который действительно становится поддерживаемым.
+
+Например вместо:
+
+```ts
+async adminDashboard() {
+  this.assertCloudOnly();
+}
+```
+
+dashboard должен иметь собственную self-host-aware реализацию.
+
+Другие методы, которые реально предназначены только для AFFiNE Cloud, должны продолжать возвращать прежние ошибки.
+
+---
+
+# Шаг 5. Исправить frontend error handling
+
+Найти код примерно такого вида:
+
+```ts
+const { data, isValidating } = useQuery({
+  query: adminDashboardOverviewQuery,
+  variables,
+});
+
+const dashboard = data.adminDashboard;
+```
+
+Обработать состояния:
+
+```text
+loading
+success
+error
+empty
+```
+
+Frontend никогда не должен рендерить белую страницу из-за GraphQL ошибки Dashboard.
+
+Добавить существующий AFFiNE error/fallback component, если такой уже используется в проекте.
+
+Не создавать новый дизайн, если есть стандартные:
+
+```text
+ErrorBoundary
+ErrorState
+Empty
+Retry
+Loading
+```
+
+или аналогичные компоненты проекта.
+
+При recoverable error желательно предоставить Retry.
+
+---
+
+# Шаг 6. Убедиться, что query не вызывается там, где он не нужен
+
+Проверить, можно ли использовать существующий механизм условного query execution.
+
+Если некоторые dashboard query действительно остаются cloud-only, в self-hosted они вообще не должны отправляться.
+
+Но основной dashboard query после данной задачи желательно сделать self-host-compatible.
+
+То есть не маскировать backend-проблему исключительно:
+
+```ts
+if (isSelfHosted) return null;
+```
+
+---
+
+# Часть 2. Полноценный i18n Task Tracker
+
+## Проблема
+
+Task Tracker содержит пользовательский интерфейс с английскими строками, прописанными непосредственно в коде.
+
+Примеры:
+
+```ts
+const PRIORITY_OPTIONS = [
+  { value: 'urgent', label: 'Urgent' },
+  { value: 'high', label: 'High' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'low', label: 'Low' },
+];
+```
+
+```ts
+return 'No due date';
+```
+
+```ts
+new Intl.DateTimeFormat('en-US', ...)
+```
+
+Дефолтная конфигурация также содержит:
+
+```ts
+export const DEFAULT_FLOW = [
+  { id: 'todo', title: 'To Do' },
+  { id: 'in-progress', title: 'In Progress' },
+  { id: 'done', title: 'Done' },
+];
+
+export const DEFAULT_BOARD_TITLE = 'Main board';
+```
+
+Из-за этого переключение языка AFFiNE на русский не переводит Task Tracker.
+
+---
+
+# Цель
+
+Все системные элементы Task Tracker должны использовать штатный i18n AFFiNE.
+
+Минимум поддержать:
+
+```text
+en
+ru
+```
+
+При этом пользовательские данные переводить нельзя.
+
+---
+
+# Шаг 1. Найти штатный i18n pattern AFFiNE
+
+Перед написанием кода найти несколько современных компонентов AFFiNE рядом с Task Tracker и посмотреть:
+
+* каким API вызывается перевод;
+* где находятся translation resources;
+* как именуются translation keys;
+* как передаются interpolation variables;
+* как определяется текущая locale;
+* как форматируются даты;
+* есть ли helper для locale-aware dates.
+
+Использовать именно существующий механизм AFFiNE.
+
+Не добавлять:
+
+```text
+react-i18next
+intl-messageformat
+custom dictionary
+```
+
+если проект использует другой механизм.
+
+---
+
+# Шаг 2. Провести аудит всех строк Task Tracker
+
+По директории Task Tracker найти все UI-visible string literals.
+
+Проверить как минимум:
+
+```text
+Task Tracker
+New task
+Board settings
+All priorities
+Allowed transitions
+No due date
+Urgent
+High
+Medium
+Low
+Story
+Bug
+Task
+Epic
+Complexity
+Priority
+Status
+Assignee
+Due date
+Create
+Cancel
+Save
+Delete
+Edit
+Move
+Search
+Filter
+Reset
+Confirm
+Description
+Title
+Board
+Column
+Transition
+```
+
+Это только примеры.
+
+Нужно проверить всю директорию, включая:
+
+```text
+components
+dialogs
+menus
+filters
+settings
+tooltips
+empty states
+validation messages
+notifications/toasts
+ARIA labels
+placeholder
+context menus
+```
+
+После исправления поиск по Task Tracker не должен находить системные UI labels, которые должны локализоваться.
+
+---
+
+# Шаг 3. Перевести enum-like options правильно
+
+Не хранить translated label в глобальной константе типа:
+
+```ts
+{
+  value: 'urgent',
+  label: 'Urgent'
+}
+```
+
+если translation API требует runtime context.
+
+Вместо этого оставить стабильное значение:
+
+```ts
+type Priority = 'urgent' | 'high' | 'medium' | 'low';
+```
+
+а label получать во время рендера:
+
+```ts
+getPriorityLabel(priority)
+```
+
+или через translation mapping:
+
+```ts
+const priorityLabels = {
+  urgent: t['...urgent'](),
+  high: t['...high'](),
+  medium: t['...medium'](),
+  low: t['...low'](),
+};
+```
+
+Использовать стиль, принятый в AFFiNE.
+
+То же самое сделать для:
+
+```text
+task type
+priority
+complexity
+system status
+other enum-like UI fields
+```
+
+---
+
+# Шаг 4. Исправить форматирование дат
+
+Убрать:
+
+```ts
+new Intl.DateTimeFormat('en-US', ...)
+```
+
+Текущая locale должна браться из приложения.
+
+Использовать существующий AFFiNE helper, если он есть.
+
+Если его нет, locale должна вычисляться через уже существующий i18n state.
+
+Например логически:
+
+```ts
+new Intl.DateTimeFormat(currentLocale, options)
+```
+
+но конкретную реализацию взять из существующего AFFiNE кода.
+
+Проверить:
+
+* `en`;
+* `ru`;
+* даты deadline;
+* short date;
+* date/time;
+* `No due date`.
+
+---
+
+# Шаг 5. Разделить system defaults и user data
+
+Это принципиально важно.
+
+Следующие значения являются пользовательскими данными:
+
+```text
+board.title
+stage.title
+task.title
+description
+custom fields
+```
+
+Их переводить нельзя.
+
+Например пользователь может создать колонку:
+
+```text
+Testing
+```
+
+и она всегда должна отображаться именно как:
+
+```text
+Testing
+```
+
+независимо от locale.
+
+---
+
+# Шаг 6. Локализация встроенных дефолтов
+
+Стандартные значения Task Tracker:
+
+```text
+Main board
+To Do
+In Progress
+Done
+```
+
+должны отображаться локализованно только пока они являются системными defaults.
+
+Для русского:
+
+```text
+Main board   -> Основная доска
+To Do        -> К выполнению
+In Progress  -> В работе
+Done         -> Готово
+```
+
+Но нельзя делать:
+
+```ts
+t(board.title)
+```
+
+или:
+
+```ts
+if (title === 'To Do')
+```
+
+как основную модель определения дефолта.
+
+Не привязывать identity системного объекта к display string.
+
+Использовать стабильный ID или явный marker.
+
+Для flow уже имеются IDs:
+
+```ts
+todo
+in-progress
+done
+```
+
+Значит отображение может быть основано на ID.
+
+Логика:
+
+```text
+если stage является встроенным default и не был переименован:
+    показать translation по ID
+иначе:
+    показать сохранённый title
+```
+
+---
+
+# Важная проблема: как определить rename
+
+Нужно исследовать текущую data model.
+
+Если пользователь меняет:
+
+```text
+To Do
+```
+
+на:
+
+```text
+Очередь
+```
+
+система должна запомнить, что это custom title.
+
+Нельзя после следующей смены locale снова показывать системный перевод.
+
+Предпочтительные варианты в порядке приоритета:
+
+### Вариант A — уже существует признак default/custom
+
+Использовать его.
+
+### Вариант B — model хранит stable ID + optional title override
+
+Лучший формат:
+
+```ts
+{
+  id: 'todo',
+  title?: string
+}
+```
+
+где отсутствие `title` означает использовать системный локализованный label.
+
+При rename:
+
+```ts
+title = userInput
+```
+
+### Вариант C — требуется миграция
+
+Если сейчас default titles физически сохраняются как:
+
+```text
+To Do
+```
+
+проверить, как безопасно отличить legacy default от custom data.
+
+Не выполнять destructive migration без необходимости.
+
+Обязательно учитывать существующие boards.
+
+---
+
+# Шаг 7. Default board title
+
+Тот же принцип применить к:
+
+```ts
+DEFAULT_BOARD_TITLE = 'Main board';
+```
+
+Отображение:
+
+```text
+en -> Main board
+ru -> Основная доска
+```
+
+только пока board использует встроенное default name.
+
+После rename:
+
+```text
+Release board
+```
+
+оно остаётся:
+
+```text
+Release board
+```
+
+при любой locale.
+
+---
+
+# Шаг 8. Translation keys
+
+Использовать нейминг, соответствующий текущей структуре AFFiNE.
+
+Логически translation keys должны покрывать примерно:
+
+```text
+com.affine.task-tracker.title
+com.affine.task-tracker.new-task
+com.affine.task-tracker.board-settings
+
+com.affine.task-tracker.priority.urgent
+com.affine.task-tracker.priority.high
+com.affine.task-tracker.priority.medium
+com.affine.task-tracker.priority.low
+
+com.affine.task-tracker.type.story
+com.affine.task-tracker.type.bug
+com.affine.task-tracker.type.task
+com.affine.task-tracker.type.epic
+
+com.affine.task-tracker.date.no-due-date
+
+com.affine.task-tracker.default-board.main
+com.affine.task-tracker.default-stage.todo
+com.affine.task-tracker.default-stage.in-progress
+com.affine.task-tracker.default-stage.done
+```
+
+Это пример структуры, а не требование использовать именно такие имена.
+
+Сначала проверить naming conventions репозитория.
+
+---
+
+# Часть 3. Tests
+
+Добавить или обновить тесты там, где инфраструктура AFFiNE позволяет это сделать.
+
+## Backend
+
+Минимально проверить:
+
+### Cloud
+
+```text
+adminDashboard продолжает работать как раньше
+```
+
+### Self-hosted
+
+```text
+adminDashboard не возвращает RESOURCE_NOT_FOUND
+```
+
+### Self-hosted без analytics data
+
+```text
+dashboard возвращает валидный объект
+```
+
+и не падает при пустой статистике.
+
+Если некоторые cloud-specific metrics недоступны:
+
+```text
+они имеют ожидаемые fallback values
+```
+
+---
+
+# Frontend Admin
+
+Проверить:
+
+```text
+loading state
+successful state
+GraphQL error state
+retry/fallback
+self-hosted rendering
+cloud rendering
+```
+
+GraphQL error не должна приводить к unhandled render exception.
+
+---
+
+# Task Tracker i18n
+
+Добавить тесты минимум на:
+
+### English
+
+```text
+Task Tracker
+Urgent
+No due date
+Main board
+To Do
+In Progress
+Done
+```
+
+### Russian
+
+```text
+Трекер задач
+Срочный
+Без срока
+Основная доска
+К выполнению
+В работе
+Готово
+```
+
+Конкретные формулировки можно адаптировать под стиль существующего русского AFFiNE.
+
+### User-defined labels
+
+Создать пользовательские значения:
+
+```text
+Board: Backend release
+Stage: QA Testing
+```
+
+При переключении:
+
+```text
+en -> ru
+```
+
+они должны остаться:
+
+```text
+Backend release
+QA Testing
+```
+
+---
+
+# Часть 4. Проверить TypeScript и generated GraphQL
+
+После изменений выполнить стандартные проверки проекта.
+
+Не угадывать команды — посмотреть scripts в repository/package manifests.
+
+Обычно потребуется эквивалент:
+
+```bash
+lint
+typecheck
+tests
+```
+
+Если были изменены GraphQL documents/schema:
+
+```text
+regenerate GraphQL artifacts
+```
+
+Но generated code менять только стандартным генератором проекта.
+
+Не редактировать generated GraphQL вручную.
+
+---
+
+# Часть 5. Проверка сборки
+
+Особенно проверить frontend/admin, потому что ранее уже возникали ошибки вида:
+
+```text
+ESModulesLinkingError
+export 'adminAuditLogsQuery' was not found in '@affine/graphql'
+```
+
+После текущих изменений убедиться, что:
+
+```text
+frontend admin production build
+```
+
+успешно собирается.
+
+Если GraphQL query/export были добавлены или изменены:
+
+1. source GraphQL document существует;
+2. codegen его видит;
+3. generated package экспортирует symbol;
+4. frontend импортирует правильный generated symbol.
+
+---
+
+# Часть 6. Не допустить regressions
+
+Проверить следующие сценарии.
+
+### AFFiNE Cloud
+
+Ничего не изменилось функционально.
+
+### AFFiNE self-hosted + English
+
+Admin Dashboard открывается.
+
+Task Tracker отображается на английском.
+
+### AFFiNE self-hosted + Russian
+
+Admin Dashboard открывается.
+
+Task Tracker системный UI отображается на русском.
+
+### Existing Task Tracker board
+
+Существующие пользовательские:
+
+```text
+board titles
+column titles
+task titles
+```
+
+не изменяются.
+
+### Newly created default board
+
+При locale:
+
+```text
+ru
+```
+
+отображается:
+
+```text
+Основная доска
+К выполнению
+В работе
+Готово
+```
+
+### Rename
+
+Если пользователь переименовал:
+
+```text
+К выполнению
+```
+
+в:
+
+```text
+Очередь
+```
+
+после переключения языка на английский должно остаться:
+
+```text
+Очередь
+```
+
+---
+
+# Часть 7. Git
+
+Перед изменениями:
+
+```bash
+git checkout develop
+git pull
+git checkout -b fix/selfhost-admin-dashboard-task-tracker-i18n
+```
+
+Не использовать:
+
+```bash
+git push --force
+```
+
+Не переписывать историю `develop`.
+
+Коммиты желательно логически разделить.
+
+Например:
+
+```text
+fix(admin): support dashboard in self-hosted deployments
+
+fix(admin): handle dashboard query errors gracefully
+
+feat(task-tracker): integrate task tracker with application i18n
+
+fix(task-tracker): localize default board and flow labels
+```
+
+Если изменения тесно связаны, допустимо меньше commits.
+
+---
+
+# Часть 8. Итоговый отчёт агента
+
+После выполнения задачи не просто написать «готово».
+
+Вывести:
+
+## Files changed
+
+Все изменённые файлы.
+
+## Admin Dashboard
+
+Что именно было причиной 404.
+
+Какие analytics metrics доступны в self-hosted.
+
+Какие оказались cloud-only.
+
+Как реализован fallback.
+
+## Task Tracker
+
+Какие hardcoded strings были найдены.
+
+Какие переведены в i18n.
+
+Как реализованы default board/stage labels.
+
+Как система отличает system default от user-renamed values.
+
+## Tests
+
+Какие команды запущены.
+
+Для каждой:
+
+```text
+PASS / FAIL
+```
+
+## Build
+
+Результат frontend/admin build.
+
+## Remaining issues
+
+Если что-либо невозможно исправить без миграции/schema change — явно описать.
+
+---
+
+# Acceptance Criteria
+
+Задача считается выполненной только если выполняются все условия:
+
+* `adminDashboard` больше не возвращает intentional 404 исключительно из-за `env.selfhosted`;
+* self-hosted Admin Dashboard открывается;
+* отсутствие cloud analytics не приводит к SQL/GraphQL crash;
+* ошибка dashboard query не вызывает белую страницу;
+* cloud dashboard сохраняет старое поведение;
+* Task Tracker использует штатный AFFiNE i18n;
+* `ru` реально переводит UI;
+* `en` продолжает работать;
+* `en-US` больше не захардкожен в Task Tracker для форматирования дат;
+* priority/type/complexity labels локализуются;
+* default board/stages локализуются;
+* пользовательские board/stage/task names никогда автоматически не переводятся;
+* rename default stage переживает смену locale;
+* TypeScript/typecheck проходит;
+* соответствующие tests проходят;
+* admin frontend production build проходит;
+* generated GraphQL code не редактировался вручную;
+* изменения находятся в отдельной ветке от `develop`.
+
+---
+
+
+Сначала исследуй код и составь краткий список найденных файлов и предполагаемых изменений. Затем реализуй изменения. После реализации обязательно перечитай diff целиком и проверь, что не были затронуты unrelated части проекта. Не считай задачу законченной, пока не выполнены typecheck/tests/build либо пока не указана конкретная техническая причина, почему отдельная проверка невозможна.

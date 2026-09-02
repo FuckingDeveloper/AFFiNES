@@ -158,7 +158,7 @@ fun MarkdownPreview() {
             markdown = """
         
         
-        当然可以，大熊！下面是一个包含**所有常用 Markdown 格式**的示例内容，您可以直接复制到 AFFiNE 或其他支持 Markdown 的编辑器中体验效果：
+        当然可以，大熊！下面是一个包含**所有常用 Markdown 格式**的示例内容，您可以直接复制到 TrackWork 或其他支持 Markdown 的编辑器中体验效果：
         
         ---
         
@@ -207,11 +207,11 @@ fun MarkdownPreview() {
         
         ---
         
-        ![示例图片](https://affine.pro/_next/static/media/logo.1e7b6b7e.svg)
+        ![示例图片](https://trackwork.mrhsoftware.com/_next/static/media/logo.1e7b6b7e.svg)
         
         ---
         
-        [这是一个链接，点我访问 AFFiNE 官网](https://affine.pro)
+        [这是一个链接，点我访问 TrackWork 官网](https://trackwork.mrhsoftware.com)
         
         ---
         

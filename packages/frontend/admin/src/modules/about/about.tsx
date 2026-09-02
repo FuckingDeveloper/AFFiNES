@@ -1,44 +1,23 @@
 import { buttonVariants } from '@affine/admin/components/ui/button';
 import { Separator } from '@affine/admin/components/ui/separator';
 import { cn } from '@affine/admin/utils';
-import {
-  AlbumIcon,
-  ChevronRightIcon,
-  GithubIcon,
-  MailWarningIcon,
-  UploadCloudIcon,
-} from 'lucide-react';
+import { ChevronRightIcon, MailWarningIcon } from 'lucide-react';
 
 type Channel = 'stable' | 'canary' | 'beta' | 'internal';
 
 const appNames = {
-  stable: 'AFFiNE',
-  canary: 'AFFiNE Canary',
-  beta: 'AFFiNE Beta',
-  internal: 'AFFiNE Internal',
+  stable: BUILD_CONFIG.productName,
+  canary: `${BUILD_CONFIG.productName} Canary`,
+  beta: `${BUILD_CONFIG.productName} Beta`,
+  internal: `${BUILD_CONFIG.productName} Internal`,
 } satisfies Record<Channel, string>;
 const appName = appNames[BUILD_CONFIG.appBuildType];
 
 const links = [
   {
-    href: BUILD_CONFIG.githubUrl,
-    icon: <GithubIcon size={20} />,
-    label: 'Star AFFiNE on GitHub',
-  },
-  {
-    href: BUILD_CONFIG.githubUrl,
+    href: `mailto:${BUILD_CONFIG.supportEmail}`,
     icon: <MailWarningIcon size={20} />,
-    label: 'Report an Issue',
-  },
-  {
-    href: 'https://docs.affine.pro/docs/self-host-affine',
-    icon: <AlbumIcon size={20} />,
-    label: 'Self-host Document',
-  },
-  {
-    href: 'https://affine.pro/pricing/?type=selfhost#table',
-    icon: <UploadCloudIcon size={20} />,
-    label: 'Upgrade to Team',
+    label: 'Поддержка',
   },
 ];
 
@@ -46,7 +25,9 @@ export function AboutAFFiNE() {
   return (
     <div className="flex flex-col h-full gap-3 py-5 px-6 w-full">
       <div className="flex items-center">
-        <span className="text-xl font-semibold">About AFFiNE</span>
+        <span className="text-xl font-semibold">
+          О {BUILD_CONFIG.productName}
+        </span>
       </div>
       <div className="overflow-y-auto space-y-[10px]">
         <div className="flex flex-col rounded-md border">
@@ -75,8 +56,8 @@ export function AboutAFFiNE() {
         </div>
       </div>
       <div className="space-y-3 text-sm font-normal text-muted-foreground">
-        <div>{`App Version: ${appName} ${BUILD_CONFIG.appVersion}`}</div>
-        <div>{`Editor Version: ${BUILD_CONFIG.editorVersion}`}</div>
+        <div>{`Версия приложения: ${appName} ${BUILD_CONFIG.displayVersion}`}</div>
+        <div>{`Версия редактора: ${BUILD_CONFIG.editorVersion}`}</div>
       </div>
     </div>
   );

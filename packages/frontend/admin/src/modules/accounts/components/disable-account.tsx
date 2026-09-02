@@ -17,17 +17,17 @@ export const DisableAccountDialog = ({
     <TypeConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Disable Account ?"
+      title="Отключить аккаунт?"
       description={
         <>
-          The data associated with <span className="font-bold">{email}</span>{' '}
-          will be deleted and cannot be used for logging in. This operation is
-          irreversible. Please proceed with caution.
+          Данные, связанные с <span className="font-bold">{email}</span>, будут
+          удалены, и вход в систему с этим аккаунтом станет недоступен. Это
+          действие нельзя отменить.
         </>
       }
       targetText={email}
-      inputPlaceholder="Please type email to confirm"
-      confirmText="Disable"
+      inputPlaceholder="Введите email для подтверждения"
+      confirmText="Отключить"
       confirmButtonVariant="destructive"
       onConfirm={onDisable}
       onClose={onClose}

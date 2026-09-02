@@ -130,7 +130,7 @@ _test.before(async () => {
         workspace_id: 'workspaceId1',
         doc_id: 'docId2-affine',
         block_id: 'blockId8',
-        content: 'AFFiNE 是一个基于云端的笔记应用',
+        content: 'TrackWork 是一个基于云端的笔记应用',
         flavour: 'flavour8',
         ref_doc_id: 'docId1',
         ref: [
@@ -892,7 +892,7 @@ test('should search doc table query title match cjk work', async t => {
       {
         workspace_id: workspaceId,
         doc_id: 'doc-0',
-        title: 'AFFiNE 是一个基于云端的笔记应用',
+        title: 'TrackWork 是一个基于云端的笔记应用',
       },
     ],
     {
@@ -961,7 +961,7 @@ test('should search doc table query title.autocomplete work', async t => {
       {
         workspace_id: workspaceId,
         doc_id: docId,
-        title: 'AFFiNE 是一个基于云端的笔记应用',
+        title: 'TrackWork 是一个基于云端的笔记应用',
       },
     ],
     {

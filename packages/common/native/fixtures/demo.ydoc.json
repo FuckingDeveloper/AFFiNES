@@ -17,7 +17,7 @@
       "block_id": "U8g2Edcy8rSmu_XUpYSTz",
       "flavour": "affine:paragraph",
       "content": [
-        "AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. "
+        "MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. "
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -69,7 +69,7 @@
       "block_id": "2N8pJ32byPEc7dlJv-0cC",
       "flavour": "affine:paragraph",
       "content": [
-        "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience."
+        "We love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience."
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -82,7 +82,7 @@
       "block_id": "rysuvULJQgFPRmNB_iTk3",
       "flavour": "affine:paragraph",
       "content": [
-        "AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time."
+        "MRH ManSys is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time."
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -134,7 +134,7 @@
       "block_id": "c_KFpzTBHdioeoIsnLIjd",
       "flavour": "affine:paragraph",
       "content": [
-        "We are building AFFiNE to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too."
+        "We are building MRH ManSys to be a fundamental open source platform that contains all the building blocks for docs, task management and visual collaboration, hoping you can shape your next workflow with us that can make your life better and also connect others, too."
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -147,7 +147,7 @@
       "block_id": "O6D7PxXwCbfCLp1_peft1",
       "flavour": "affine:paragraph",
       "content": [
-        "If you want to learn more about the product design of AFFiNE, here goes the concepts:"
+        "If you want to learn more about the product design of MRH ManSys, here goes the concepts:"
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -160,7 +160,7 @@
       "block_id": "os84XIVFN6z6aN9tq16S5",
       "flavour": "affine:paragraph",
       "content": [
-        "To Shape, not to adapt. AFFiNE is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools."
+        "To Shape, not to adapt. MRH ManSys is built for individuals & teams who care about their data, who refuse vendor lock-in, and who want to have control over their essential tools."
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -316,7 +316,7 @@
       "block_id": "cBud4or0twRvF36twhwqZ",
       "flavour": "affine:paragraph",
       "content": [
-        "Self host AFFiNE"
+        "Self host MRH ManSys"
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -334,7 +334,7 @@
         "Tag",
         "Reference",
         "Developers",
-        "AFFiNE"
+        "MRH ManSys"
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -347,7 +347,7 @@
       "block_id": "YJ13TsE8mv5mxy2DIpMOD",
       "flavour": "affine:paragraph",
       "content": [
-        "Affine Development"
+        "MRH ManSys Development"
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -360,7 +360,7 @@
       "block_id": "T_BOz9f-9uD5QjKABiciE",
       "flavour": "affine:paragraph",
       "content": [
-        "For developers or installations guides, please go to AFFiNE Doc"
+        "For developers or installations guides, please go to MRH ManSys Doc"
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -438,7 +438,7 @@
       "block_id": "b0ftuFAo7qDYRiI18TN6b",
       "flavour": "affine:paragraph",
       "content": [
-        "Affine Development"
+        "MRH ManSys Development"
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -451,7 +451,7 @@
       "block_id": "64rS_MtVI-f_MpE6qCbls",
       "flavour": "affine:paragraph",
       "content": [
-        "For developer or installation guides, please go to AFFiNE Development"
+        "For developer or installation guides, please go to MRH ManSys Development"
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -479,13 +479,13 @@
       "content": [
         "",
         " ",
-        "AFFiNE ",
+        "MRH ManSys ",
         "Database Reference",
         "Development",
         "Related Articles",
         "Self-host",
-        "What is AFFiNE",
-        "You can check these URLs to learn about AFFiNE"
+        "What is MRH ManSys",
+        "You can check these URLs to learn about MRH ManSys"
       ],
       "blob": null,
       "ref_doc_id": null,
@@ -563,5 +563,5 @@
     }
   ],
   "title": "Write, Draw, Plan all at Once.",
-  "summary": "AFFiNE is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. You own your data, with no compromisesLocal-first & Real-time collaborativeWe love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, AFFiNE is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.Blocks that assemble your next docs, tasks kanban or whiteboardThere is a large overlap of their atomic \"building blocks\" between these apps. They are neither open source nor have a plugin system like VS Code for contributors to customize. We want to have something that contains all the features we love and goes one step further. "
+  "summary": "MRH ManSys is an open source all in one workspace, an operating system for all the building blocks of your team wiki, knowledge management and digital assets and a better alternative to Notion and Miro. You own your data, with no compromisesLocal-first & Real-time collaborativeWe love the idea proposed by Ink & Switch in the famous article about you owning your data, despite the cloud. Furthermore, MRH ManSys is the first all-in-one workspace that keeps your data ownership with no compromises on real-time collaboration and editing experience.AFFiNE is a local-first application upon CRDTs with real-time collaboration support. Your data is always stored locally while multiple nodes remain synced in real-time.Blocks that assemble your next docs, tasks kanban or whiteboardThere is a large overlap of their atomic \"building blocks\" between these apps. They are neither open source nor have a plugin system like VS Code for contributors to customize. We want to have something that contains all the features we love and goes one step further. "
 }

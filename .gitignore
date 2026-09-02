@@ -93,3 +93,5 @@ af.cmd
 
 # playwright
 storageState.json
+.playwright-mcp/
+.sisyphus/

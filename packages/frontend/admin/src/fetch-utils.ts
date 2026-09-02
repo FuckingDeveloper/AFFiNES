@@ -1,9 +1,9 @@
 /**
- * Custom fetch utility with AFFiNE version header
+ * Custom fetch utility with TrackWork version header
  * Automatically adds the x-affine-version header to all fetch requests
  */
 
-// BUILD_CONFIG is defined globally in the AFFiNE project
+// BUILD_CONFIG is defined globally in the TrackWork project
 
 /**
  * Wrapper around fetch that automatically adds the x-affine-version header

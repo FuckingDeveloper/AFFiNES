@@ -10,7 +10,7 @@ import { OAuth } from '@affine/core/components/affine/auth/oauth';
 import { useAsyncCallback } from '@affine/core/components/hooks/affine-async-hooks';
 import { AuthService, ServerService } from '@affine/core/modules/cloud';
 import type { AuthSessionStatus } from '@affine/core/modules/cloud/entities/session';
-import { ServerDeploymentType } from '@affine/graphql';
+import { ServerAuthMode, ServerDeploymentType } from '@affine/graphql';
 import { Trans, useI18n } from '@affine/i18n';
 import {
   ArrowRightBigIcon,
@@ -39,15 +39,23 @@ function validateEmail(email: string) {
   return emailRegex.test(email);
 }
 
+function validateLogin(login: string) {
+  return (
+    validateEmail(login) || /^[a-zA-Z0-9][a-zA-Z0-9._-]{2,31}$/.test(login)
+  );
+}
+
 export const SignInStep = ({
   state,
   changeState,
   onSkip,
+  allowSkip = true,
   onAuthenticated,
 }: {
   state: SignInState;
   changeState: Dispatch<SetStateAction<SignInState>>;
   onSkip: () => void;
+  allowSkip?: boolean;
   onAuthenticated?: (status: AuthSessionStatus) => void;
 }) => {
   const t = useI18n();
@@ -60,6 +68,9 @@ export const SignInStep = ({
     serverService.server.config$.selector(
       c => c.type === ServerDeploymentType.Selfhosted
     )
+  );
+  const authMode = useLiveData(
+    serverService.server.config$.selector(c => c.authMode)
   );
   const authService = useService(AuthService);
   const [isMutating, setIsMutating] = useState(false);
@@ -81,7 +92,7 @@ export const SignInStep = ({
   }, [loginStatus, onAuthenticated, t]);
 
   const onContinue = useAsyncCallback(async () => {
-    if (!validateEmail(email)) {
+    if (!validateLogin(email)) {
       setIsValidEmail(false);
       return;
     }
@@ -90,23 +101,12 @@ export const SignInStep = ({
     setIsMutating(true);
 
     try {
-      const { hasPassword } = await authService.checkUserByEmail(email);
-
-      if (hasPassword) {
-        changeState(prev => ({
-          ...prev,
-          email,
-          step: 'signInWithPassword',
-          hasPassword: true,
-        }));
-      } else {
-        changeState(prev => ({
-          ...prev,
-          email,
-          step: 'signInWithEmail',
-          hasPassword: false,
-        }));
-      }
+      changeState(prev => ({
+        ...prev,
+        email,
+        step: 'signInWithPassword',
+        hasPassword: true,
+      }));
     } catch (err: any) {
       console.error(err);
 
@@ -118,7 +118,7 @@ export const SignInStep = ({
     }
 
     setIsMutating(false);
-  }, [authService, changeState, email]);
+  }, [changeState, email]);
 
   const onAddSelfhosted = useCallback(() => {
     changeState(prev => ({
@@ -126,6 +126,13 @@ export const SignInStep = ({
       step: 'addSelfhosted',
     }));
   }, [changeState]);
+
+  const authModeLabel =
+    authMode === ServerAuthMode.LDAP
+      ? 'LDAP'
+      : authMode === ServerAuthMode.RADIUS
+        ? 'RADIUS'
+        : 'Password';
 
   if (versionError && isSelfhosted) {
     return (
@@ -149,16 +156,20 @@ export const SignInStep = ({
       />
 
       <AuthContent>
+        <div className={style.authModeHint}>
+          {t['com.affine.auth.sign.mode']({ mode: authModeLabel })}
+        </div>
+
         <OAuth redirectUrl={state.redirectUrl} />
 
         <AuthInput
           className={style.authInput}
-          label={t['com.affine.settings.email']()}
-          placeholder={t['com.affine.auth.sign.email.placeholder']()}
+          label={t['com.affine.auth.sign.login']()}
+          placeholder={t['com.affine.auth.sign.login.placeholder']()}
           onChange={setEmail}
           error={!isValidEmail}
           errorHint={
-            isValidEmail ? '' : t['com.affine.auth.sign.email.error']()
+            isValidEmail ? '' : t['com.affine.auth.sign.login.error']()
           }
           onEnter={onContinue}
         />
@@ -177,13 +188,13 @@ export const SignInStep = ({
           {t['com.affine.auth.sign.email.continue']()}
         </Button>
 
-        {!isSelfhosted && (
+        {allowSkip && !isSelfhosted && (
           <>
             <div className={style.authMessage}>
               {/*prettier-ignore*/}
               <Trans i18nKey="com.affine.auth.sign.message">
                 By clicking &quot;Continue with Google/Email&quot; above, you acknowledge that
-                you agree to AFFiNE&apos;s <a href="https://affine.pro/terms" target="_blank" rel="noreferrer">Terms of Conditions</a> and <a href="https://affine.pro/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.
+                you agree to TrackWork&apos;s <a href="https://trackwork.mrhsoftware.com/terms" target="_blank" rel="noreferrer">Terms of Conditions</a> and <a href="https://trackwork.mrhsoftware.com/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.
             </Trans>
             </div>
             <div className={style.skipDivider}>

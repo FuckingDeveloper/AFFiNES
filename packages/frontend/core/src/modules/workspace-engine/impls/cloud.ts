@@ -441,7 +441,7 @@ class CloudWorkspaceFlavourProvider implements WorkspaceFlavourProvider {
   }
 
   onWorkspaceInitialized(workspace: Workspace): void {
-    // bind the workspace to the affine cloud server
+    // Bind the workspace to the configured TrackWork server.
     workspace.scope.get(WorkspaceServerService).bindServer(this.server);
   }
 

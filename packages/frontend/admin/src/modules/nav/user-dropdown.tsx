@@ -18,6 +18,7 @@ import { useCallback } from 'react';
 import { toast } from 'sonner';
 
 import { affineFetch } from '../../fetch-utils';
+import { useI18n } from '../../i18n';
 import { useCurrentUser, useRevalidateCurrentUser } from '../common';
 
 interface UserDropdownProps {
@@ -31,10 +32,12 @@ const UserInfo = ({
   name,
   email,
   avatarUrl,
+  adminLabel,
 }: {
   email: string;
   avatarUrl: string | null;
   name?: string;
+  adminLabel: string;
 }) => {
   return (
     <>
@@ -46,7 +49,7 @@ const UserInfo = ({
       </Avatar>
       <div className="flex flex-col font-medium gap-1">
         {name ?? email.split('@')[0]}
-        <span className={adminBadgeClass}>Admin</span>
+        <span className={adminBadgeClass}>{adminLabel}</span>
       </div>
     </>
   );
@@ -84,17 +87,18 @@ const UserName = ({
 export function UserDropdown({ isCollapsed }: UserDropdownProps) {
   const currentUser = useCurrentUser();
   const relative = useRevalidateCurrentUser();
+  const { t } = useI18n();
 
   const handleLogout = useCallback(() => {
     affineFetch('/api/auth/sign-out', { method: 'POST' })
       .then(() => {
-        toast.success('Logged out successfully');
+        toast.success(t('user.logoutSuccess'));
         return relative();
       })
       .catch(err => {
-        toast.error(`Failed to logout: ${err.message}`);
+        toast.error(`${t('user.logoutError')}: ${err.message}`);
       });
-  }, [relative]);
+  }, [relative, t]);
 
   if (isCollapsed) {
     return (
@@ -116,11 +120,14 @@ export function UserDropdown({ isCollapsed }: UserDropdownProps) {
                 email={currentUser.email}
                 name={currentUser.name}
                 avatarUrl={currentUser.avatarUrl}
+                adminLabel={t('user.admin')}
               />
             ) : null}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleLogout}>
+            {t('user.logout')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -136,7 +143,7 @@ export function UserDropdown({ isCollapsed }: UserDropdownProps) {
           </AvatarFallback>
         </Avatar>
         <UserName name={currentUser?.name} email={currentUser?.email} />
-        <span className={adminBadgeClass}>Admin</span>
+        <span className={adminBadgeClass}>{t('user.admin')}</span>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -155,11 +162,14 @@ export function UserDropdown({ isCollapsed }: UserDropdownProps) {
                 email={currentUser.email}
                 name={currentUser.name}
                 avatarUrl={currentUser.avatarUrl}
+                adminLabel={t('user.admin')}
               />
             ) : null}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleLogout}>
+            {t('user.logout')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

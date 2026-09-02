@@ -54,6 +54,7 @@ import { WorkspaceModule } from './core/workspaces';
 import { Env } from './env';
 import { ModelsModule } from './models';
 import { CalendarModule } from './plugins/calendar';
+import { IntegrationModule } from './plugins/integration';
 import { CaptchaModule } from './plugins/captcha';
 import { CopilotModule, CopilotRealtimeModule } from './plugins/copilot';
 import { CustomerIoModule } from './plugins/customerio';
@@ -62,6 +63,7 @@ import { IndexerModule } from './plugins/indexer';
 import { LicenseModule } from './plugins/license';
 import { OAuthModule } from './plugins/oauth';
 import { PaymentModule } from './plugins/payment';
+import { TrackWorkModule } from './plugins/trackwork';
 import { WorkerModule } from './plugins/worker';
 
 export const FunctionalityModules = [
@@ -202,6 +204,8 @@ export function buildAppModule(env: Env) {
       CaptchaModule,
       OAuthModule,
       CalendarModule,
+      IntegrationModule,
+      TrackWorkModule,
       CustomerIoModule,
       TelemetryModule,
       CommentModule,

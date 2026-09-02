@@ -7,7 +7,6 @@ import type {
 import {
   type CopilotChatHistoryFragment,
   ServerDeploymentType,
-  SubscriptionStatus,
 } from '@affine/graphql';
 import {
   menu,
@@ -157,9 +156,6 @@ export class ChatInputPreference extends SignalWatcher(
             const isSelfHosted =
               this.serverService.server.config$.value?.type ===
               ServerDeploymentType.Selfhosted;
-            const status =
-              this.subscriptionService.subscription.ai$.value?.status;
-            const isSubscribed = status === SubscriptionStatus.Active;
             return menu.action({
               name: model.category,
               info: html`
@@ -172,16 +168,10 @@ export class ChatInputPreference extends SignalWatcher(
               `,
               postfix: html`
                 <div class="ai-model-postfix" @click=${this.onAISubscribe}>
-                  ${model.isPro && !isSubscribed ? LockIcon() : undefined}
+                  ${model.isPro && !isSelfHosted ? LockIcon() : undefined}
                 </div>
               `,
               select: () => {
-                if (model.isPro && !isSelfHosted && !isSubscribed) {
-                  this.notificationService.toast(
-                    `Pro models require an AFFiNE AI subscription.`
-                  );
-                  return;
-                }
                 this.aiModelService.setModel(model.id);
               },
             });

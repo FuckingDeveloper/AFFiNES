@@ -1,10 +1,11 @@
 import { IntegrationTypeIcon } from '@affine/core/modules/integration';
 import type { I18nString } from '@affine/i18n';
-import { AiIcon, Logo1Icon, TodayIcon } from '@blocksuite/icons/rc';
+import { GithubIcon, Logo1Icon, TodayIcon } from '@blocksuite/icons/rc';
 import type { ReactNode } from 'react';
 
-import { WorkspaceByokSetting } from '../byok';
 import { CalendarSettingPanel } from './calendar/setting-panel';
+import { GitLabSettingPanel } from './gitlab/setting-panel';
+import { JenkinsSettingPanel } from './jenkins/setting-panel';
 import MCPIcon from './mcp-server/MCP.inline.svg';
 import { McpServerSettingPanel } from './mcp-server/setting-panel';
 import { ReadwiseSettingPanel } from './readwise/setting-panel';
@@ -35,6 +36,20 @@ const INTEGRATION_LIST = [
     cloud: true,
   },
   {
+    id: 'gitlab' as const,
+    name: 'com.affine.integration.gitlab.name',
+    desc: 'com.affine.integration.gitlab.desc',
+    icon: <GithubIcon />,
+    setting: <GitLabSettingPanel />,
+  },
+  {
+    id: 'jenkins' as const,
+    name: 'com.affine.integration.jenkins.name',
+    desc: 'com.affine.integration.jenkins.desc',
+    icon: <GithubIcon />,
+    setting: <JenkinsSettingPanel />,
+  },
+  {
     id: 'mcp-server' as const,
     name: 'com.affine.integration.mcp-server.name',
     desc: 'com.affine.integration.mcp-server.desc',
@@ -49,14 +64,9 @@ const INTEGRATION_LIST = [
     icon: <Logo1Icon />,
     link: 'https://chromewebstore.google.com/detail/affine-web-clipper/mpbbkmbdpleomiogkbkkpfoljjpahmoi',
   },
-  {
-    id: 'byok' as const,
-    name: 'com.affine.settings.workspace.byok.title',
-    desc: 'com.affine.settings.workspace.byok.subtitle',
-    icon: <AiIcon />,
-    setting: <WorkspaceByokSetting />,
-    byok: true,
-  },
+  // BYOK is intentionally hidden in this build to avoid broken server-side
+  // settings endpoints in self-host/community mode.
+  false,
 ] satisfies (IntegrationCard | false)[];
 
 type IntegrationId = Exclude<

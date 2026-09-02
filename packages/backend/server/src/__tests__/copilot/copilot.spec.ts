@@ -431,7 +431,7 @@ test('should be able to render listed prompt', async t => {
     content: 'links:\n{{#links}}- {{.}}\n{{/links}}',
   };
   const params = {
-    links: ['https://affine.pro', 'https://github.com/toeverything/affine'],
+    links: ['https://trackwork.mrhsoftware.com', 'https://github.com/toeverything/affine'],
   };
 
   await prompt.set(promptName, 'test', [msg]);
@@ -439,7 +439,7 @@ test('should be able to render listed prompt', async t => {
 
   t.is(
     prompt.finish(testPrompt!, params).pop()?.content,
-    'links:\n- https://affine.pro\n- https://github.com/toeverything/affine\n',
+    'links:\n- https://trackwork.mrhsoftware.com\n- https://github.com/toeverything/affine\n',
     'should render the prompt'
   );
 });
@@ -624,7 +624,7 @@ test('should be able to update chat session prompt', async t => {
   // Update the session
   const updatedSessionId = await session.update({
     sessionId,
-    promptName: 'Chat With AFFiNE AI',
+    promptName: 'Chat With TrackWork AI',
     userId,
   });
   t.is(updatedSessionId, sessionId, 'should update session with same id');
@@ -634,7 +634,7 @@ test('should be able to update chat session prompt', async t => {
   t.truthy(updatedSession, 'should retrieve updated session');
   t.is(
     updatedSession?.config.promptName,
-    'Chat With AFFiNE AI',
+    'Chat With TrackWork AI',
     'should have updated prompt name'
   );
 });
@@ -843,10 +843,10 @@ test('should merge latest user turn content and attachments into prompt', async 
     },
     {
       title: 'attachment message',
-      message: { attachments: ['https://affine.pro/example.jpg'] as string[] },
+      message: { attachments: ['https://trackwork.mrhsoftware.com/example.jpg'] as string[] },
       project: (messages: { attachments?: unknown }[]) =>
         messages.map(({ attachments }) => attachments),
-      expected: [undefined, ['https://affine.pro/example.jpg']],
+      expected: [undefined, ['https://trackwork.mrhsoftware.com/example.jpg']],
     },
     {
       title: 'empty message',

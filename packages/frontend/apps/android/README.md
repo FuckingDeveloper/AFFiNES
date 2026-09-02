@@ -1,6 +1,6 @@
 # Android
 
-AFFiNE Android app.
+TrackWork Android app.
 
 ## Setup
 

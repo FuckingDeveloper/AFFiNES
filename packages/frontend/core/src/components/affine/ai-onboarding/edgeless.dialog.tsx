@@ -4,7 +4,6 @@ import { SubscriptionService } from '@affine/core/modules/cloud';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { EditorService } from '@affine/core/modules/editor';
 import { useI18n } from '@affine/i18n';
-import { track } from '@affine/track';
 import { AiIcon } from '@blocksuite/icons/rc';
 import { useLiveData, useService, useServices } from '@toeverything/infra';
 import { cssVar } from '@toeverything/theme';
@@ -57,10 +56,8 @@ export const AIOnboardingEdgeless = () => {
   const mode = useLiveData(editorService.editor.mode$);
 
   const goToPricingPlans = useCallback(() => {
-    track.$.aiOnboarding.dialog.viewPlans();
     workspaceDialogService.open('setting', {
-      activeTab: 'plans',
-      scrollAnchor: 'aiPricingPlan',
+      activeTab: 'account',
     });
   }, [workspaceDialogService]);
 

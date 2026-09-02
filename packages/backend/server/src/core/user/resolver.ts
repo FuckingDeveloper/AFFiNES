@@ -15,6 +15,7 @@ import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
 import { isNil, omitBy } from 'lodash-es';
 
 import {
+  ActionForbidden,
   CannotDeleteOwnAccount,
   type FileUpload,
   ImageFormatNotSupported,
@@ -156,11 +157,11 @@ export class UserResolver {
   ): Promise<UserType> {
     input = omitBy(input, isNil);
 
-    if (Object.keys(input).length === 0) {
-      return user;
+    if (input.name !== undefined) {
+      throw new ActionForbidden();
     }
 
-    return sessionUser(await this.models.user.update(user.id, input));
+    return user;
   }
 
   @Mutation(() => RemoveAvatar, {
@@ -177,10 +178,9 @@ export class UserResolver {
 
   @Mutation(() => DeleteAccount)
   async deleteAccount(
-    @CurrentUser() user: CurrentUser
+    @CurrentUser() _user: CurrentUser
   ): Promise<DeleteAccount> {
-    await this.models.user.delete(user.id);
-    return { success: true };
+    throw new ActionForbidden();
   }
 }
 
@@ -228,6 +228,9 @@ class ListUserInput {
 
 @InputType()
 class CreateUserInput {
+  @Field(() => String, { nullable: true })
+  username?: string;
+
   @Field(() => String)
   email!: string;
 
@@ -253,6 +256,30 @@ class UserImportFailedType {
   error!: string;
 }
 
+@ObjectType()
+class AdminAuditLogType {
+  @Field()
+  id!: string;
+
+  @Field()
+  actorId!: string;
+
+  @Field()
+  actorEmail!: string;
+
+  @Field()
+  action!: string;
+
+  @Field()
+  targetType!: string;
+
+  @Field(() => String, { nullable: true })
+  targetId!: string | null;
+
+  @Field(() => Date)
+  createdAt!: Date;
+}
+
 const UserImportResultType = createUnionType({
   name: 'UserImportResultType',
   types: () => [UserType, UserImportFailedType],
@@ -268,6 +295,36 @@ export class UserManagementResolver {
     private readonly db: PrismaClient,
     private readonly models: Models
   ) {}
+
+  private async audit(
+    actor: CurrentUser,
+    action: string,
+    targetId?: string | null
+  ) {
+    await this.db.adminAuditLog.create({
+      data: {
+        actorId: actor.id,
+        actorEmail: actor.email,
+        action,
+        targetType: 'user',
+        targetId,
+      },
+    });
+  }
+
+  @Query(() => [AdminAuditLogType], {
+    description: 'List recent administrative actions',
+  })
+  async adminAuditLogs(
+    @Args('first', { type: () => Int, defaultValue: 50 }) first: number,
+    @Args('skip', { type: () => Int, defaultValue: 0 }) skip: number
+  ): Promise<AdminAuditLogType[]> {
+    return this.db.adminAuditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(first, 1), 200),
+      skip: Math.max(skip, 0),
+    });
+  }
 
   @Query(() => Int, {
     description: 'Get users count',
@@ -335,12 +392,14 @@ export class UserManagementResolver {
     description: 'Create a new user',
   })
   async createUser(
+    @CurrentUser() actor: CurrentUser,
     @Args({ name: 'input', type: () => CreateUserInput }) input: CreateUserInput
   ) {
     const { id } = await this.models.user.create({
       ...input,
       registered: true,
     });
+    await this.audit(actor, 'user.create', id);
 
     // data returned by `createUser` does not satisfies `UserType`
     return this.getUser(id);
@@ -350,10 +409,12 @@ export class UserManagementResolver {
     description: 'import users',
   })
   async importUsers(
+    @CurrentUser() actor: CurrentUser,
     @Args({ name: 'input', type: () => ImportUsersInput })
     input: ImportUsersInput
   ): Promise<(typeof UserImportResultType)[]> {
     const results = await this.models.user.importUsers(input.users);
+    await this.audit(actor, 'user.import', null);
 
     return results.map((result, i) => {
       if (result.status === 'fulfilled') {
@@ -378,6 +439,7 @@ export class UserManagementResolver {
       throw new CannotDeleteOwnAccount();
     }
     await this.models.user.delete(id);
+    await this.audit(user, 'user.delete', id);
     return { success: true };
   }
 
@@ -385,6 +447,7 @@ export class UserManagementResolver {
     description: 'Update an user',
   })
   async updateUser(
+    @CurrentUser() actor: CurrentUser,
     @Args('id') id: string,
     @Args('input') input: ManageUserInput
   ): Promise<UserType> {
@@ -401,25 +464,36 @@ export class UserManagementResolver {
       return sessionUser(user);
     }
 
-    return sessionUser(
-      await this.models.user.update(user.id, {
-        email: input.email,
-        name: input.name,
-      })
-    );
+    const updated = await this.models.user.update(user.id, {
+      username: input.username,
+      email: input.email,
+      name: input.name,
+    });
+    await this.audit(actor, 'user.update', id);
+    return sessionUser(updated);
   }
 
   @Mutation(() => UserType, {
     description: 'Ban an user',
   })
-  async banUser(@Args('id') id: string): Promise<UserType> {
-    return sessionUser(await this.models.user.ban(id));
+  async banUser(
+    @CurrentUser() actor: CurrentUser,
+    @Args('id') id: string
+  ): Promise<UserType> {
+    const user = await this.models.user.ban(id);
+    await this.audit(actor, 'user.disable', id);
+    return sessionUser(user);
   }
 
   @Mutation(() => UserType, {
     description: 'Reenable an banned user',
   })
-  async enableUser(@Args('id') id: string): Promise<UserType> {
-    return sessionUser(await this.models.user.enable(id));
+  async enableUser(
+    @CurrentUser() actor: CurrentUser,
+    @Args('id') id: string
+  ): Promise<UserType> {
+    const user = await this.models.user.enable(id);
+    await this.audit(actor, 'user.enable', id);
+    return sessionUser(user);
   }
 }

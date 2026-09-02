@@ -1,0 +1,6 @@
+mutation createDevelopmentMergeRequest($input: CreateDevelopmentMergeRequestInput!) {
+  createDevelopmentMergeRequest(input: $input) {
+    iid
+    url
+  }
+}

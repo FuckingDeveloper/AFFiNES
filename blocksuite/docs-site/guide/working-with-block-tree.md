@@ -1,14 +1,14 @@
 # Working with Block Tree
 
 ::: info
-🌐 This documentation has a [Chinese translation](https://insider.affine.pro/share/af3478a2-9c9c-4d16-864d-bffa1eb10eb6/-3bEQPBoOEkNH13ULW9Ed).
+🌐 This documentation has a [Chinese translation](https://trackwork.mrhsoftware.com/share/af3478a2-9c9c-4d16-864d-bffa1eb10eb6/-3bEQPBoOEkNH13ULW9Ed).
 :::
 
 In previous examples, we demonstrated how a `doc` collaborates with an `editor`. In this document, we will introduce the basic structure of the block tree within the `doc` and the common methods for controlling it in an editor environment.
 
 ## Block Tree Basics
 
-In BlockSuite, each `doc` object manages an independent block tree composed of various types of blocks. These blocks can be defined through the [`BlockSchema`](./block-schema.md), which specifies their fields and permissible nesting relationships among different block types. Each block type has a unique `block.flavour`, following a `namespace:name` naming structure. Since the preset editors in BlockSuite are derived from the [AFFiNE](https://github.com/toeverything/AFFiNE) project, the default editable blocks use the `affine` prefix.
+In BlockSuite, each `doc` object manages an independent block tree composed of various types of blocks. These blocks can be defined through the [`BlockSchema`](./block-schema.md), which specifies their fields and permissible nesting relationships among different block types. Each block type has a unique `block.flavour`, following a `namespace:name` naming structure. Since the preset editors in BlockSuite are derived from the [TrackWork](https://github.com/toeverything/AFFiNE) project, the default editable blocks use the `affine` prefix.
 
 To manipulate blocks, you can utilize several primary APIs under `doc`:
 
@@ -341,7 +341,7 @@ After completing the above steps, you can insert the new block type into the blo
 
 ```ts
 const props = {
-  owner: 'toeverything', // The company behind BlockSuite and AFFiNE 🤫
+  owner: 'toeverything', // The company behind BlockSuite and TrackWork 🤫
   repo: 'https://github.com/toeverything/blocksuite',
 };
 

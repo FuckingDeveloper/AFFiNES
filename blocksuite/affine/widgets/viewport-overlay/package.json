@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-viewport-overlay",
-  "description": "Affine viewport overlay widget.",
+  "description": "TrackWork viewport overlay widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

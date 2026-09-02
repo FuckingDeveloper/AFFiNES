@@ -1,0 +1,36 @@
+query trackWorkTaskDevelopment($workspaceId: String!, $taskKey: String!) {
+  trackWorkTaskDevelopment(workspaceId: $workspaceId, taskKey: $taskKey) {
+    repositories
+    commits {
+      externalId
+      title
+      url
+      shortSha
+      authorName
+      committedAt
+      branch
+    }
+    branches {
+      name
+      url
+    }
+    mergeRequests {
+      externalId
+      iid
+      title
+      url
+      status
+      sourceBranch
+      targetBranch
+    }
+    pipelines {
+      externalId
+      number
+      name
+      status
+      url
+      startedAt
+      finishedAt
+    }
+  }
+}

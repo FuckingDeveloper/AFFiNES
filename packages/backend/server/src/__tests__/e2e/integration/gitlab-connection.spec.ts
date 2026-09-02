@@ -1,0 +1,297 @@
+import { PrismaClient } from '@prisma/client';
+
+import {
+  createDevelopmentBranchMutation,
+  createDevelopmentIntegrationMutation,
+  createDevelopmentMergeRequestMutation,
+  deleteDevelopmentIntegrationMutation,
+  developmentIntegrationsQuery,
+  importDevelopmentRepositoryMutation,
+  updateDevelopmentIntegrationMutation,
+} from '@affine/graphql';
+import { WorkspaceRole } from '../../../models';
+import { app, e2e, Mockers } from '../test';
+import { registerTrackWorkTaskKeys } from './trackwork-test-utils';
+import Sinon from 'sinon';
+
+const createConnectionVariables = (workspaceId: string) => ({
+  input: {
+    workspaceId,
+    provider: 'gitlab',
+    name: 'My GitLab',
+    baseUrl: 'https://gitlab.example.org',
+    token: 'glpat-secret-token',
+    webhookSecret: 'super-secret',
+  },
+});
+
+e2e('admin can create a gitlab connection and list it', async t => {
+  const admin = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: admin.id },
+  });
+  await app.login(admin);
+
+  const res = await app.gql({
+    query: createDevelopmentIntegrationMutation,
+    variables: createConnectionVariables(workspace.id),
+  });
+
+  const connection = res.createDevelopmentIntegration;
+  t.is(connection.provider, 'gitlab');
+  t.is(connection.baseUrl, 'https://gitlab.example.org');
+  t.is(connection.name, 'My GitLab');
+  t.true(connection.enabled);
+  t.true(connection.hasToken);
+  t.true(connection.hasWebhookSecret);
+  t.true(
+    connection.webhookUrl.endsWith(
+      `/api/integrations/gitlab/webhook/${connection.id}`
+    )
+  );
+
+  const db = app.get(PrismaClient);
+  const record = await db.developmentIntegrationConnection.findUniqueOrThrow({
+    where: { id: connection.id },
+  });
+
+  t.not(record.tokenCipher, 'glpat-secret-token');
+  t.not(record.webhookSecretCipher, 'super-secret');
+
+  const list = await app.gql({
+    query: developmentIntegrationsQuery,
+    variables: { workspaceId: workspace.id },
+  });
+
+  t.is(list.workspace.developmentIntegrations.length, 1);
+});
+
+e2e('non-admin member cannot create a connection', async t => {
+  const owner = await app.create(Mockers.User);
+  const member = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: owner.id },
+    permissions: {
+      create: [
+        {
+          userId: member.id,
+          type: WorkspaceRole.Collaborator,
+          status: 'Accepted',
+        },
+      ],
+    },
+  });
+
+  await app.login(member);
+
+  await t.throwsAsync(() =>
+    app.gql({
+      query: createDevelopmentIntegrationMutation,
+      variables: createConnectionVariables(workspace.id),
+    })
+  );
+});
+
+e2e('admin of workspace B cannot touch workspace A connection', async t => {
+  const ownerA = await app.create(Mockers.User);
+  const workspaceA = await app.create(Mockers.Workspace, {
+    owner: { id: ownerA.id },
+  });
+
+  await app.login(ownerA);
+  const created = await app.gql({
+    query: createDevelopmentIntegrationMutation,
+    variables: createConnectionVariables(workspaceA.id),
+  });
+  const connectionId = created.createDevelopmentIntegration.id;
+
+  const ownerB = await app.create(Mockers.User);
+  await app.create(Mockers.Workspace, {
+    owner: { id: ownerB.id },
+  });
+
+  await app.login(ownerB);
+
+  await t.throwsAsync(() =>
+    app.gql({
+      query: deleteDevelopmentIntegrationMutation,
+      variables: { connectionId },
+    })
+  );
+
+  await t.throwsAsync(() =>
+    app.gql({
+      query: updateDevelopmentIntegrationMutation,
+      variables: { input: { id: connectionId, enabled: false } },
+    })
+  );
+});
+
+e2e('rejects invalid gitlab base urls', async t => {
+  const admin = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: admin.id },
+  });
+  await app.login(admin);
+
+  await t.throwsAsync(() =>
+    app.gql({
+      query: createDevelopmentIntegrationMutation,
+      variables: {
+        input: {
+          workspaceId: workspace.id,
+          provider: 'gitlab',
+          name: 'My GitLab',
+          baseUrl: 'ftp://gitlab.example.org',
+          token: 'glpat-secret-token',
+        },
+      },
+    })
+  );
+});
+
+e2e('webhook accepts a valid secret and rejects invalid ones', async t => {
+  const admin = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: admin.id },
+  });
+  await app.login(admin);
+
+  const created = await app.gql({
+    query: createDevelopmentIntegrationMutation,
+    variables: createConnectionVariables(workspace.id),
+  });
+  const connectionId = created.createDevelopmentIntegration.id;
+  const url = `/api/integrations/gitlab/webhook/${connectionId}`;
+
+  const valid = await app
+    .POST(url)
+    .set('X-Gitlab-Token', 'super-secret')
+    .send({ object_kind: 'push', project: { id: 1 }, commits: [] })
+    .expect(200);
+
+  t.is(valid.body.accepted, true);
+
+  await app
+    .POST(url)
+    .set('X-Gitlab-Token', 'wrong-secret')
+    .send({ object_kind: 'push' })
+    .expect(404);
+
+  await app.POST(url).send({ object_kind: 'push' }).expect(404);
+
+  await app
+    .POST('/api/integrations/gitlab/webhook/unknown-connection')
+    .send({})
+    .expect(404);
+
+  await app.gql({
+    query: updateDevelopmentIntegrationMutation,
+    variables: { input: { id: connectionId, enabled: false } },
+  });
+
+  await app
+    .POST(url)
+    .set('X-Gitlab-Token', 'super-secret')
+    .send({ object_kind: 'push' })
+    .expect(404);
+});
+
+e2e('creates a gitlab branch and merge request', async t => {
+  const admin = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: admin.id },
+  });
+  await app.login(admin);
+  await registerTrackWorkTaskKeys(workspace.id, ['TW-142']);
+
+  const created = await app.gql({
+    query: createDevelopmentIntegrationMutation,
+    variables: createConnectionVariables(workspace.id),
+  });
+  const connectionId = created.createDevelopmentIntegration.id;
+
+  await app.gql({
+    query: importDevelopmentRepositoryMutation,
+    variables: {
+      input: {
+        connectionId,
+        externalId: '1',
+        name: 'auth-service',
+        fullName: 'mrh/auth-service',
+        webUrl: 'https://gitlab.example.org/mrh/auth-service',
+      },
+    },
+  });
+
+  const responses: Record<string, unknown> = {
+    branches: {
+      name: 'feature/TW-142-fix-token',
+      web_url:
+        'https://gitlab.example.org/mrh/auth-service/-/branches/feature/TW-142-fix-token',
+    },
+    merge_requests: {
+      iid: 321,
+      web_url:
+        'https://gitlab.example.org/mrh/auth-service/-/merge_requests/321',
+    },
+  };
+
+  const stub = Sinon.stub(globalThis, 'fetch').callsFake(
+    async (input: string | URL | Request, _init?: RequestInit) => {
+      const url = String(input);
+      const key = url.includes('/branches') ? 'branches' : 'merge_requests';
+      return {
+        ok: true,
+        status: 200,
+        json: async () => responses[key],
+        text: async () => '{}',
+      } as Response;
+    }
+  );
+
+  try {
+    const branch = await app.gql({
+      query: createDevelopmentBranchMutation,
+      variables: {
+        input: {
+          connectionId,
+          repositoryId: '1',
+          baseBranch: 'main',
+          name: 'feature/TW-142-fix-token',
+          taskKey: 'TW-142',
+        },
+      },
+    });
+
+    t.is(branch.createDevelopmentBranch.name, 'feature/TW-142-fix-token');
+
+    const mr = await app.gql({
+      query: createDevelopmentMergeRequestMutation,
+      variables: {
+        input: {
+          connectionId,
+          repositoryId: '1',
+          sourceBranch: 'feature/TW-142-fix-token',
+          targetBranch: 'main',
+          title: 'TW-142 Fix token race',
+          description: 'TrackWork: TW-142',
+          taskKey: 'TW-142',
+        },
+      },
+    });
+
+    t.is(mr.createDevelopmentMergeRequest.iid, '321');
+    t.true(
+      mr.createDevelopmentMergeRequest.url.includes('/merge_requests/321')
+    );
+
+    const branchCall = stub
+      .getCalls()
+      .find(call => String(call.args[0]).includes('/branches'));
+    const branchInit = branchCall!.args[1] as RequestInit;
+    t.is(branchInit.method, 'POST');
+  } finally {
+    stub.restore();
+  }
+});

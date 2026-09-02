@@ -107,7 +107,7 @@ export function DataTableRowActions({
           onClick={handleEdit}
         >
           <EditIcon fontSize={18} />
-          <span>Edit</span>
+          <span>Редактировать</span>
         </Button>
         <Button
           variant="ghost"
@@ -116,7 +116,7 @@ export function DataTableRowActions({
           onClick={handleSharedLinks}
         >
           <LinkIcon fontSize={18} />
-          <span>Shared links</span>
+          <span>Общие ссылки</span>
         </Button>
       </div>
       <DiscardChanges
@@ -127,7 +127,7 @@ export function DataTableRowActions({
           setPendingAction(null);
         }}
         onConfirm={handleDiscardConfirm}
-        description="Changes to this workspace will not be saved."
+        description="Изменения этого рабочего пространства не будут сохранены."
       />
     </>
   );

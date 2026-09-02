@@ -3,31 +3,43 @@ import { Label } from '@affine/admin/components/ui/label';
 import { useCallback } from 'react';
 
 type CreateAdminProps = {
+  username: string;
   name: string;
   email: string;
   password: string;
   invalidEmail: boolean;
+  invalidUsername: boolean;
   invalidPassword: boolean;
   passwordLimits: {
     minLength: number;
     maxLength: number;
   };
   onNameChange: (name: string) => void;
+  onUsernameChange: (username: string) => void;
   onEmailChange: (email: string) => void;
   onPasswordChange: (password: string) => void;
 };
 
 export const CreateAdmin = ({
+  username,
   name,
   email,
   password,
   invalidEmail,
+  invalidUsername,
   invalidPassword,
   passwordLimits,
   onNameChange,
+  onUsernameChange,
   onEmailChange,
   onPasswordChange,
 }: CreateAdminProps) => {
+  const handleUsernameChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onUsernameChange(event.target.value);
+    },
+    [onUsernameChange]
+  );
   const handleNameChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       onNameChange(event.target.value);
@@ -53,15 +65,34 @@ export const CreateAdmin = ({
       <div className="flex flex-col pl-1 max-lg:p-4 max-w-96 mb-5">
         <div className="flex flex-col mb-16 max-sm:mb-6">
           <h1 className="text-lg font-semibold">
-            Create Administrator Account
+            Создание аккаунта администратора
           </h1>
           <p className="text-sm text-muted-foreground">
-            This account can also be used to log in as an AFFiNE user.
+            Этот аккаунт также можно использовать для входа как пользователь
+            TrackWork.
           </p>
         </div>
         <div className="flex flex-col gap-9">
+          <div className="grid gap-2 relative">
+            <Label htmlFor="username">Логин</Label>
+            <Input
+              id="username"
+              type="text"
+              autoComplete="username"
+              value={username}
+              onChange={handleUsernameChange}
+              minLength={3}
+              maxLength={32}
+              required
+            />
+            <p
+              className={`absolute text-sm text-destructive -bottom-6 ${invalidUsername ? '' : 'opacity-0 pointer-events-none'}`}
+            >
+              3–32 символа: латиница, цифры, точка, дефис или подчёркивание.
+            </p>
+          </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">Имя</Label>
             <Input
               id="name"
               type="text"
@@ -82,12 +113,12 @@ export const CreateAdmin = ({
             <p
               className={`absolute text-sm text-destructive -bottom-6 ${invalidEmail ? '' : 'opacity-0 pointer-events-none'}`}
             >
-              Invalid email address.
+              Некорректный email.
             </p>
           </div>
           <div className="grid gap-2">
             <div className="flex items-center">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Пароль</Label>
             </div>
             <Input
               id="password"
@@ -101,11 +132,11 @@ export const CreateAdmin = ({
             <p
               className={`text-sm text-muted-foreground ${invalidPassword && 'text-destructive'}`}
             >
-              {invalidPassword ? 'Invalid password. ' : ''}Please enter{' '}
+              {invalidPassword ? 'Некорректный пароль. ' : ''}Введите{' '}
               {String(passwordLimits.minLength)}-
-              {String(passwordLimits.maxLength)} digit password, it is
-              recommended to include 2+ of: uppercase, lowercase, numbers,
-              symbols.
+              {String(passwordLimits.maxLength)} символов пароля. Рекомендуется
+              использовать минимум 2 типа символов: заглавные, строчные, цифры и
+              спецсимволы.
             </p>
           </div>
         </div>

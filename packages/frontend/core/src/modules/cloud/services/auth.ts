@@ -199,6 +199,7 @@ export class AuthService extends Service {
   async signInPassword(credential: {
     email: string;
     password: string;
+    twoFactorCode?: string;
     verifyToken?: string;
     challenge?: string;
   }) {
@@ -220,6 +221,53 @@ export class AuthService extends Service {
     await this.store.signOut();
     this.store.setCachedAuthSession(null);
     this.session.revalidate();
+  }
+
+  async getTwoFactorStatus() {
+    const res = await this.fetchService.fetch('/api/auth/2fa/status', {
+      method: 'GET',
+    });
+
+    return (await res.json()) as { enabled: boolean };
+  }
+
+  async createTwoFactorSetup() {
+    const res = await this.fetchService.fetch('/api/auth/2fa/setup', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
+
+    return (await res.json()) as {
+      secret: string;
+      issuer: string;
+      otpauthUrl: string;
+    };
+  }
+
+  async enableTwoFactor(secret: string, code: string) {
+    const res = await this.fetchService.fetch('/api/auth/2fa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ secret, code }),
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
+
+    return (await res.json()) as { enabled: boolean };
+  }
+
+  async disableTwoFactor(code: string) {
+    const res = await this.fetchService.fetch('/api/auth/2fa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
+
+    return (await res.json()) as { enabled: boolean };
   }
 
   async deleteAccount() {

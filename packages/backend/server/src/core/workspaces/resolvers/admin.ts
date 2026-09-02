@@ -519,7 +519,28 @@ export class AdminWorkspaceResolver {
     input?: AdminDashboardInput,
     @Info() info?: GraphQLResolveInfo
   ) {
-    this.assertCloudOnly();
+    if (env.selfhosted) {
+      const includeTopSharedLinks = Boolean(
+        info?.fieldNodes.some(
+          node =>
+            node.selectionSet &&
+            hasSelectedField(
+              node.selectionSet.selections,
+              'topSharedLinks',
+              info.fragments
+            )
+        )
+      );
+
+      return this.models.workspaceAnalytics.adminGetDashboard({
+        timezone: input?.timezone,
+        storageHistoryDays: input?.storageHistoryDays,
+        syncHistoryHours: input?.syncHistoryHours,
+        sharedLinkWindowDays: input?.sharedLinkWindowDays,
+        includeTopSharedLinks,
+      });
+    }
+
     const includeTopSharedLinks = Boolean(
       info?.fieldNodes.some(
         node =>

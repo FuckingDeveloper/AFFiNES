@@ -3,7 +3,6 @@ import { useBlurRoot } from '@affine/core/components/hooks/use-blur-root';
 import { AuthService, SubscriptionService } from '@affine/core/modules/cloud';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { Trans, useI18n } from '@affine/i18n';
-import { track } from '@affine/track';
 import { ArrowLeftSmallIcon } from '@blocksuite/icons/rc';
 import { useLiveData, useService, useServices } from '@toeverything/infra';
 import type { ReactNode } from 'react';
@@ -45,12 +44,12 @@ const getPlayList = (t: Translate): Array<PlayListItem> => [
     desc: (
       <Trans
         i18nKey="com.affine.ai-onboarding.general.5.description"
-        values={{ link: 'ai.affine.pro' }}
+        values={{ link: 'trackwork.mrhsoftware.com' }}
         components={{
           a: (
             <a
               className={styles.link}
-              href="https://ai.affine.pro"
+              href="https://trackwork.mrhsoftware.com"
               target="_blank"
               rel="noreferrer"
             />
@@ -111,10 +110,8 @@ export const AIOnboardingGeneral = () => {
   }, []);
   const goToPricingPlans = useCallback(() => {
     workspaceDialogService.open('setting', {
-      activeTab: 'plans',
-      scrollAnchor: 'aiPricingPlan',
+      activeTab: 'account',
     });
-    track.$.aiOnboarding.dialog.viewPlans();
     closeAndDismiss();
   }, [closeAndDismiss, workspaceDialogService]);
   const onPrev = useCallback(() => {
@@ -223,7 +220,7 @@ export const AIOnboardingGeneral = () => {
               a: (
                 <a
                   className={styles.privacyLink}
-                  href="https://affine.pro/terms#ai"
+                  href="https://trackwork.mrhsoftware.com/terms#ai"
                 />
               ),
             }}

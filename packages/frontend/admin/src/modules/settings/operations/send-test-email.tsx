@@ -5,28 +5,30 @@ import type { UserFriendlyError } from '@affine/error';
 import { sendTestEmailMutation } from '@affine/graphql';
 import { useCallback } from 'react';
 
+import { useI18n } from '../../../i18n';
 import type { AppConfig } from '../config';
 
 export function SendTestEmail({ appConfig }: { appConfig: AppConfig }) {
   const { trigger } = useMutation({
     mutation: sendTestEmailMutation,
   });
+  const { t } = useI18n();
 
   const onClick = useCallback(() => {
     trigger(appConfig.mailer.SMTP)
       .then(() => {
         notify.success({
-          title: 'Test email sent',
-          message: 'The test email has been successfully sent.',
+          title: t('settings.testEmailSent'),
+          message: t('settings.testEmailSentMessage'),
         });
       })
       .catch((err: UserFriendlyError) => {
         notify.error({
-          title: 'Failed to send test email',
+          title: t('settings.testEmailFailed'),
           message: err.message,
         });
       });
-  }, [appConfig, trigger]);
+  }, [appConfig, trigger, t]);
 
-  return <Button onClick={onClick}>Send Test Email</Button>;
+  return <Button onClick={onClick}>{t('settings.sendTestEmail')}</Button>;
 }

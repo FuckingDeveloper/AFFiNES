@@ -120,7 +120,7 @@ export interface LookupKey {
 
 export interface KnownStripeInvoice {
   /**
-   * User in AFFiNE system.
+   * User in TrackWork system.
    */
   userId?: string;
 
@@ -144,7 +144,7 @@ export interface KnownStripeInvoice {
 
 export interface KnownStripeSubscription {
   /**
-   * User in AFFiNE system.
+   * User in TrackWork system.
    */
   userId?: string;
 
@@ -188,71 +188,71 @@ export const DEFAULT_PRICES = new Map([
   [
     `${SubscriptionPlan.Pro}_${SubscriptionRecurring.Monthly}`,
     {
-      product: 'AFFiNE Pro',
+      product: 'TrackWork Pro',
       price: 799,
     },
   ],
   [
     `${SubscriptionPlan.Pro}_${SubscriptionRecurring.Yearly}`,
     {
-      product: 'AFFiNE Pro',
+      product: 'TrackWork Pro',
       price: 8100,
     },
   ],
   // only EA for yearly pro
   [
     `${SubscriptionPlan.Pro}_${SubscriptionRecurring.Yearly}_${SubscriptionVariant.EA}`,
-    { product: 'AFFiNE Pro', price: 5000 },
+    { product: 'TrackWork Pro', price: 5000 },
   ],
   [
     `${SubscriptionPlan.Pro}_${SubscriptionRecurring.Lifetime}`,
     {
-      product: 'AFFiNE Pro Believer',
+      product: 'TrackWork Pro Believer',
       price: 49900,
     },
   ],
   [
     `${SubscriptionPlan.Pro}_${SubscriptionRecurring.Monthly}_${SubscriptionVariant.Onetime}`,
-    { product: 'AFFiNE Pro - One Month', price: 799 },
+    { product: 'TrackWork Pro - One Month', price: 799 },
   ],
   [
     `${SubscriptionPlan.Pro}_${SubscriptionRecurring.Yearly}_${SubscriptionVariant.Onetime}`,
-    { product: 'AFFiNE Pro - One Year', price: 8100 },
+    { product: 'TrackWork Pro - One Year', price: 8100 },
   ],
 
   // ai
   [
     `${SubscriptionPlan.AI}_${SubscriptionRecurring.Yearly}`,
-    { product: 'AFFiNE AI', price: 10680 },
+    { product: 'TrackWork AI', price: 10680 },
   ],
   // only EA for yearly AI
   [
     `${SubscriptionPlan.AI}_${SubscriptionRecurring.Yearly}_${SubscriptionVariant.EA}`,
-    { product: 'AFFiNE AI', price: 9900 },
+    { product: 'TrackWork AI', price: 9900 },
   ],
   [
     `${SubscriptionPlan.AI}_${SubscriptionRecurring.Yearly}_${SubscriptionVariant.Onetime}`,
-    { product: 'AFFiNE AI - One Year', price: 10680 },
+    { product: 'TrackWork AI - One Year', price: 10680 },
   ],
 
   // team
   [
     `${SubscriptionPlan.Team}_${SubscriptionRecurring.Monthly}`,
-    { product: 'AFFiNE Team(per seat)', price: 1200 },
+    { product: 'TrackWork Team(per seat)', price: 1200 },
   ],
   [
     `${SubscriptionPlan.Team}_${SubscriptionRecurring.Yearly}`,
-    { product: 'AFFiNE Team(per seat)', price: 12000 },
+    { product: 'TrackWork Team(per seat)', price: 12000 },
   ],
 
   // selfhost team
   [
     `${SubscriptionPlan.SelfHostedTeam}_${SubscriptionRecurring.Monthly}`,
-    { product: 'AFFiNE Self-hosted Team(per seat)', price: 1200 },
+    { product: 'TrackWork Self-hosted Team(per seat)', price: 1200 },
   ],
   [
     `${SubscriptionPlan.SelfHostedTeam}_${SubscriptionRecurring.Yearly}`,
-    { product: 'AFFiNE Self-hosted Team(per seat)', price: 12000 },
+    { product: 'TrackWork Self-hosted Team(per seat)', price: 12000 },
   ],
 ]);
 

@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import { openHomePage } from '@affine-test/kit/utils/load-page';
@@ -53,6 +54,62 @@ const cloudUserSchema = z.object({
   email: z.string().email(),
   password: z.string(),
 });
+
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+function decodeBase32(input: string) {
+  const normalized = input
+    .replace(/=+$/g, '')
+    .replace(/\s+/g, '')
+    .toUpperCase();
+  let value = 0;
+  let bits = 0;
+  const output: number[] = [];
+
+  for (const char of normalized) {
+    const idx = BASE32_ALPHABET.indexOf(char);
+    if (idx === -1) {
+      throw new Error('Invalid base32 secret.');
+    }
+
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      output.push((value >>> (bits - 8)) & 0xff);
+      bits -= 8;
+    }
+  }
+
+  return Buffer.from(output);
+}
+
+function hotp(secret: string, counter: number, digits = 6) {
+  const key = decodeBase32(secret);
+  const counterBytes = Buffer.alloc(8);
+  counterBytes.writeBigUInt64BE(BigInt(counter));
+
+  const digest = createHmac('sha1', key).update(counterBytes).digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const binary =
+    ((digest[offset] & 0x7f) << 24) |
+    ((digest[offset + 1] & 0xff) << 16) |
+    ((digest[offset + 2] & 0xff) << 8) |
+    (digest[offset + 3] & 0xff);
+  const otp = binary % 10 ** digits;
+
+  return otp.toString().padStart(digits, '0');
+}
+
+export function generateTotpCode(
+  secret: string,
+  options?: { digits?: number; periodSeconds?: number; atMs?: number }
+) {
+  const digits = options?.digits ?? 6;
+  const periodSeconds = options?.periodSeconds ?? 30;
+  const atMs = options?.atMs ?? Date.now();
+  const counter = Math.floor(atMs / 1000 / periodSeconds);
+  return hotp(secret, counter, digits);
+}
 
 const server = new Package('@affine/server');
 const require = createRequire(server.srcPath.join('index.ts').toFileUrl());
@@ -155,7 +212,7 @@ export async function cleanupWorkspace(workspaceId: string): Promise<void> {
 export async function switchDefaultChatModel(model: string) {
   await runPrisma(async client => {
     const prompt = await client.aiPrompt.findFirst({
-      where: { name: 'Chat With AFFiNE AI' },
+      where: { name: 'Chat With TrackWork AI' },
       select: { id: true },
     });
     if (!prompt) return;

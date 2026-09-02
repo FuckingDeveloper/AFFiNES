@@ -5,6 +5,6 @@ import timber.log.Timber
 class AffineDebugTree : Timber.DebugTree() {
 
     override fun createStackElementTag(element: StackTraceElement): String {
-        return "Affine:${super.createStackElementTag(element)}:${element.lineNumber}"
+        return "TrackWork:${super.createStackElementTag(element)}:${element.lineNumber}"
     }
 }

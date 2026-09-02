@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { OneDay, OneGB, OneMB } from '../../base';
+import { OneDay } from '../../base';
 
 const UserPlanQuotaConfig = z.object({
   // quota name
@@ -95,14 +95,13 @@ export type FeatureConfig<T extends FeatureName> = z.infer<
 const FreeFeature = {
   type: FeatureType.Quota,
   configs: {
-    // quota name
-    name: 'Free',
-    blobLimit: 10 * OneMB,
-    businessBlobLimit: 100 * OneMB,
-    storageQuota: 10 * OneGB,
-    historyPeriod: 7 * OneDay,
-    memberLimit: 3,
-    copilotActionLimit: 10,
+    // single unified free plan with unlocked limits
+    name: 'Free+',
+    blobLimit: Number.MAX_SAFE_INTEGER,
+    businessBlobLimit: Number.MAX_SAFE_INTEGER,
+    storageQuota: Number.MAX_SAFE_INTEGER,
+    historyPeriod: 36500 * OneDay,
+    memberLimit: 2_147_483_647,
   },
 } as const;
 
@@ -110,11 +109,10 @@ const ProFeature = {
   type: FeatureType.Quota,
   configs: {
     name: 'Pro',
-    blobLimit: 100 * OneMB,
-    storageQuota: 100 * OneGB,
-    historyPeriod: 30 * OneDay,
-    memberLimit: 10,
-    copilotActionLimit: 10,
+    blobLimit: Number.MAX_SAFE_INTEGER,
+    storageQuota: Number.MAX_SAFE_INTEGER,
+    historyPeriod: 36500 * OneDay,
+    memberLimit: 2_147_483_647,
   },
 } as const;
 
@@ -122,11 +120,10 @@ const LifetimeProFeature = {
   type: FeatureType.Quota,
   configs: {
     name: 'Lifetime Pro',
-    blobLimit: 100 * OneMB,
-    storageQuota: 1024 * OneGB,
-    historyPeriod: 30 * OneDay,
-    memberLimit: 10,
-    copilotActionLimit: 10,
+    blobLimit: Number.MAX_SAFE_INTEGER,
+    storageQuota: Number.MAX_SAFE_INTEGER,
+    historyPeriod: 36500 * OneDay,
+    memberLimit: 2_147_483_647,
   },
 } as const;
 
@@ -134,11 +131,11 @@ const TeamFeature = {
   type: FeatureType.Quota,
   configs: {
     name: 'Team Workspace',
-    blobLimit: 500 * OneMB,
-    storageQuota: 100 * OneGB,
-    seatQuota: 20 * OneGB,
-    historyPeriod: 30 * OneDay,
-    memberLimit: 1,
+    blobLimit: Number.MAX_SAFE_INTEGER,
+    storageQuota: Number.MAX_SAFE_INTEGER,
+    seatQuota: 0,
+    historyPeriod: 36500 * OneDay,
+    memberLimit: 2_147_483_647,
   },
 } as const;
 
@@ -158,9 +155,7 @@ export const FeatureConfigs: {
     configs: FeatureConfig<K>;
   };
 } = {
-  get free_plan_v1() {
-    return env.selfhosted ? ProFeature : FreeFeature;
-  },
+  free_plan_v1: FreeFeature,
   pro_plan_v1: ProFeature,
   lifetime_pro_plan_v1: LifetimeProFeature,
   team_plan_v1: TeamFeature,

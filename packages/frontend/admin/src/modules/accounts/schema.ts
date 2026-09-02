@@ -2,6 +2,7 @@ import type { FeatureType, ListUsersQuery } from '@affine/graphql';
 
 export type UserType = ListUsersQuery['users'][0];
 export type UserInput = {
+  username: string;
   name: string;
   email: string;
   password?: string;

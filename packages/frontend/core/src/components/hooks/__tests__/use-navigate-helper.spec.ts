@@ -24,36 +24,36 @@ describe('use-navigate-helper utilities', () => {
   test('buildWorkspaceSettingsRedirectUri builds a settings redirect from a workspace page', () => {
     expect(
       buildWorkspaceSettingsRedirectUri(
-        'https://app.affine.pro/workspace/workspace-1/all',
+        'https://trackwork.mrhsoftware.com/workspace/workspace-1/all',
         {
           tab: 'workspace:integrations',
           scrollAnchor: 'integration-calendar',
         }
       )
     ).toBe(
-      'https://app.affine.pro/workspace/workspace-1/settings?tab=workspace%3Aintegrations&scrollAnchor=integration-calendar'
+      'https://trackwork.mrhsoftware.com/workspace/workspace-1/settings?tab=workspace%3Aintegrations&scrollAnchor=integration-calendar'
     );
   });
 
   test('buildWorkspaceSettingsRedirectUri preserves app subpaths before the workspace route', () => {
     expect(
       buildWorkspaceSettingsRedirectUri(
-        'https://app.affine.pro/app/workspace/workspace-1/collection',
+        'https://trackwork.mrhsoftware.com/app/workspace/workspace-1/collection',
         {
           tab: 'workspace:integrations',
           scrollAnchor: 'integration-calendar',
         }
       )
     ).toBe(
-      'https://app.affine.pro/app/workspace/workspace-1/settings?tab=workspace%3Aintegrations&scrollAnchor=integration-calendar'
+      'https://trackwork.mrhsoftware.com/app/workspace/workspace-1/settings?tab=workspace%3Aintegrations&scrollAnchor=integration-calendar'
     );
   });
 
   test('buildWorkspaceSettingsRedirectUri falls back to the current url when no workspace route is present', () => {
     expect(
-      buildWorkspaceSettingsRedirectUri('https://app.affine.pro/sign-in', {
+      buildWorkspaceSettingsRedirectUri('https://trackwork.mrhsoftware.com/sign-in', {
         tab: 'workspace:integrations',
       })
-    ).toBe('https://app.affine.pro/sign-in');
+    ).toBe('https://trackwork.mrhsoftware.com/sign-in');
   });
 });

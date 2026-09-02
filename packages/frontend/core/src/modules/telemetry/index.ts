@@ -1,9 +1,5 @@
 import { type Framework } from '@toeverything/infra';
 
-import { ServersService } from '../cloud';
-import { GlobalContextService } from '../global-context';
-import { TelemetryService } from './services/telemetry';
-
-export function configureTelemetryModule(framework: Framework) {
-  framework.service(TelemetryService, [GlobalContextService, ServersService]);
+export function configureTelemetryModule(_framework: Framework) {
+  // Telemetry is intentionally disabled for the internal TrackWork build.
 }

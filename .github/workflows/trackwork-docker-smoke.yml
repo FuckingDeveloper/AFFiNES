@@ -1,0 +1,75 @@
+name: TrackWork Docker smoke test
+
+on:
+  pull_request:
+    paths:
+      - '.docker/selfhost/**'
+      - '.github/deployment/node/Dockerfile'
+      - 'packages/backend/**'
+      - 'packages/frontend/admin/**'
+      - 'packages/frontend/apps/web/**'
+      - 'packages/frontend/core/**'
+      - 'scripts/start-docker-selfhost.sh'
+      - '.github/workflows/trackwork-docker-smoke.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: trackwork-docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare self-host configuration
+        run: |
+          cp .docker/selfhost/.env.example .docker/selfhost/.env
+          sed -i 's/change-this-to-a-long-random-password/trackwork-ci-password-0123456789abcdef/' .docker/selfhost/.env
+
+      - name: Build and start TrackWork
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+        run: ./scripts/start-docker-selfhost.sh
+
+      - name: Wait for readiness
+        run: |
+          for attempt in $(seq 1 60); do
+            echo "Readiness check ${attempt}/60"
+            if curl -fsS http://127.0.0.1:3010/health/ready > /tmp/ready.json; then
+              grep -q '"postgres":"ok"' /tmp/ready.json
+              grep -q '"redis":"ok"' /tmp/ready.json
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "TrackWork did not become ready after 60 attempts" >&2
+          exit 1
+
+      - name: Verify WEB, Admin and username login
+        run: |
+          curl -fsS http://127.0.0.1:3010/ | grep -q '<html'
+          curl -fsS http://127.0.0.1:3010/admin/ | grep -q '<html'
+          curl -fsS -H 'content-type: application/json' \
+            -H 'x-affine-version: 0.26.3' \
+            -d '{"username":"smoke-admin","name":"Smoke Admin","email":"smoke@trackwork.local","password":"TrackWork-ci-1234"}' \
+            http://127.0.0.1:3010/api/setup/create-admin-user > /tmp/admin.json
+          grep -q '"username":"smoke-admin"' /tmp/admin.json
+          curl -fsS -c /tmp/cookies.txt \
+            -H 'content-type: application/json' \
+            -H 'x-affine-version: 0.26.3' \
+            -d '{"email":"smoke-admin","password":"TrackWork-ci-1234"}' \
+            http://127.0.0.1:3010/api/auth/sign-in > /tmp/login.json
+          grep -q '"username":"smoke-admin"' /tmp/login.json
+
+      - name: Show diagnostics
+        if: always()
+        run: |
+          docker compose --env-file .docker/selfhost/.env \
+            -f .docker/selfhost/compose.yml \
+            -f .docker/selfhost/compose.local.yml ps -a
+          docker compose --env-file .docker/selfhost/.env \
+            -f .docker/selfhost/compose.yml \
+            -f .docker/selfhost/compose.local.yml logs --tail=150

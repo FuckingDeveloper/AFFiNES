@@ -1,0 +1,11 @@
+mutation refreshDevelopmentPipelines($connectionId: String!) {
+  refreshDevelopmentPipelines(connectionId: $connectionId) {
+    externalId
+    number
+    name
+    status
+    url
+    startedAt
+    finishedAt
+  }
+}

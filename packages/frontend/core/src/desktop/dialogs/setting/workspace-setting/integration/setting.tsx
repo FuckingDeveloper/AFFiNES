@@ -96,9 +96,13 @@ export const IntegrationSettingTextRadioGroup = ({
   checked,
   onChange,
 }: IntegrationSettingTextRadioGroupProps) => {
+  const safeItems = items.filter(
+    (item): item is IntegrationSettingTextRadioGroupItem => !!item
+  );
+
   return (
     <div className={styles.textRadioGroup}>
-      {items.map(item => (
+      {safeItems.map(item => (
         <div
           onClick={() => onChange(item.value)}
           key={item.value}

@@ -39,3 +39,10 @@ declare module '*.wasm?url' {
   const url: string;
   export default url;
 }
+
+declare module 'qrcode' {
+  export function toDataURL(
+    text: string,
+    options?: { width?: number; margin?: number }
+  ): Promise<string>;
+}

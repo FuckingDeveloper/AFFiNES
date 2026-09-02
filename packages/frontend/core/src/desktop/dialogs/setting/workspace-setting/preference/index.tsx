@@ -13,7 +13,6 @@ import { FrameworkScope, useService } from '@toeverything/infra';
 import { useCallback } from 'react';
 
 import { DeleteLeaveWorkspace } from './delete-leave-workspace';
-import { EnableCloudPanel } from './enable-cloud';
 import { LabelsPanel } from './labels';
 import { ProfilePanel } from './profile';
 import { SharingPanel } from './sharing';
@@ -57,9 +56,6 @@ export const WorkspaceSettingDetail = ({
         >
           <ProfilePanel />
           <LabelsPanel />
-          {workspace.flavour === 'local' && (
-            <EnableCloudPanel onCloseSetting={onCloseSetting} />
-          )}
         </SettingRow>
       </SettingWrapper>
       <TemplateDocSetting />

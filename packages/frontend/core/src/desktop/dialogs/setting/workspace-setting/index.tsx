@@ -1,30 +1,25 @@
-import { useWorkspaceInfo } from '@affine/core/components/hooks/use-workspace-info';
-import { ServerService } from '@affine/core/modules/cloud';
 import type { SettingTab } from '@affine/core/modules/dialogs/constant';
-import { WorkspaceService } from '@affine/core/modules/workspace';
 import { EmbeddingSettings } from '@affine/core/modules/workspace-indexer-embedding';
-import { ServerDeploymentType } from '@affine/graphql';
+import { useTaskTrackerI18n } from '@affine/core/utils/task-tracker-i18n';
 import { useI18n } from '@affine/i18n';
 import {
   AiEmbeddingIcon,
   CollaborationIcon,
   IntegrationsIcon,
-  PaymentIcon,
   PropertyIcon,
   SaveIcon,
   SettingsIcon,
+  ViewLayersIcon,
 } from '@blocksuite/icons/rc';
-import { useLiveData, useService } from '@toeverything/infra';
 import { useMemo } from 'react';
 
 import type { SettingSidebarItem, SettingState } from '../types';
-import { WorkspaceSettingBilling } from './billing';
 import { IntegrationSetting } from './integration';
-import { WorkspaceSettingLicense } from './license';
 import { MembersPanel } from './members';
 import { WorkspaceSettingDetail } from './preference';
 import { WorkspaceSettingProperties } from './properties';
 import { WorkspaceSettingStorage } from './storage';
+import { WorkspaceTaskTrackerSetting } from './task-tracker';
 
 export const WorkspaceSetting = ({
   activeTab,
@@ -49,37 +44,23 @@ export const WorkspaceSetting = ({
           onChangeSettingState={onChangeSettingState}
         />
       );
-    case 'workspace:billing':
-      return <WorkspaceSettingBilling />;
     case 'workspace:storage':
       return <WorkspaceSettingStorage onCloseSetting={onCloseSetting} />;
-    case 'workspace:license':
-      return <WorkspaceSettingLicense onCloseSetting={onCloseSetting} />;
     case 'workspace:integrations':
       return <IntegrationSetting scrollAnchor={scrollAnchor} />;
     case 'workspace:embedding':
       return <EmbeddingSettings />;
+    case 'workspace:task-tracker':
+      return <WorkspaceTaskTrackerSetting />;
     default:
       return null;
   }
 };
 
 export const useWorkspaceSettingList = (): SettingSidebarItem[] => {
-  const workspaceService = useService(WorkspaceService);
-  const information = useWorkspaceInfo(workspaceService.workspace);
-  const serverService = useService(ServerService);
-
-  const isSelfhosted = useLiveData(
-    serverService.server.config$.selector(
-      c => c.type === ServerDeploymentType.Selfhosted
-    )
-  );
-
   const t = useI18n();
+  const { t: taskTrackerT } = useTaskTrackerI18n();
 
-  const showBilling =
-    !isSelfhosted && information?.isTeam && information?.isOwner;
-  const showLicense = information?.isOwner && isSelfhosted;
   const items = useMemo<SettingSidebarItem[]>(() => {
     return [
       {
@@ -121,20 +102,14 @@ export const useWorkspaceSettingList = (): SettingSidebarItem[] => {
         icon: <AiEmbeddingIcon />,
         testId: 'workspace-setting:embedding',
       },
-      showBilling && {
-        key: 'workspace:billing' as SettingTab,
-        title: t['com.affine.settings.workspace.billing'](),
-        icon: <PaymentIcon />,
-        testId: 'workspace-setting:billing',
-      },
-      showLicense && {
-        key: 'workspace:license' as SettingTab,
-        title: t['com.affine.settings.workspace.license'](),
-        icon: <PaymentIcon />,
-        testId: 'workspace-setting:license',
+      {
+        key: 'workspace:task-tracker',
+        title: taskTrackerT('title'),
+        icon: <ViewLayersIcon />,
+        testId: 'workspace-setting:task-tracker',
       },
     ].filter((item): item is SettingSidebarItem => !!item);
-  }, [showBilling, showLicense, t]);
+  }, [t, taskTrackerT]);
 
   return items;
 };

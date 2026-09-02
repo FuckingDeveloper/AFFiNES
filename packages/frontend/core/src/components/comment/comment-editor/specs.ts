@@ -145,7 +145,7 @@ export function getCommentEditorViewManager(framework: FrameworkProvider) {
       ViewportOverlayViewExtension,
       LinkedDocViewExtension,
 
-      // Affine side
+      // TrackWork side
       AffineThemeViewExtension,
       AffineEditorViewExtension,
 

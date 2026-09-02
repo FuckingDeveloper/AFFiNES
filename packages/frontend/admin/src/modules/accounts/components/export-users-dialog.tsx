@@ -32,7 +32,7 @@ export function ExportUsersDialog({
   const [fields, setFields] = useState<ExportField[]>([
     {
       id: 'name',
-      label: 'Username',
+      label: 'Имя пользователя',
       checked: true,
     },
     {
@@ -59,11 +59,11 @@ export function ExportUsersDialog({
       await exportCSV(users, fields, () => {
         setIsExporting(false);
         onOpenChange(false);
-        toast('Users exported successfully');
+        toast('Пользователи успешно экспортированы');
       });
     } catch (error) {
-      console.error('Failed to export users', error);
-      toast.error('Failed to export users');
+      console.error('Не удалось экспортировать пользователей', error);
+      toast.error('Не удалось экспортировать пользователей');
       setIsExporting(false);
     }
   }, [exportCSV, fields, onOpenChange, users]);
@@ -74,11 +74,11 @@ export function ExportUsersDialog({
       await copyToClipboard(users, fields, () => {
         setIsCopying(false);
         onOpenChange(false);
-        toast('Users copied successfully');
+        toast('Пользователи успешно скопированы');
       });
     } catch (error) {
-      console.error('Failed to copy users', error);
-      toast.error('Failed to copy users');
+      console.error('Не удалось скопировать пользователей', error);
+      toast.error('Не удалось скопировать пользователей');
       setIsCopying(false);
     }
   }, [copyToClipboard, fields, onOpenChange, users]);
@@ -87,7 +87,7 @@ export function ExportUsersDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Export</DialogTitle>
+          <DialogTitle>Экспорт</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
@@ -112,7 +112,7 @@ export function ExportUsersDialog({
             className="w-full text-[15px] px-4 py-2 h-10"
             disabled={isExporting || isCopying}
           >
-            {isExporting ? 'Exporting...' : 'Download account information'}
+            {isExporting ? 'Экспорт...' : 'Скачать данные аккаунтов'}
           </Button>
           <Button
             variant="outline"

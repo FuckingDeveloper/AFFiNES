@@ -5,26 +5,41 @@ import type { CookieOptions, Request, Response } from 'express';
 import { assign, pick } from 'lodash-es';
 
 import {
+  BadRequest,
   Config,
+  CryptoHelper,
   getClientVersionFromRequest,
   SignUpForbidden,
+  WrongSignInCredentials,
 } from '../../base';
 import { Models, type User, type UserSession } from '../../models';
 import { Mailer } from '../mail/mailer';
+import { AuthMode } from './config';
 import { createDevUsers } from './dev';
+import { EnterpriseAuthService } from './enterprise-auth';
 import type { CurrentUser } from './session';
+import { generateTotpSecret, toOtpAuthUrl, verifyTotp } from './totp';
 
 export function sessionUser(
   user: Pick<
     User,
-    'id' | 'email' | 'avatarUrl' | 'name' | 'emailVerifiedAt' | 'disabled'
+    | 'id'
+    | 'username'
+    | 'email'
+    | 'avatarUrl'
+    | 'name'
+    | 'emailVerifiedAt'
+    | 'disabled'
   > & { password?: string | null }
 ): CurrentUser {
   // use pick to avoid unexpected fields
-  return assign(pick(user, 'id', 'email', 'avatarUrl', 'name', 'disabled'), {
-    hasPassword: user.password !== null,
-    emailVerified: user.emailVerifiedAt !== null,
-  });
+  return assign(
+    pick(user, 'id', 'username', 'email', 'avatarUrl', 'name', 'disabled'),
+    {
+      hasPassword: user.password !== null,
+      emailVerified: user.emailVerifiedAt !== null,
+    }
+  );
 }
 
 function extractTokenFromHeader(authorization: string) {
@@ -45,7 +60,9 @@ export class AuthService implements OnApplicationBootstrap {
   constructor(
     private readonly config: Config,
     private readonly models: Models,
-    private readonly mailer: Mailer
+    private readonly crypto: CryptoHelper,
+    private readonly mailer: Mailer,
+    private readonly enterpriseAuth: EnterpriseAuthService
   ) {
     this.cookieOptions = {
       sameSite: 'lax',
@@ -86,8 +103,112 @@ export class AuthService implements OnApplicationBootstrap {
       .then(sessionUser);
   }
 
-  async signIn(email: string, password: string): Promise<CurrentUser> {
-    return this.models.user.signIn(email, password).then(sessionUser);
+  async signIn(login: string, password: string): Promise<CurrentUser> {
+    if (this.config.auth.mode !== AuthMode.Password) {
+      const externalAuth = await this.enterpriseAuth.authenticate(
+        login,
+        password
+      );
+      if (!externalAuth.authenticated) {
+        throw new WrongSignInCredentials({ email: login });
+      }
+
+      let user = await this.models.user.getUserByEmail(login, {
+        withDisabled: true,
+      });
+      if (!user && !this.enterpriseAuth.canAutoRegister()) {
+        throw new WrongSignInCredentials({ email: login });
+      }
+
+      try {
+        user = await this.models.user.fulfill(login, {
+          name: externalAuth.displayName,
+        });
+      } catch {
+        throw new WrongSignInCredentials({ email: login });
+      }
+
+      return sessionUser(user);
+    }
+
+    return this.models.user.signIn(login, password).then(sessionUser);
+  }
+
+  async canPasswordSignIn(login: string) {
+    if (this.config.auth.mode !== AuthMode.Password) {
+      return this.enterpriseAuth.canTryPasswordSignIn(login, false, false);
+    }
+
+    const user = await this.models.user.getUserByLogin(login);
+    return !!user?.password;
+  }
+
+  async getTwoFactorStatus(userId: string) {
+    const twoFactor = await this.models.twoFactorAuth.get(userId);
+    return {
+      enabled: !!twoFactor,
+    };
+  }
+
+  async createTwoFactorSetup(user: Pick<User, 'email'>) {
+    const secret = generateTotpSecret(this.crypto.randomBytes(20));
+    const issuer = this.config.server.name?.trim() || 'TrackWork';
+
+    return {
+      secret,
+      issuer,
+      otpauthUrl: toOtpAuthUrl(secret, {
+        issuer,
+        accountName: user.email,
+      }),
+    };
+  }
+
+  async enableTwoFactor(userId: string, secret: string, code: string) {
+    const normalizedSecret = secret.replace(/\s+/g, '').toUpperCase();
+    let isValid = false;
+    try {
+      isValid = verifyTotp(normalizedSecret, code);
+    } catch {
+      throw new BadRequest('TWO_FACTOR_INVALID');
+    }
+
+    if (!isValid) {
+      throw new BadRequest('TWO_FACTOR_INVALID');
+    }
+
+    const secretEncrypted = this.crypto.encrypt(normalizedSecret);
+    await this.models.twoFactorAuth.upsert(userId, secretEncrypted);
+  }
+
+  async disableTwoFactor(userId: string, code: string) {
+    const twoFactor = await this.models.twoFactorAuth.get(userId);
+    if (!twoFactor) {
+      return;
+    }
+
+    const secret = this.crypto.decrypt(twoFactor.secretEncrypted);
+    if (!verifyTotp(secret, code)) {
+      throw new BadRequest('TWO_FACTOR_INVALID');
+    }
+
+    await this.models.twoFactorAuth.delete(userId);
+  }
+
+  async verifySignInTwoFactor(userId: string, code?: string) {
+    const twoFactor = await this.models.twoFactorAuth.get(userId);
+    if (!twoFactor) {
+      return;
+    }
+
+    if (!code) {
+      throw new BadRequest('TWO_FACTOR_REQUIRED');
+    }
+
+    const secret = this.crypto.decrypt(twoFactor.secretEncrypted);
+    if (!verifyTotp(secret, code)) {
+      throw new BadRequest('TWO_FACTOR_INVALID');
+    }
   }
 
   async signOut(sessionId: string, userId?: string) {

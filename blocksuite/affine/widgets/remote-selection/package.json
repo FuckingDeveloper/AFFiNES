@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-remote-selection",
-  "description": "Affine remote selection widget.",
+  "description": "TrackWork remote selection widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

@@ -46,9 +46,9 @@ async function resolveWhitelistedLocalPath(filepath: string) {
 }
 
 const apiBaseByBuildType: Record<typeof buildType, string> = {
-  stable: 'https://app.affine.pro',
-  beta: 'https://insider.affine.pro',
-  internal: 'https://insider.affine.pro',
+  stable: 'https://trackwork.mrhsoftware.com',
+  beta: 'https://trackwork.mrhsoftware.com',
+  internal: 'https://trackwork.mrhsoftware.com',
   canary: 'https://affine.fail',
 };
 
@@ -285,7 +285,7 @@ export function registerProtocol() {
 
     (async () => {
       // session cookies are set to assets:// on production
-      // if sending request to the cloud, attach the session cookie (to affine cloud server)
+      // Attach the session cookie only to the configured TrackWork server.
       if (
         url.protocol === 'http:' ||
         url.protocol === 'https:' ||

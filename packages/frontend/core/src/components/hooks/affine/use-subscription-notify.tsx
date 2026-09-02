@@ -55,9 +55,7 @@ export const generateSubscriptionCallbackLink = (
       ? '/ai-upgrade-success'
       : plan === SubscriptionPlan.Team
         ? '/upgrade-success/team'
-        : plan === SubscriptionPlan.SelfHostedTeam
-          ? '/upgrade-success/self-hosted-team'
-          : '/upgrade-success';
+        : '/upgrade-success';
 
   if (plan === SubscriptionPlan.SelfHostedTeam) {
     return baseUrl;

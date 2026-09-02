@@ -17,7 +17,7 @@ const ROOT = path.resolve(__dirname, '..');
 const envBuildType = (process.env.BUILD_TYPE || 'canary').trim().toLowerCase();
 const buildType = ReleaseTypeSchema.parse(envBuildType);
 const stableBuild = buildType === 'stable';
-const productName = !stableBuild ? `AFFiNE-${buildType}` : 'AFFiNE';
+const productName = !stableBuild ? `AFFiNE-${buildType}` : 'TrackWork';
 const icoPath = path.join(
   ROOT,
   !stableBuild
@@ -44,7 +44,7 @@ const icnsPath = path.join(
 
 const iconPngPath = path.join(ROOT, './resources/icons/icon.png');
 
-const iconUrl = `https://cdn.affine.pro/app-icons/icon_${buildType}.ico`;
+const iconUrl = `https://trackwork.mrhsoftware.com/app-icons/icon_${buildType}.ico`;
 
 log(`buildType=${buildType}, productName=${productName}, icoPath=${icoPath}`);
 

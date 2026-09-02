@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-linked-doc",
-  "description": "Affine linked doc widget.",
+  "description": "TrackWork linked doc widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

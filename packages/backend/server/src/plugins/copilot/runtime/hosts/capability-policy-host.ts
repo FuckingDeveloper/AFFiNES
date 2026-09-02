@@ -42,8 +42,11 @@ export class CapabilityPolicyHost {
     userId: string | undefined,
     paymentEnabled: boolean | undefined
   ) {
-    if (!paymentEnabled || !userId) {
+    if (!userId) {
       return false;
+    }
+    if (!paymentEnabled) {
+      return true;
     }
 
     try {
@@ -55,9 +58,9 @@ export class CapabilityPolicyHost {
           plan: SubscriptionPlan.AI,
         } as never);
 
-      return subscription?.status === SubscriptionStatus.Active;
+      return !subscription || subscription.status === SubscriptionStatus.Active;
     } catch {
-      return false;
+      return true;
     }
   }
 

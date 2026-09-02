@@ -62,6 +62,40 @@ export const KNOWN_CONFIG_GROUPS = [
     fields: [
       'allowSignup',
       'allowSignupForOauth',
+      {
+        key: 'mode',
+        type: 'Enum',
+        options: ['password', 'ldap', 'radius'],
+        desc: 'Active authentication method. Only one method can be active at a time.',
+      },
+      'enterprise.autoRegister',
+      {
+        key: 'enterprise.allowedEmailDomains',
+        type: 'JSON',
+        desc: 'Allowed enterprise email domains in JSON array format (e.g. ["example.com"])',
+      },
+      'enterprise.ldap.url',
+      'enterprise.ldap.bindDN',
+      {
+        key: 'enterprise.ldap.bindCredentials',
+        type: 'String',
+        sensitive: true,
+      },
+      'enterprise.ldap.searchBase',
+      'enterprise.ldap.searchFilter',
+      'enterprise.ldap.nameAttribute',
+      'enterprise.ldap.connectTimeoutMs',
+      'enterprise.ldap.timeoutMs',
+      'enterprise.ldap.rejectUnauthorized',
+      'enterprise.radius.host',
+      'enterprise.radius.port',
+      {
+        key: 'enterprise.radius.secret',
+        type: 'String',
+        sensitive: true,
+      },
+      'enterprise.radius.nasIpAddress',
+      'enterprise.radius.timeoutMs',
       // nested json object
       {
         key: 'passwordRequirements',
@@ -85,7 +119,16 @@ export const KNOWN_CONFIG_GROUPS = [
       'SMTP.host',
       'SMTP.port',
       'SMTP.username',
-      'SMTP.password',
+      {
+        key: 'SMTP.password',
+        type: 'String',
+        sensitive: true,
+      },
+      {
+        key: 'fallbackSMTP.password',
+        type: 'String',
+        sensitive: true,
+      },
       'SMTP.ignoreTLS',
       'SMTP.sender',
     ],
@@ -143,14 +186,13 @@ export const KNOWN_CONFIG_GROUPS = [
   {
     name: 'OAuth',
     module: 'oauth',
-    fields: ['providers.google', 'providers.github', 'providers.oidc'],
+    fields: ['providers.oidc'],
   } as ConfigGroup<'oauth'>,
   {
     name: 'AI',
     module: 'copilot',
     fields: [
       'enabled',
-      'scenarios',
       'providers.openai',
       'providers.gemini',
       'providers.anthropic',

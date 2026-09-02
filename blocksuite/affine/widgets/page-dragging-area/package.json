@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-page-dragging-area",
-  "description": "Affine page dragging area widget.",
+  "description": "TrackWork page dragging area widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"

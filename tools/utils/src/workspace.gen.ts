@@ -1112,6 +1112,7 @@ export const PackageList = [
       'tools/utils',
       'packages/common/graphql',
       'packages/common/realtime',
+      'packages/common/trackwork',
     ],
   },
   {
@@ -1169,6 +1170,11 @@ export const PackageList = [
   {
     location: 'packages/common/s3-compat',
     name: '@affine/s3-compat',
+    workspaceDependencies: [],
+  },
+  {
+    location: 'packages/common/trackwork',
+    name: '@affine/trackwork',
     workspaceDependencies: [],
   },
   {
@@ -1297,6 +1303,7 @@ export const PackageList = [
       'packages/common/reader',
       'packages/frontend/templates',
       'packages/frontend/track',
+      'packages/common/trackwork',
       'blocksuite/affine/all',
       'blocksuite/affine/blocks/root',
       'blocksuite/affine/components',
@@ -1533,6 +1540,7 @@ export type PackageName =
   | '@affine/reader'
   | '@affine/realtime'
   | '@affine/s3-compat'
+  | '@affine/trackwork'
   | '@affine/admin'
   | '@affine/android'
   | '@affine/electron'

@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import type { NextFunction, Request, Response } from 'express';
 import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
 
 import {
@@ -84,6 +85,20 @@ export async function run() {
     app.setGlobalPrefix(config.server.path);
   }
 
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
+    if (config.server.https) {
+      res.setHeader(
+        'Strict-Transport-Security',
+        'max-age=31536000; includeSubDomains'
+      );
+    }
+    next();
+  });
+
   app.use(serverTimingAndCache);
 
   app.use(
@@ -110,8 +125,8 @@ export async function run() {
     const { SwaggerModule, DocumentBuilder } = await import('@nestjs/swagger');
     // Swagger API Docs
     const docConfig = new DocumentBuilder()
-      .setTitle('AFFiNE API')
-      .setDescription(`AFFiNE Server ${env.version} API documentation`)
+      .setTitle('TrackWork API')
+      .setDescription(`TrackWork Server ${env.version} API documentation`)
       .setVersion(`${env.version}`)
       .build();
     const documentFactory = () => SwaggerModule.createDocument(app, docConfig);
@@ -127,7 +142,7 @@ export async function run() {
     ? `[${config.server.listenAddr}]`
     : config.server.listenAddr;
 
-  logger.log(`AFFiNE Server is running in [${env.DEPLOYMENT_TYPE}] mode`);
+  logger.log(`TrackWork Server is running in [${env.DEPLOYMENT_TYPE}] mode`);
   logger.log(`Listening on http://${formattedAddr}:${config.server.port}`);
   logger.log(`And the public server should be recognized as ${url.baseUrl}`);
 }

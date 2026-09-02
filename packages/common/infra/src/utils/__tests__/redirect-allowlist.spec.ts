@@ -49,7 +49,7 @@ describe('redirect allowlist', () => {
     ).toBe(true);
 
     expect(
-      isAllowedRedirectTarget('https://affine.pro./', {
+      isAllowedRedirectTarget('https://trackwork.mrhsoftware.com./', {
         currentHostname: 'self.example.com',
       })
     ).toBe(true);

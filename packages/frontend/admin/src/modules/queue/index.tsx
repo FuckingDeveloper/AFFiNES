@@ -85,7 +85,7 @@ export function QueuePage() {
 
   return (
     <div className="h-dvh flex-1 flex-col flex overflow-hidden">
-      <Header title="Queue" />
+      <Header title="Очередь" />
       <div className="flex-1 overflow-hidden">
         <div className={`${QUEUEDASH_SCOPE_CLASS} h-full`}>
           <QueueDashApp

@@ -20,8 +20,13 @@
   "scripts": {
     "affine": "r affine.ts",
     "af": "r affine.ts",
-    "dev": "yarn affine dev",
-    "build": "yarn affine build",
+    "dev": "yarn run affine dev -p web",
+    "build": "yarn run affine build -p web",
+    "build:server": "yarn run affine build -p server --deps",
+    "build:admin": "yarn run affine build -p admin",
+    "build:mobile": "yarn run affine build -p mobile",
+    "build:trackwork": "yarn run build:server && yarn run build && yarn run build:admin",
+    "build:docker": "yarn run build:server && yarn run build && yarn run build:admin && yarn run build:mobile",
     "lint:eslint": "cross-env NODE_OPTIONS=\"--max-old-space-size=16384\" eslint --report-unused-disable-directives-severity=off . --cache",
     "lint:eslint:fix": "yarn lint:eslint --fix --fix-type problem,suggestion,layout",
     "lint:prettier": "prettier --ignore-unknown --cache --check .",
@@ -34,7 +39,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc -b tsconfig.json --verbose",
-    "postinstall": "yarn affine init && yarn husky"
+    "postinstall": "yarn run affine init && yarn husky"
   },
   "lint-staged": {
     "*": "prettier --write --ignore-unknown --cache",

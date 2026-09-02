@@ -14,16 +14,19 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
         <thead className="sticky top-0 bg-muted/40">
           <tr>
             <th className="border-b border-border px-4 py-2 text-left text-xs font-medium tracking-wider text-muted-foreground">
-              Name
+              Логин
+            </th>
+            <th className="border-b border-border px-4 py-2 text-left text-xs font-medium tracking-wider text-muted-foreground">
+              Имя
             </th>
             <th className="border-b border-border px-4 py-2 text-left text-xs font-medium tracking-wider text-muted-foreground">
               Email
             </th>
             <th className="border-b border-border px-4 py-2 text-left text-xs font-medium tracking-wider text-muted-foreground">
-              Password
+              Пароль
             </th>
             <th className="border-b border-border px-4 py-2 text-left text-xs font-medium tracking-wider text-muted-foreground">
-              Status
+              Статус
             </th>
           </tr>
         </thead>
@@ -36,6 +39,9 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
                 ${user.importStatus === ImportStatus.Success ? 'bg-[var(--affine-v2-layer-background-success)]' : ''}
                 ${user.importStatus === ImportStatus.Processing ? 'bg-[var(--affine-v2-layer-background-warning)]' : ''}`}
             >
+              <td className="max-w-[150px] truncate px-4 py-2 text-sm text-foreground">
+                {user.username || '(создастся автоматически)'}
+              </td>
               <td className="max-w-[150px] truncate px-4 py-2 text-sm text-foreground">
                 {user.name || '-'}
               </td>
@@ -64,27 +70,27 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
                 {user.importStatus === ImportStatus.Success ? (
                   <span className="text-foreground">
                     <span className="mr-2 inline-block h-2 w-2 rounded-full bg-[var(--affine-v2-status-success)]" />
-                    Success
+                    Успешно
                   </span>
                 ) : user.importStatus === ImportStatus.Failed ? (
                   <span className="text-destructive" title={user.importError}>
                     <span className="mr-2 inline-block h-2 w-2 rounded-full bg-destructive" />
-                    Failed ({user.importError})
+                    Ошибка ({user.importError})
                   </span>
                 ) : user.importStatus === ImportStatus.Processing ? (
                   <span className="text-primary">
                     <span className="mr-2 inline-block h-2 w-2 rounded-full bg-primary" />
-                    Processing...
+                    Обработка...
                   </span>
                 ) : user.valid === false ? (
                   <span className="text-destructive" title={user.error}>
                     <span className="mr-2 inline-block h-2 w-2 rounded-full bg-destructive" />
-                    Invalid ({user.error})
+                    Некорректно ({user.error})
                   </span>
                 ) : (
                   <span className="text-foreground">
                     <span className="mr-2 inline-block h-2 w-2 rounded-full bg-foreground" />
-                    Valid
+                    Корректно
                   </span>
                 )}
               </td>

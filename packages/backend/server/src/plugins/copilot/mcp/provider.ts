@@ -425,7 +425,7 @@ export class WorkspaceMcpProvider {
     }
 
     return {
-      name: `AFFiNE MCP Server for Workspace ${workspaceId}`,
+      name: `TrackWork MCP Server for Workspace ${workspaceId}`,
       version: '1.0.1',
       tools,
     };

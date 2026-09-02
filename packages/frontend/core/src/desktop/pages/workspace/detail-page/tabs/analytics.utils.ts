@@ -2,7 +2,7 @@ import type { GetDocPageAnalyticsQuery } from '@affine/graphql';
 
 export const ANALYTICS_WINDOW_OPTIONS = [7, 14, 28, 60, 90] as const;
 export const DEFAULT_ANALYTICS_WINDOW_DAYS = 28;
-export const NON_TEAM_ANALYTICS_WINDOW_DAYS = 7;
+export const NON_TEAM_ANALYTICS_WINDOW_DAYS = 90;
 export const INITIAL_MEMBERS_PAGE_SIZE = 5;
 export const MAX_MEMBERS_PAGE_SIZE = 50;
 

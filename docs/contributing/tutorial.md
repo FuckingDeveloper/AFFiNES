@@ -23,7 +23,7 @@ The codebase is organized as follows:
 
 ### `@affine/env`
 
-Environment setup for AFFiNE client side.
+Environment setup for TrackWork client side.
 
 It includes the global constants, browser and system check.
 

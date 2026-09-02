@@ -35,13 +35,13 @@ interface DataTableToolbarProps<TData> {
 }
 
 const sortOptions: { value: AdminWorkspaceSort; label: string }[] = [
-  { value: AdminWorkspaceSort.CreatedAt, label: 'Created time' },
-  { value: AdminWorkspaceSort.BlobCount, label: 'Blob count' },
-  { value: AdminWorkspaceSort.BlobSize, label: 'Blob size' },
-  { value: AdminWorkspaceSort.SnapshotCount, label: 'Snapshot count' },
-  { value: AdminWorkspaceSort.SnapshotSize, label: 'Snapshot size' },
-  { value: AdminWorkspaceSort.MemberCount, label: 'Member count' },
-  { value: AdminWorkspaceSort.PublicPageCount, label: 'Public pages' },
+  { value: AdminWorkspaceSort.CreatedAt, label: 'Время создания' },
+  { value: AdminWorkspaceSort.BlobCount, label: 'Количество blob' },
+  { value: AdminWorkspaceSort.BlobSize, label: 'Размер blob' },
+  { value: AdminWorkspaceSort.SnapshotCount, label: 'Количество снимков' },
+  { value: AdminWorkspaceSort.SnapshotSize, label: 'Размер снимков' },
+  { value: AdminWorkspaceSort.MemberCount, label: 'Количество участников' },
+  { value: AdminWorkspaceSort.PublicPageCount, label: 'Публичные страницы' },
 ];
 
 export function DataTableToolbar<TData>({
@@ -82,22 +82,22 @@ export function DataTableToolbar<TData>({
   const selectedSortLabel = useMemo(
     () =>
       sortOptions.find(option => option.value === sort)?.label ??
-      'Created time',
+      'Время создания',
     [sort]
   );
 
   const flagOptions: { key: keyof WorkspaceFlagFilter; label: string }[] = [
-    { key: 'public', label: 'Public' },
-    { key: 'enableSharing', label: 'Enable sharing' },
-    { key: 'enableAi', label: 'Enable AI' },
-    { key: 'enableUrlPreview', label: 'Enable URL preview' },
-    { key: 'enableDocEmbedding', label: 'Enable doc embedding' },
+    { key: 'public', label: 'Публичный' },
+    { key: 'enableSharing', label: 'Разрешить общий доступ' },
+    { key: 'enableAi', label: 'Включить AI' },
+    { key: 'enableUrlPreview', label: 'Включить предпросмотр URL' },
+    { key: 'enableDocEmbedding', label: 'Включить встраивание документов' },
   ];
 
   const flagLabel = (value: boolean | undefined) => {
-    if (value === true) return 'On';
-    if (value === false) return 'Off';
-    return 'Any';
+    if (value === true) return 'Вкл';
+    if (value === false) return 'Выкл';
+    return 'Любой';
   };
 
   const handleFlagToggle = useCallback(
@@ -134,7 +134,7 @@ export function DataTableToolbar<TData>({
               className="h-8 px-2 lg:px-3"
               disabled={disabled}
             >
-              Sort: {selectedSortLabel}
+              Сортировка: {selectedSortLabel}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[220px] p-2">
@@ -162,7 +162,7 @@ export function DataTableToolbar<TData>({
               className="h-8 px-2 lg:px-3"
               disabled={disabled}
             >
-              Flags
+              Флаги
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[260px] p-2">
@@ -187,7 +187,7 @@ export function DataTableToolbar<TData>({
         </Popover>
         <div className="flex">
           <Input
-            placeholder="Search Workspace / Owner"
+            placeholder="Поиск рабочего пространства / владельца"
             value={value}
             onChange={onValueChange}
             className="h-8 w-[150px] lg:w-[250px]"

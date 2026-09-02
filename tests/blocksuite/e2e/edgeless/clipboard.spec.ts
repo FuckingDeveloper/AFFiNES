@@ -242,7 +242,7 @@ test.describe('pasting URLs', () => {
     await waitNextFrame(page);
 
     await pasteContent(page, {
-      'text/plain': 'https://affine.pro',
+      'text/plain': 'https://trackwork.mrhsoftware.com',
     });
 
     await expect(page.locator('bookmark-card')).toBeVisible();

@@ -16,18 +16,15 @@ import {
 import { useLiveData, useServices } from '@toeverything/infra';
 import { useEffect, useMemo } from 'react';
 
-import { AuthService, ServerService } from '../../../../modules/cloud';
+import { AuthService } from '../../../../modules/cloud';
 import type { SettingSidebarItem, SettingState } from '../types';
 import { AboutAffine } from './about';
 import { AppearanceSettings } from './appearance';
 import { BackupSettingPanel } from './backup';
-import { BillingSettings } from './billing';
 import { EditorSettings } from './editor';
 import { ExperimentalFeatures } from './experimental-features';
-import { PaymentIcon, UpgradeIcon } from './icons';
 import { MeetingsSettings } from './meetings';
 import { NotificationSettings } from './notifications';
-import { AFFiNEPricingPlans } from './plans';
 import { Shortcuts } from './shortcuts';
 
 export type GeneralSettingList = SettingSidebarItem[];
@@ -36,22 +33,17 @@ export const useGeneralSettingList = (): GeneralSettingList => {
   const t = useI18n();
   const {
     authService,
-    serverService,
     userFeatureService,
     featureFlagService,
     meetingSettingsService,
   } = useServices({
     AuthService,
-    ServerService,
     UserFeatureService,
     FeatureFlagService,
     MeetingSettingsService,
   });
   const status = useLiveData(authService.session.status$);
   const loggedIn = status === 'authenticated';
-  const hasPaymentFeature = useLiveData(
-    serverService.server.features$.map(f => f?.payment)
-  );
   const enableEditorSettings = useLiveData(
     featureFlagService.flags.enable_editor_settings.$
   );
@@ -108,23 +100,6 @@ export const useGeneralSettingList = (): GeneralSettingList => {
       });
     }
 
-    if (hasPaymentFeature) {
-      settings.splice(4, 0, {
-        key: 'plans',
-        title: t['com.affine.payment.title'](),
-        icon: <UpgradeIcon />,
-        testId: 'plans-panel-trigger',
-      });
-      if (loggedIn) {
-        settings.splice(4, 0, {
-          key: 'billing',
-          title: t['com.affine.payment.billing-setting.title'](),
-          icon: <PaymentIcon />,
-          testId: 'billing-panel-trigger',
-        });
-      }
-    }
-
     if (BUILD_CONFIG.isElectron) {
       settings.push({
         key: 'backup',
@@ -149,13 +124,7 @@ export const useGeneralSettingList = (): GeneralSettingList => {
       }
     );
     return settings;
-  }, [
-    t,
-    loggedIn,
-    enableEditorSettings,
-    meetingSettings?.enabled,
-    hasPaymentFeature,
-  ]);
+  }, [t, loggedIn, enableEditorSettings, meetingSettings?.enabled]);
 };
 
 interface GeneralSettingProps {
@@ -165,7 +134,7 @@ interface GeneralSettingProps {
 
 export const GeneralSetting = ({
   activeTab,
-  onChangeSettingState,
+  onChangeSettingState: _onChangeSettingState,
 }: GeneralSettingProps) => {
   switch (activeTab) {
     case 'shortcuts':
@@ -181,9 +150,8 @@ export const GeneralSetting = ({
     case 'about':
       return <AboutAffine />;
     case 'plans':
-      return <AFFiNEPricingPlans />;
     case 'billing':
-      return <BillingSettings onChangeSettingState={onChangeSettingState} />;
+      return <AppearanceSettings />;
     case 'experimental-features':
       return <ExperimentalFeatures />;
     case 'backup':

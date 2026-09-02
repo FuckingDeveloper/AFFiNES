@@ -825,7 +825,7 @@ describe('snapshot to html', () => {
                     {
                       insert: 'bbb',
                       attributes: {
-                        link: 'https://affine.pro/',
+                        link: 'https://trackwork.mrhsoftware.com/',
                       },
                     },
                     {
@@ -841,7 +841,7 @@ describe('snapshot to html', () => {
       ],
     };
     const html = template(
-      `<div class="affine-paragraph-block-container"><p>aaa <a href="https://affine.pro/">bbb</a> ccc</p><div class="affine-block-children-container" style="padding-left: 26px;"></div></div>`
+      `<div class="affine-paragraph-block-container"><p>aaa <a href="https://trackwork.mrhsoftware.com/">bbb</a> ccc</p><div class="affine-block-children-container" style="padding-left: 26px;"></div></div>`
     );
 
     const htmlAdapter = new HtmlAdapter(createJob(), provider);

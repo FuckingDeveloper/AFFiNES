@@ -40,6 +40,7 @@ function UserForm({
 
   const defaultUser: Partial<UserInput> = useMemo(
     () => ({
+      username: defaultValue?.username ?? '',
       name: defaultValue?.name ?? '',
       email: defaultValue?.email ?? '',
       password: defaultValue?.password ?? '',
@@ -70,6 +71,7 @@ function UserForm({
 
   useEffect(() => {
     const normalize = (value: Partial<UserInput>) => ({
+      username: value.username ?? '',
       name: value.name ?? '',
       email: value.email ?? '',
       password: value.password ?? '',
@@ -78,7 +80,8 @@ function UserForm({
     const current = normalize(changes);
     const baseline = normalize(defaultUser);
     const dirty =
-      (current.name !== baseline.name ||
+      (current.username !== baseline.username ||
+        current.name !== baseline.name ||
         current.email !== baseline.email ||
         current.password !== baseline.password ||
         current.features.join(',') !== baseline.features.join(',')) &&
@@ -123,11 +126,19 @@ function UserForm({
       <div className="flex-grow space-y-3 overflow-y-auto p-4">
         <div className="flex flex-col rounded-xl border border-border bg-card shadow-sm">
           <InputItem
-            label="User name"
+            label="Логин"
+            field="username"
+            value={changes.username}
+            onChange={setField}
+            placeholder="Например: ivan.petrov"
+          />
+          <Separator />
+          <InputItem
+            label="Имя пользователя"
             field="name"
             value={changes.name}
             onChange={setField}
-            placeholder="Enter user name"
+            placeholder="Введите имя пользователя"
           />
           <Separator />
           <InputItem
@@ -135,18 +146,18 @@ function UserForm({
             field="email"
             value={changes.email}
             onChange={setField}
-            placeholder="Enter email address"
+            placeholder="Введите email"
           />
           {showOption && (
             <>
               <Separator />
               <InputItem
-                label="Password"
+                label="Пароль"
                 field="password"
                 value={changes.password}
                 onChange={setField}
                 optional
-                placeholder="Enter password"
+                placeholder="Введите пароль"
               />
             </>
           )}
@@ -195,7 +206,7 @@ function InputItem({
         {label}
         {optional && (
           <span className="ml-1 font-normal text-muted-foreground">
-            (optional)
+            (необязательно)
           </span>
         )}
       </Label>
@@ -211,11 +222,11 @@ function InputItem({
 }
 
 const validateCreateUser = (user: Partial<UserInput>) => {
-  return !!user.name && !!user.email && !!user.features;
+  return !!user.username && !!user.name && !!user.email && !!user.features;
 };
 
 const validateUpdateUser = (user: Partial<UserInput>) => {
-  return !!user.name || !!user.email;
+  return !!user.username || !!user.name || !!user.email;
 };
 
 export function CreateUserForm({
@@ -256,7 +267,7 @@ export function CreateUserForm({
 
   return (
     <UserForm
-      title="Create User"
+      title="Создать пользователя"
       onClose={onComplete}
       onConfirm={handleCreateUser}
       onValidate={validateCreateUser}
@@ -302,7 +313,7 @@ export function UpdateUserForm({
 
   return (
     <UserForm
-      title="Update User"
+      title="Изменить пользователя"
       defaultValue={user}
       onClose={onComplete}
       onConfirm={onUpdateUser}
@@ -315,7 +326,7 @@ export function UpdateUserForm({
             variant="outline"
             onClick={onResetPassword}
           >
-            <span>Reset Password</span>
+            <span>Сбросить пароль</span>
             <ChevronRightIcon size={16} className="text-muted-foreground" />
           </Button>
           <Button
@@ -323,7 +334,7 @@ export function UpdateUserForm({
             variant="outline"
             onClick={onDeleteAccount}
           >
-            <span>Delete Account</span>
+            <span>Удалить аккаунт</span>
             <ChevronRightIcon size={16} />
           </Button>
         </div>

@@ -103,7 +103,7 @@ export const useColumns = ({
 
               table.toggleAllPageRowsSelected(!!value);
             }}
-            aria-label="Select all"
+            aria-label="Выбрать всё"
             className="translate-y-[2px]"
           />
         ),
@@ -121,7 +121,7 @@ export const useColumns = ({
               }
               row.toggleSelected(!!value);
             }}
-            aria-label="Select row"
+            aria-label="Выбрать строку"
             className="translate-y-[2px]"
           />
         ),
@@ -137,7 +137,7 @@ export const useColumns = ({
           <DataTableColumnHeader
             className="text-xs"
             column={column}
-            title="Name"
+            title="Имя"
           />
         ),
         cell: ({ row }) => (
@@ -153,17 +153,17 @@ export const useColumns = ({
                 <span>{row.original.name}</span>
                 {row.original.features.includes(FeatureType.Admin) && (
                   <span className="ml-2 inline-flex h-5 items-center rounded-md border border-border/60 bg-chip-blue px-2 py-0.5 text-xxs font-medium text-chip-text">
-                    Admin
+                    Администратор
                   </span>
                 )}
                 {row.original.disabled && (
                   <span className="ml-2 inline-flex h-5 items-center rounded-md border border-border/60 bg-chip-white px-2 py-0.5 text-xxs font-medium">
-                    Disabled
+                    Заблокирован
                   </span>
                 )}
               </div>
               <div className="max-w-full overflow-hidden text-xs font-medium text-muted-foreground">
-                {row.original.email}
+                @{row.original.username} · {row.original.email}
               </div>
             </div>
           </div>
@@ -177,7 +177,7 @@ export const useColumns = ({
           <DataTableColumnHeader
             className="text-xs max-md:hidden"
             column={column}
-            title="User Detail"
+            title="Данные пользователя"
           />
         ),
         cell: ({ row: { original: user } }) => (
@@ -193,8 +193,8 @@ export const useColumns = ({
                   IconFalse={
                     <UnlockIcon fontSize={16} className="text-destructive" />
                   }
-                  textTrue="Password Set"
-                  textFalse="No Password"
+                  textTrue="Пароль задан"
+                  textFalse="Нет пароля"
                 />
                 <StatusItem
                   condition={user.emailVerified}
@@ -210,8 +210,8 @@ export const useColumns = ({
                       className="text-destructive"
                     />
                   }
-                  textTrue="Email Verified"
-                  textFalse="Email Not Verified"
+                  textTrue="Email подтверждён"
+                  textFalse="Email не подтверждён"
                 />
               </div>
               <div className="flex flex-wrap gap-2 items-center">
@@ -225,7 +225,7 @@ export const useColumns = ({
                     </span>
                   ))
                 ) : (
-                  <span className="text-muted-foreground">No features</span>
+                  <span className="text-muted-foreground">Нет функций</span>
                 )}
               </div>
             </div>
@@ -241,7 +241,7 @@ export const useColumns = ({
           <DataTableColumnHeader
             className="text-xs"
             column={column}
-            title="Actions"
+            title="Действия"
           />
         ),
         cell: ({ row: { original: user } }) => (

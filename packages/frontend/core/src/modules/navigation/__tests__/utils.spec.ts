@@ -20,7 +20,7 @@ function defineTest(
 }
 
 beforeEach(() => {
-  vi.stubGlobal('location', { origin: 'http://affine.pro' });
+  vi.stubGlobal('location', { origin: 'https://trackwork.mrhsoftware.com' });
 });
 
 afterEach(() => {
@@ -29,6 +29,39 @@ afterEach(() => {
 
 const testCases: [string, ReturnType<typeof resolveLinkToDoc>][] = [
   ['http://example.com/', null],
+  // security: host names that merely END with an allowed domain must not pass
+  [
+    'https://eviltrackwork.mrhsoftware.com/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j',
+    null,
+  ],
+  [
+    'https://trackwork.mrhsoftware.com.evil.com/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j',
+    null,
+  ],
+  [
+    'https://fakeapple.getaffineapp.com/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j',
+    null,
+  ],
+  [
+    'https://affine.fail.evil.com/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j',
+    null,
+  ],
+  // real subdomains are still allowed
+  [
+    'https://sub.trackwork.mrhsoftware.com/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j',
+    {
+      workspaceId: '48__RTCSwASvWZxyAk3Jw',
+      docId: '-Uge-K6SYcAbcNYfQ5U-j',
+    },
+  ],
+  // a port must not break the host check
+  [
+    'https://trackwork.mrhsoftware.com:8443/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j',
+    {
+      workspaceId: '48__RTCSwASvWZxyAk3Jw',
+      docId: '-Uge-K6SYcAbcNYfQ5U-j',
+    },
+  ],
   [
     '/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j?blockIds=xxxx',
     {
@@ -38,17 +71,29 @@ const testCases: [string, ReturnType<typeof resolveLinkToDoc>][] = [
     },
   ],
   [
-    'http://affine.pro/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j?blockIds=xxxx',
+    'https://trackwork.mrhsoftware.com/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j?blockIds=xxxx',
     {
       workspaceId: '48__RTCSwASvWZxyAk3Jw',
       docId: '-Uge-K6SYcAbcNYfQ5U-j',
       blockIds: ['xxxx'],
     },
   ],
-  ['http://affine.pro/workspace/48__RTCSwASvWZxyAk3Jw/all', null],
-  ['http://affine.pro/workspace/48__RTCSwASvWZxyAk3Jw/collection', null],
-  ['http://affine.pro/workspace/48__RTCSwASvWZxyAk3Jw/tag', null],
-  ['http://affine.pro/workspace/48__RTCSwASvWZxyAk3Jw/trash', null],
+  [
+    'https://trackwork.mrhsoftware.com/workspace/48__RTCSwASvWZxyAk3Jw/all',
+    null,
+  ],
+  [
+    'https://trackwork.mrhsoftware.com/workspace/48__RTCSwASvWZxyAk3Jw/collection',
+    null,
+  ],
+  [
+    'https://trackwork.mrhsoftware.com/workspace/48__RTCSwASvWZxyAk3Jw/tag',
+    null,
+  ],
+  [
+    'https://trackwork.mrhsoftware.com/workspace/48__RTCSwASvWZxyAk3Jw/trash',
+    null,
+  ],
   [
     'file//./workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j?blockIds=xxxx',
     {
@@ -122,7 +167,7 @@ describe('resolveLinkToDoc in self-hosted', () => {
       },
     ],
     [
-      'http://affine.pro/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j?blockIds=xxxx',
+      'https://trackwork.mrhsoftware.com/workspace/48__RTCSwASvWZxyAk3Jw/-Uge-K6SYcAbcNYfQ5U-j?blockIds=xxxx',
       {
         workspaceId: '48__RTCSwASvWZxyAk3Jw',
         docId: '-Uge-K6SYcAbcNYfQ5U-j',

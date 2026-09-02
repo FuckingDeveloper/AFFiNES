@@ -11,7 +11,11 @@ import {
   GlobalDialogService,
 } from '@affine/core/modules/dialogs';
 import { WorkspacesService } from '@affine/core/modules/workspace';
-import { buildShowcaseWorkspace } from '@affine/core/utils/first-app-data';
+import {
+  buildShowcaseWorkspace,
+  buildWorkspaceTaskKey,
+  normalizeWorkspaceTaskKey,
+} from '@affine/core/utils/first-app-data';
 import { useI18n } from '@affine/i18n';
 import track from '@affine/track';
 import { FrameworkScope, useLiveData, useService } from '@toeverything/infra';
@@ -43,6 +47,7 @@ export const CreateWorkspaceDialog = ({
   const t = useI18n();
 
   const [workspaceName, setWorkspaceName] = useState('');
+  const [workspaceTaskKey, setWorkspaceTaskKey] = useState('');
   const [inputServerId, setInputServerId] = useState(
     serverId ?? 'affine-cloud'
   );
@@ -76,6 +81,7 @@ export const CreateWorkspaceDialog = ({
           <FrameworkScope scope={server?.scope}>
             <CustomConfirmButton
               workspaceName={workspaceName}
+              workspaceTaskKey={workspaceTaskKey}
               server={server}
               onCreated={res =>
                 close({ metadata: res.meta, defaultDocId: res.defaultDocId })
@@ -102,6 +108,23 @@ export const CreateWorkspaceDialog = ({
       />
 
       <FormSection
+        label="Workspace task key"
+        input={
+          <RowInput
+            className={styles.input}
+            data-testid="create-workspace-task-key-input"
+            placeholder={buildWorkspaceTaskKey(workspaceName)}
+            maxLength={16}
+            minLength={2}
+            value={workspaceTaskKey}
+            onChange={value => {
+              setWorkspaceTaskKey(normalizeWorkspaceTaskKey(value));
+            }}
+          />
+        }
+      />
+
+      <FormSection
         label={t['com.affine.nameWorkspace.subtitle.workspace-type']()}
         input={
           <ServerSelector
@@ -117,10 +140,12 @@ export const CreateWorkspaceDialog = ({
 
 const CustomConfirmButton = ({
   workspaceName,
+  workspaceTaskKey,
   server,
   onCreated,
 }: {
   workspaceName: string;
+  workspaceTaskKey: string;
   server?: Server | null;
   onCreated: (res: Awaited<ReturnType<typeof buildShowcaseWorkspace>>) => void;
 }) => {
@@ -149,7 +174,10 @@ const CustomConfirmButton = ({
       const res = await buildShowcaseWorkspace(
         workspacesService,
         server?.id ?? 'local',
-        workspaceName
+        workspaceName,
+        workspaceTaskKey.length >= 2
+          ? normalizeWorkspaceTaskKey(workspaceTaskKey)
+          : buildWorkspaceTaskKey(workspaceName)
       );
       onCreated(res);
     } catch (e) {
@@ -161,7 +189,14 @@ const CustomConfirmButton = ({
     } finally {
       setLoading(false);
     }
-  }, [loading, onCreated, server, workspaceName, workspacesService]);
+  }, [
+    loading,
+    onCreated,
+    server,
+    workspaceName,
+    workspaceTaskKey,
+    workspacesService,
+  ]);
 
   const handleCheckSessionAndConfirm = useCallback(() => {
     if (server && loginStatus !== 'authenticated') {

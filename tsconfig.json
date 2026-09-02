@@ -134,6 +134,7 @@
     { "path": "./packages/common/reader" },
     { "path": "./packages/common/realtime" },
     { "path": "./packages/common/s3-compat" },
+    { "path": "./packages/common/trackwork" },
     { "path": "./packages/frontend/admin" },
     { "path": "./packages/frontend/apps/android" },
     { "path": "./packages/frontend/apps/electron" },

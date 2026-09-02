@@ -1,4 +1,4 @@
-# Building AFFiNE Web
+# Building TrackWork Web
 
 > **Warning**:
 >
@@ -17,7 +17,7 @@
 
 ## Prerequisites
 
-AFFiNE client has both **Node.js** & **Rust** toolchains.
+TrackWork client has both **Node.js** & **Rust** toolchains.
 
 ### Install Node.js
 

@@ -503,7 +503,7 @@ describe('snapshot to plain text', () => {
                     {
                       insert: 'aaa',
                       attributes: {
-                        link: 'https://affine.pro/',
+                        link: 'https://trackwork.mrhsoftware.com/',
                       },
                     },
                   ],
@@ -576,7 +576,7 @@ describe('snapshot to plain text', () => {
     );
 
     const plainText =
-      'aaa: https://affine.pro/\ntest: https://example.com/deadbeef?mode=page&blockIds=abc%2C123&elementIds=def%2C456&databaseId=deadbeef&databaseRowId=123\nE=mc^2\n';
+      'aaa: https://trackwork.mrhsoftware.com/\ntest: https://example.com/deadbeef?mode=page&blockIds=abc%2C123&elementIds=def%2C456&databaseId=deadbeef&databaseRowId=123\nE=mc^2\n';
     const target = await plainTextAdapter.fromBlockSnapshot({
       snapshot: blockSnapshot,
     });

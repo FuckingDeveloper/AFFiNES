@@ -4,6 +4,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
+import { I18nProvider } from '../../i18n';
+
 const mocked = vi.hoisted(() => {
   let queryState: {
     appConfig: {
@@ -80,7 +82,7 @@ describe('useAppConfig', () => {
     mocked.setQueryState({
       appConfig: {
         server: {
-          name: 'AFFiNE',
+          name: 'TrackWork',
           hosts: ['localhost'],
         },
         auth: {
@@ -111,24 +113,28 @@ describe('useAppConfig', () => {
   });
 
   test('clears dirty state when value is changed back to original', () => {
-    const { result } = renderHook(() => useAppConfig());
+    const { result } = renderHook(() => useAppConfig(), {
+      wrapper: I18nProvider,
+    });
 
     act(() => {
-      result.current.update('server/name', 'AFFiNE Cloud');
+      result.current.update('server/name', 'TrackWork');
     });
     expect(result.current.isGroupDirty('server')).toBe(true);
 
     act(() => {
-      result.current.update('server/name', 'AFFiNE');
+      result.current.update('server/name', 'TrackWork');
     });
     expect(result.current.isGroupDirty('server')).toBe(false);
   });
 
   test('resetGroup cancels only target group changes immediately', () => {
-    const { result } = renderHook(() => useAppConfig());
+    const { result } = renderHook(() => useAppConfig(), {
+      wrapper: I18nProvider,
+    });
 
     act(() => {
-      result.current.update('server/name', 'AFFiNE Cloud');
+      result.current.update('server/name', 'TrackWork');
       result.current.update('auth/allowSignup', false);
     });
 
@@ -141,22 +147,24 @@ describe('useAppConfig', () => {
 
     expect(result.current.isGroupDirty('server')).toBe(false);
     expect(result.current.isGroupDirty('auth')).toBe(true);
-    expect(result.current.patchedAppConfig.server.name).toBe('AFFiNE');
+    expect(result.current.patchedAppConfig.server.name).toBe('TrackWork');
     expect(result.current.getGroupVersion('server')).toBe(1);
   });
 
   test('saveGroup submits only target group updates and keeps others dirty', async () => {
-    const { result } = renderHook(() => useAppConfig());
+    const { result } = renderHook(() => useAppConfig(), {
+      wrapper: I18nProvider,
+    });
 
     act(() => {
-      result.current.update('server/name', 'AFFiNE Cloud');
+      result.current.update('server/name', 'TrackWork');
       result.current.update('auth/allowSignup', false);
     });
 
     mocked.saveUpdatesMock.mockResolvedValue({
       updateAppConfig: {
         server: {
-          name: 'AFFiNE Cloud',
+          name: 'TrackWork',
         },
       },
     });
@@ -170,19 +178,21 @@ describe('useAppConfig', () => {
         {
           module: 'server',
           key: 'name',
-          value: 'AFFiNE Cloud',
+          value: 'TrackWork',
         },
       ],
     });
     expect(result.current.isGroupDirty('server')).toBe(false);
     expect(result.current.isGroupDirty('auth')).toBe(true);
-    expect(result.current.patchedAppConfig.server.name).toBe('AFFiNE Cloud');
+    expect(result.current.patchedAppConfig.server.name).toBe('TrackWork');
     expect(result.current.getGroupVersion('server')).toBe(1);
     expect(mocked.notifySuccessMock).toHaveBeenCalledTimes(1);
   });
 
   test('marks group dirty when nested enum-like option changes', () => {
-    const { result } = renderHook(() => useAppConfig());
+    const { result } = renderHook(() => useAppConfig(), {
+      wrapper: I18nProvider,
+    });
 
     act(() => {
       result.current.update('storages/blob.storage/provider', 'aws-s3');

@@ -32,7 +32,7 @@ function session(
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     parentSessionId: null,
-    promptName: 'Chat With AFFiNE AI',
+    promptName: 'Chat With TrackWork AI',
     action: null,
     optionalModels: null,
     tokens: 0,

@@ -8,9 +8,11 @@ import {
 } from '@affine/admin/components/ui/select';
 import { Switch } from '@affine/admin/components/ui/switch';
 import { cn } from '@affine/admin/utils';
+import { Eye, EyeOff } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Textarea } from '../../components/ui/textarea';
+import { useI18n } from '../../i18n';
 
 export type ConfigInputProps = {
   field: string;
@@ -19,6 +21,8 @@ export type ConfigInputProps = {
   onChange: (field: string, value: any) => void;
   error?: string;
   onErrorChange?: (field: string, error?: string) => void;
+  sensitive?: boolean;
+  example?: string;
 } & (
   | {
       type: 'String' | 'Number' | 'Boolean' | 'JSON';
@@ -37,6 +41,7 @@ const Inputs: Record<
     options?: string[];
     error?: string;
     onValidationChange?: (error?: string) => void;
+    sensitive?: boolean;
   }>
 > = {
   Boolean: function SwitchInput({ defaultValue, onChange }) {
@@ -51,18 +56,39 @@ const Inputs: Record<
       />
     );
   },
-  String: function StringInput({ defaultValue, onChange }) {
+  String: function StringInput({ defaultValue, onChange, sensitive }) {
+    const { t } = useI18n();
+    const [revealed, setRevealed] = useState(false);
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange(e.target.value);
     };
 
     return (
-      <Input
-        type="text"
-        minLength={1}
-        value={defaultValue ?? ''}
-        onChange={handleInputChange}
-      />
+      <div className="relative">
+        <Input
+          type={sensitive && !revealed ? 'password' : 'text'}
+          minLength={1}
+          value={defaultValue ?? ''}
+          onChange={handleInputChange}
+          autoComplete={sensitive ? 'new-password' : undefined}
+          className={sensitive ? 'pr-10' : undefined}
+        />
+        {sensitive ? (
+          <button
+            type="button"
+            className="absolute right-0 top-0 inline-flex h-9 w-9 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground"
+            onClick={() => {
+              setRevealed(prev => !prev);
+            }}
+            aria-label={
+              revealed ? t('settings.hideSecret') : t('settings.showSecret')
+            }
+            title={revealed ? t('settings.hide') : t('settings.show')}
+          >
+            {revealed ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        ) : null}
+      </div>
     );
   },
   Number: function NumberInput({ defaultValue, onChange }) {
@@ -85,6 +111,7 @@ const Inputs: Record<
     error,
     onValidationChange,
   }) {
+    const { t } = useI18n();
     const fallbackText = useMemo(
       () =>
         typeof defaultValue === 'string'
@@ -106,9 +133,7 @@ const Inputs: Record<
         onValidationChange?.(undefined);
         onChange(value);
       } catch {
-        onValidationChange?.('Invalid JSON format');
-        // Keep the draft "dirty" even when JSON is temporarily invalid
-        // so Save/Cancel state can reflect real editing progress.
+        onValidationChange?.(t('settings.invalidJson'));
         onChange(nextText);
       }
     };
@@ -127,13 +152,14 @@ const Inputs: Record<
     );
   },
   Enum: function EnumInput({ defaultValue, onChange, options }) {
+    const { t } = useI18n();
     return (
       <Select
         value={typeof defaultValue === 'string' ? defaultValue : undefined}
         onValueChange={onChange}
       >
         <SelectTrigger>
-          <SelectValue placeholder="Select an option" />
+          <SelectValue placeholder={t('settings.selectOption')} />
         </SelectTrigger>
         <SelectContent>
           {options?.map(option => (
@@ -155,8 +181,10 @@ export const ConfigRow = ({
   onChange,
   error,
   onErrorChange,
+  example,
   ...props
 }: ConfigInputProps) => {
+  const { t } = useI18n();
   const Input = Inputs[type] ?? Inputs.JSON;
   const [validationError, setValidationError] = useState<string>();
 
@@ -180,6 +208,11 @@ export const ConfigRow = ({
     };
   }, [field, mergedError, onErrorChange]);
 
+  const exampleValue =
+    example && example !== `fields.${field.replace(/\//g, '.')}.example`
+      ? example
+      : undefined;
+
   return (
     <div
       className={cn(
@@ -187,10 +220,20 @@ export const ConfigRow = ({
         type === 'Boolean' ? 'items-start justify-between' : 'flex-col'
       )}
     >
-      <div
-        className="flex-3 text-sm font-semibold leading-6 text-foreground"
-        dangerouslySetInnerHTML={{ __html: desc }}
-      />
+      <div className="flex-3">
+        <div
+          className="text-sm font-semibold leading-6 text-foreground"
+          dangerouslySetInnerHTML={{ __html: desc }}
+        />
+        {exampleValue ? (
+          <div className="mt-1 text-xs text-muted-foreground">
+            {t('settings.example')}:{' '}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono">
+              {exampleValue}
+            </code>
+          </div>
+        ) : null}
+      </div>
       <div
         className={cn(
           'relative flex flex-1 flex-col',

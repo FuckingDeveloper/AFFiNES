@@ -1,6 +1,6 @@
 apiVersion: v2
 name: affine
-description: AFFiNE cloud chart
+description: TrackWork cloud chart
 type: application
 version: 0.0.0
 appVersion: "0.26.3"

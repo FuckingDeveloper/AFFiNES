@@ -1,7 +1,7 @@
 generator client {
   provider        = "prisma-client-js"
   output          = "../../../node_modules/.prisma/client"
-  binaryTargets   = ["native", "debian-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+  binaryTargets   = ["native", "debian-openssl-3.0.x", "debian-openssl-1.1.x", "linux-arm64-openssl-3.0.x", "linux-arm64-openssl-1.1.x"]
   previewFeatures = ["metrics", "relationJoins", "nativeDistinct", "postgresqlExtensions"]
 }
 
@@ -13,6 +13,7 @@ datasource db {
 
 model User {
   id              String    @id @default(uuid()) @db.VarChar
+  username        String    @unique @default(cuid()) @db.VarChar(32)
   name            String    @db.VarChar
   email           String    @unique @db.VarChar
   emailVerifiedAt DateTime? @map("email_verified") @db.Timestamptz(3)
@@ -48,6 +49,7 @@ model User {
   // receive notifications
   notifications               Notification[]              @relation("user_notifications")
   settings                    UserSettings?
+  twoFactorAuth               UserTwoFactorAuth?
   comments                    Comment[]
   replies                     Reply[]
   commentAttachments          CommentAttachment[]         @relation("createdCommentAttachments")
@@ -57,6 +59,20 @@ model User {
 
   @@index([email])
   @@map("users")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String   @map("actor_id") @db.VarChar
+  actorEmail String   @map("actor_email") @db.VarChar
+  action     String   @db.VarChar
+  targetType String   @map("target_type") @db.VarChar
+  targetId   String?  @map("target_id") @db.VarChar
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@map("admin_audit_logs")
 }
 
 model ConnectedAccount {
@@ -166,21 +182,61 @@ model Workspace {
   projectedInvitations       WorkspaceInvitation[]
   docAccessPolicies          DocAccessPolicy[]
   docGrants                  DocGrant[]
+  developmentIntegrations    DevelopmentIntegrationConnection[]
+  trackWorkTasks             TrackWorkTask[]
 
   @@index([lastCheckEmbeddings])
   @@index([createdAt])
   @@map("workspaces")
 }
 
+model TrackWorkTask {
+  id               String   @id @default(uuid()) @db.VarChar
+  workspaceId      String   @map("workspace_id") @db.VarChar
+  docId            String   @map("doc_id") @db.VarChar
+  taskKey          String   @map("task_key") @db.VarChar
+  number           Int
+  linksInitialized Boolean  @default(false) @map("links_initialized")
+  createdById      String?  @map("created_by_id") @db.VarChar
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  workspace Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  links     TrackWorkDocumentLink[]
+
+  @@unique([workspaceId, docId])
+  @@unique([workspaceId, taskKey])
+  @@unique([workspaceId, number])
+  @@unique([workspaceId, id])
+  @@index([workspaceId, createdAt])
+  @@map("trackwork_tasks")
+}
+
+model TrackWorkDocumentLink {
+  id          String   @id @default(uuid()) @db.VarChar
+  workspaceId String   @map("workspace_id") @db.VarChar
+  taskId      String   @map("task_id") @db.VarChar
+  documentId  String   @map("document_id") @db.VarChar
+  createdById String?  @map("created_by_id") @db.VarChar
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  task TrackWorkTask @relation(fields: [workspaceId, taskId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([taskId, documentId])
+  @@index([workspaceId, documentId])
+  @@index([workspaceId, taskId])
+  @@map("trackwork_document_links")
+}
+
 model WorkspaceRuntimeState {
-  workspaceId        String    @id @map("workspace_id") @db.VarChar
-  known              Boolean   @default(false)
-  readonly           Boolean   @default(false)
-  readonlyReasons    String[]  @default([]) @map("readonly_reasons")
-  lastReconciledAt   DateTime? @map("last_reconciled_at") @db.Timestamptz(3)
-  staleAfter         DateTime? @map("stale_after") @db.Timestamptz(3)
-  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
-  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  workspaceId      String    @id @map("workspace_id") @db.VarChar
+  known            Boolean   @default(false)
+  readonly         Boolean   @default(false)
+  readonlyReasons  String[]  @default([]) @map("readonly_reasons")
+  lastReconciledAt DateTime? @map("last_reconciled_at") @db.Timestamptz(3)
+  staleAfter       DateTime? @map("stale_after") @db.Timestamptz(3)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
@@ -201,36 +257,36 @@ model WorkspaceMember {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([workspaceId, userId, state])
   @@index([userId, state])
   @@index([workspaceId, role, state])
-  @@unique([workspaceId, userId, state])
   @@map("workspace_members")
 }
 
 model WorkspaceInvitation {
-  id                 String   @id @default(uuid()) @db.VarChar
-  workspaceId        String   @map("workspace_id") @db.VarChar
-  inviteeUserId      String?  @map("invitee_user_id") @db.VarChar
-  normalizedEmail    String?  @map("normalized_email") @db.VarChar
-  inviterUserId      String?  @map("inviter_user_id") @db.VarChar
-  requestedRole      String   @default("member") @map("requested_role") @db.Text
-  status             String   @db.Text
-  kind               String   @default("email") @db.Text
-  tokenHash          String?  @unique(map: "workspace_invitations_token_hash_key") @map("token_hash") @db.Text
-  legacyPermissionId String?  @map("legacy_permission_id") @db.VarChar
+  id                 String    @id @default(uuid()) @db.VarChar
+  workspaceId        String    @map("workspace_id") @db.VarChar
+  inviteeUserId      String?   @map("invitee_user_id") @db.VarChar
+  normalizedEmail    String?   @map("normalized_email") @db.VarChar
+  inviterUserId      String?   @map("inviter_user_id") @db.VarChar
+  requestedRole      String    @default("member") @map("requested_role") @db.Text
+  status             String    @db.Text
+  kind               String    @default("email") @db.Text
+  tokenHash          String?   @unique(map: "workspace_invitations_token_hash_key") @map("token_hash") @db.Text
+  legacyPermissionId String?   @map("legacy_permission_id") @db.VarChar
   expiresAt          DateTime? @map("expires_at") @db.Timestamptz(3)
   acceptedAt         DateTime? @map("accepted_at") @db.Timestamptz(3)
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   inviteeUser User?     @relation("workspace_invitation_invitee", fields: [inviteeUserId], references: [id], onDelete: SetNull)
   inviter     User?     @relation("workspace_invitation_inviter", fields: [inviterUserId], references: [id], onDelete: SetNull)
 
+  @@unique([workspaceId, inviteeUserId])
   @@index([workspaceId, status])
   @@index([inviteeUserId, status])
   @@index([workspaceId, normalizedEmail, status])
-  @@unique([workspaceId, inviteeUserId])
   @@map("workspace_invitations")
 }
 
@@ -269,17 +325,17 @@ model DocAccessPolicy {
 }
 
 model DocGrant {
-  workspaceId   String   @map("workspace_id") @db.VarChar
-  docId         String   @map("doc_id") @db.VarChar
-  principalType String   @map("principal_type") @db.Text
-  principalId   String   @map("principal_id") @db.VarChar
-  role          String   @db.Text
-  grantedBy     String?  @map("granted_by") @db.VarChar
-  legacyWorkspaceId String? @map("legacy_workspace_id") @db.VarChar
-  legacyDocId       String? @map("legacy_doc_id") @db.VarChar
-  legacyUserId      String? @map("legacy_user_id") @db.VarChar
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  workspaceId       String   @map("workspace_id") @db.VarChar
+  docId             String   @map("doc_id") @db.VarChar
+  principalType     String   @map("principal_type") @db.Text
+  principalId       String   @map("principal_id") @db.VarChar
+  role              String   @db.Text
+  grantedBy         String?  @map("granted_by") @db.VarChar
+  legacyWorkspaceId String?  @map("legacy_workspace_id") @db.VarChar
+  legacyDocId       String?  @map("legacy_doc_id") @db.VarChar
+  legacyUserId      String?  @map("legacy_user_id") @db.VarChar
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
@@ -1159,6 +1215,18 @@ model UserSettings {
   @@map("user_settings")
 }
 
+model UserTwoFactorAuth {
+  userId          String   @id @map("user_id") @db.VarChar
+  secretEncrypted String   @map("secret_encrypted") @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("user_two_factor_auth")
+}
+
 model Comment {
   // NOTE: manually set this column type to identity in migration file
   sid         Int       @unique @default(autoincrement()) @db.Integer
@@ -1385,4 +1453,126 @@ model CalendarEventInstance {
   @@unique([calendarEventId, recurrenceId])
   @@index([calendarEventId, startAtUtc])
   @@map("calendar_event_instances")
+}
+
+model DevelopmentIntegrationConnection {
+  id                  String   @id @default(uuid()) @db.VarChar
+  workspaceId         String   @map("workspace_id") @db.VarChar
+  provider            String   @db.VarChar
+  name                String   @db.VarChar
+  baseUrl             String   @map("base_url") @db.VarChar
+  tokenCipher         String   @map("token_cipher") @db.Text
+  webhookSecretCipher String?  @map("webhook_secret_cipher") @db.Text
+  username            String?  @db.VarChar
+  enabled             Boolean  @default(true)
+  createdById         String   @map("created_by_id") @db.VarChar
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  repositories        DevelopmentRepository[]
+  DevelopmentPipeline DevelopmentPipeline[]
+  taskLinks           DevelopmentTaskLink[]
+  webhookEvents       DevelopmentWebhookEvent[]
+  activities          DevelopmentActivity[]
+  workspace           Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("development_integration_connections")
+}
+
+model DevelopmentRepository {
+  id            String   @id @default(uuid()) @db.VarChar
+  connectionId  String   @map("connection_id") @db.VarChar
+  externalId    String   @map("external_id") @db.VarChar
+  name          String   @db.VarChar
+  fullName      String   @map("full_name") @db.VarChar
+  webUrl        String   @map("web_url") @db.VarChar
+  defaultBranch String?  @map("default_branch") @db.VarChar
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  connection DevelopmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, externalId])
+  @@map("development_repositories")
+}
+
+model DevelopmentTaskLink {
+  id           String   @id @default(uuid()) @db.VarChar
+  workspaceId  String   @map("workspace_id") @db.VarChar
+  connectionId String   @map("connection_id") @db.VarChar
+  repositoryId String   @map("repository_id") @db.VarChar
+  taskKey      String   @map("task_key") @db.VarChar
+  entityType   String   @map("entity_type") @db.VarChar
+  externalId   String   @map("external_id") @db.VarChar
+  iid          String?  @db.VarChar
+  url          String   @db.VarChar
+  title        String   @db.VarChar
+  status       String?  @db.VarChar
+  metadata     Json     @db.JsonB
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  connection DevelopmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, repositoryId, taskKey, entityType, externalId], map: "dev_task_links_connection_repo_task_entity_external_key")
+  @@index([workspaceId, taskKey])
+  @@index([connectionId])
+  @@index([repositoryId])
+  @@map("development_task_links")
+}
+
+model DevelopmentWebhookEvent {
+  id             String   @id @default(uuid()) @db.VarChar
+  connectionId   String   @map("connection_id") @db.VarChar
+  idempotencyKey String   @map("idempotency_key") @db.VarChar
+  eventType      String   @map("event_type") @db.VarChar
+  processedAt    DateTime @default(now()) @map("processed_at") @db.Timestamptz(3)
+
+  connection DevelopmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, idempotencyKey])
+  @@map("development_webhook_events")
+}
+
+model DevelopmentPipeline {
+  id           String    @id @default(uuid()) @db.VarChar
+  connectionId String    @map("connection_id") @db.VarChar
+  externalId   String    @map("external_id") @db.VarChar
+  name         String    @db.VarChar
+  number       String    @db.VarChar
+  status       String    @db.VarChar
+  url          String    @db.VarChar
+  branch       String?   @db.VarChar
+  startedAt    DateTime? @map("started_at") @db.Timestamptz(3)
+  finishedAt   DateTime? @map("finished_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  connection DevelopmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, externalId])
+  @@index([connectionId, status])
+  @@map("development_pipelines")
+}
+
+model DevelopmentActivity {
+  id             String   @id @default(uuid()) @db.VarChar
+  workspaceId    String   @map("workspace_id") @db.VarChar
+  connectionId   String   @map("connection_id") @db.VarChar
+  taskKey        String   @map("task_key") @db.VarChar
+  eventType      String   @map("event_type") @db.VarChar
+  title          String   @db.VarChar
+  url            String   @db.VarChar
+  authorName     String?  @map("author_name") @db.VarChar
+  repositoryName String?  @map("repository_name") @db.VarChar
+  metadata       Json     @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  connection DevelopmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, taskKey, createdAt])
+  @@index([workspaceId, createdAt])
+  @@map("development_activity")
 }

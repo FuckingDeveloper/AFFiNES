@@ -15,7 +15,9 @@ declare global {
    *   }
    * }
    */
-  interface Jobs {}
+  interface Jobs {
+    'integration.scm-webhook': import('../../../plugins/integration/types').ScmWebhookJobData;
+  }
 
   type JobName = keyof Jobs;
 }
@@ -29,6 +31,7 @@ export enum Queue {
   COPILOT = 'copilot',
   INDEXER = 'indexer',
   CALENDAR = 'calendar',
+  INTEGRATION = 'integration',
 }
 
 export const QUEUES = Object.values(Queue);

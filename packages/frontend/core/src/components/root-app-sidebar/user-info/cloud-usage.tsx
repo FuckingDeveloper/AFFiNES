@@ -1,4 +1,4 @@
-import { ErrorMessage, Skeleton } from '@affine/component';
+import { Skeleton } from '@affine/component';
 import { UserQuotaService } from '@affine/core/modules/cloud';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { useI18n } from '@affine/i18n';
@@ -19,8 +19,7 @@ export const CloudUsage = () => {
   const workspaceDialogService = useService(WorkspaceDialogService);
   const handleClick = useCatchEventCallback(() => {
     workspaceDialogService.open('setting', {
-      activeTab: 'plans',
-      scrollAnchor: 'cloudPricingPlan',
+      activeTab: 'account',
     });
   }, [workspaceDialogService]);
 
@@ -35,7 +34,7 @@ export const CloudUsage = () => {
 
   if (percent === null) {
     if (quotaError) {
-      return <ErrorMessage>Failed to load quota</ErrorMessage>;
+      return null;
     }
     return (
       <div>

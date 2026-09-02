@@ -22,11 +22,11 @@ const mobileUAString =
 
 function initTestStaticFiles(staticPath: string) {
   const files = {
-    'selfhost.html': `<!DOCTYPE html><html><body>AFFiNE</body><script src="main.a.js"/></html>`,
+    'selfhost.html': `<!DOCTYPE html><html><body>TrackWork</body><script src="main.a.js"/></html>`,
     'main.a.js': `const name = 'affine'`,
-    'admin/selfhost.html': `<!DOCTYPE html><html><body>AFFiNE Admin</body><script src="/admin/main.b.js"/></html>`,
+    'admin/selfhost.html': `<!DOCTYPE html><html><body>TrackWork Admin</body><script src="/admin/main.b.js"/></html>`,
     'admin/main.b.js': `const name = 'affine-admin'`,
-    'mobile/selfhost.html': `<!DOCTYPE html><html><body>AFFiNE mobile</body><script src="/mobile/main.c.js"/></html>`,
+    'mobile/selfhost.html': `<!DOCTYPE html><html><body>TrackWork mobile</body><script src="/mobile/main.c.js"/></html>`,
     'mobile/main.c.js': `const name = 'affine-mobile'`,
   };
 
@@ -137,6 +137,48 @@ test('should be able to call apis', async t => {
   t.is(res.body.flavor, 'allinone');
 });
 
+test('should report liveness and dependency readiness', async t => {
+  const server = t.context.app.getHttpServer();
+
+  await request(server).get('/health/live').expect(200, { status: 'ok' });
+  const ready = await request(server).get('/health/ready').expect(200);
+
+  t.deepEqual(ready.body, {
+    status: 'ok',
+    services: {
+      postgres: 'ok',
+      redis: 'ok',
+    },
+  });
+});
+
+test('should atomically create only one initial administrator', async t => {
+  const server = t.context.app.getHttpServer();
+  const credentials = {
+    username: 'trackwork-admin',
+    name: 'TrackWork Admin',
+    email: 'admin@mrhsoftware.com',
+    password: 'a-secure-trackwork-password',
+  };
+
+  const responses = await Promise.all([
+    request(server).post('/api/setup/create-admin-user').send(credentials),
+    request(server).post('/api/setup/create-admin-user').send(credentials),
+  ]);
+
+  t.deepEqual(
+    responses.map(response => response.status).sort((a, b) => a - b),
+    [201, 403]
+  );
+  t.is(await t.context.db.user.count(), 1);
+  t.is(
+    await t.context.db.userFeature.count({
+      where: { name: 'administrator' },
+    }),
+    1
+  );
+});
+
 const blockedPages = [
   '/',
   '/workspace',
@@ -178,7 +220,7 @@ test('should allow visiting setup page if not initialized', async t => {
     .get('/admin/setup')
     .expect(200);
 
-  t.true(res.text.includes('AFFiNE Admin'));
+  t.true(res.text.includes('TrackWork Admin'));
 });
 
 test('should redirect to admin if initialized', async t => {
@@ -210,7 +252,7 @@ test.skip('should return web assets if visited by mobile', async t => {
     .set('user-agent', mobileUAString)
     .expect(200);
 
-  t.true(res.text.includes('AFFiNE mobile'));
+  t.true(res.text.includes('TrackWork mobile'));
 });
 
 test('should can send maximum size of body', async t => {

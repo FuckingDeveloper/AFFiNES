@@ -216,7 +216,7 @@ export class ImportDoc extends WithDisposable(LitElement) {
   private _openLearnImportLink(event: MouseEvent) {
     event.stopPropagation();
     window.open(
-      'https://affine.pro/blog/import-your-data-from-notion-into-affine',
+      'https://trackwork.mrhsoftware.com/blog/import-your-data-from-notion-into-affine',
       '_blank'
     );
   }
@@ -254,8 +254,8 @@ export class ImportDoc extends WithDisposable(LitElement) {
           <div>Import</div>
         </header>
         <div>
-          AFFiNE will gradually support more file formats for import.
-          <a href="https://affine.pro/redirect/discord" target="_blank"
+          TrackWork will gradually support more file formats for import.
+          <a href="https://trackwork.mrhsoftware.com/redirect/discord" target="_blank"
             >Provide feedback.</a
           >
         </div>
@@ -305,7 +305,7 @@ export class ImportDoc extends WithDisposable(LitElement) {
           </icon-button>
         </div>
         <!-- <div class="footer">
-        <div>Migrate from other versions of AFFiNE?</div>
+        <div>Migrate from other versions of TrackWork?</div>
       </div> -->
       </div>
     `;

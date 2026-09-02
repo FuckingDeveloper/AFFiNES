@@ -1,3 +1,4 @@
+import { DashboardErrorBoundary } from '@affine/admin/components/dashboard-error-boundary';
 import { Toaster } from '@affine/admin/components/ui/sonner';
 import { lazy, ROUTES } from '@affine/routes';
 import { withSentryReactRouterV7Routing } from '@sentry/react';
@@ -15,6 +16,7 @@ import { SWRConfig } from 'swr';
 
 import { ThemeProvider } from './components/theme-provider';
 import { TooltipProvider } from './components/ui/tooltip';
+import { I18nProvider } from './i18n';
 import { isAdmin, useCurrentUser, useServerConfig } from './modules/common';
 import { Layout } from './modules/layout';
 
@@ -79,15 +81,7 @@ function RootRoutes() {
   }
 
   if (/^\/admin\/?$/.test(location.pathname)) {
-    return (
-      <Navigate
-        to={
-          environment.isSelfHosted
-            ? ROUTES.admin.accounts
-            : ROUTES.admin.dashboard
-        }
-      />
-    );
+    return <Navigate to={ROUTES.admin.dashboard} />;
   }
 
   return <Outlet />;
@@ -95,55 +89,61 @@ function RootRoutes() {
 
 export const App = () => {
   return (
-    <ThemeProvider>
-      <TooltipProvider>
-        <SWRConfig
-          value={{
-            revalidateOnFocus: false,
-            revalidateOnMount: false,
-          }}
-        >
-          <BrowserRouter basename={environment.subPath}>
-            <Routes>
-              <Route path={ROUTES.admin.index} element={<RootRoutes />}>
-                <Route path={ROUTES.admin.auth} element={<Auth />} />
-                <Route path={ROUTES.admin.setup} element={<Setup />} />
-                <Route element={<AuthenticatedRoutes />}>
-                  <Route
-                    path={ROUTES.admin.dashboard}
-                    element={
-                      environment.isSelfHosted ? (
-                        <Navigate to={ROUTES.admin.accounts} replace />
-                      ) : (
-                        <Dashboard />
-                      )
-                    }
-                  />
-                  <Route path={ROUTES.admin.accounts} element={<Accounts />} />
-                  <Route
-                    path={ROUTES.admin.workspaces}
-                    element={
-                      environment.isSelfHosted ? (
-                        <Navigate to={ROUTES.admin.accounts} replace />
-                      ) : (
-                        <Workspaces />
-                      )
-                    }
-                  />
-                  <Route path={`${ROUTES.admin.queue}/*`} element={<Queue />} />
-                  <Route path={ROUTES.admin.ai} element={<AI />} />
-                  <Route path={ROUTES.admin.about} element={<About />} />
-                  <Route
-                    path={ROUTES.admin.settings.index}
-                    element={<Settings />}
-                  />
+    <I18nProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <SWRConfig
+            value={{
+              revalidateOnFocus: false,
+              revalidateOnMount: false,
+            }}
+          >
+            <BrowserRouter basename={environment.subPath}>
+              <Routes>
+                <Route path={ROUTES.admin.index} element={<RootRoutes />}>
+                  <Route path={ROUTES.admin.auth} element={<Auth />} />
+                  <Route path={ROUTES.admin.setup} element={<Setup />} />
+                  <Route element={<AuthenticatedRoutes />}>
+                    <Route
+                      path={ROUTES.admin.dashboard}
+                      element={
+                        <DashboardErrorBoundary>
+                          <Dashboard />
+                        </DashboardErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.admin.accounts}
+                      element={<Accounts />}
+                    />
+                    <Route
+                      path={ROUTES.admin.workspaces}
+                      element={
+                        environment.isSelfHosted ? (
+                          <Navigate to={ROUTES.admin.accounts} replace />
+                        ) : (
+                          <Workspaces />
+                        )
+                      }
+                    />
+                    <Route
+                      path={`${ROUTES.admin.queue}/*`}
+                      element={<Queue />}
+                    />
+                    <Route path={ROUTES.admin.ai} element={<AI />} />
+                    <Route path={ROUTES.admin.about} element={<About />} />
+                    <Route
+                      path={ROUTES.admin.settings.index}
+                      element={<Settings />}
+                    />
+                  </Route>
                 </Route>
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </SWRConfig>
-        <Toaster />
-      </TooltipProvider>
-    </ThemeProvider>
+              </Routes>
+            </BrowserRouter>
+          </SWRConfig>
+          <Toaster />
+        </TooltipProvider>
+      </ThemeProvider>
+    </I18nProvider>
   );
 };

@@ -1,4 +1,5 @@
 import { getStoreManager } from '@affine/core/blocksuite/manager/store';
+import { buildWorkspaceTaskKey } from '@affine/core/utils/first-app-data';
 import { MarkdownTransformer } from '@blocksuite/affine/widgets/linked-doc';
 import { Service } from '@toeverything/infra';
 
@@ -65,6 +66,9 @@ export class ImportClipperService extends Service {
       async docCollection => {
         docCollection.meta.initialize();
         docCollection.doc.getMap('meta').set('name', workspaceName);
+        docCollection.doc
+          .getMap('meta')
+          .set('taskKey', buildWorkspaceTaskKey(workspaceName));
         docId = await MarkdownTransformer.importMarkdownToDoc({
           collection: docCollection,
           schema: getAFFiNEWorkspaceSchema(),

@@ -115,7 +115,7 @@ export function SharedDataTable<TData extends { id: string }, TValue>({
                 d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
               />
             </svg>
-            <span>Loading...</span>
+            <span>Загрузка...</span>
           </div>
         ) : null}
         <Table>
@@ -187,7 +187,7 @@ export function SharedDataTable<TData extends { id: string }, TValue>({
                     colSpan={columns.length}
                     className="h-24 text-center flex-1"
                   >
-                    No results.
+                    Нет результатов.
                   </TableCell>
                 </TableRow>
               )}

@@ -94,6 +94,7 @@ export class AuthStore extends Store {
   async signInPassword(credential: {
     email: string;
     password: string;
+    twoFactorCode?: string;
     verifyToken?: string;
     challenge?: string;
   }) {

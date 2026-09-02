@@ -11,9 +11,7 @@ import {
 import { UserFriendlyError } from '@affine/error';
 import { useI18n } from '@affine/i18n';
 import { useLiveData, useService } from '@toeverything/infra';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-
-import * as styles from './style.css';
+import { useCallback, useEffect, useState } from 'react';
 
 export const NotificationSettings = () => {
   const t = useI18n();
@@ -25,14 +23,6 @@ export const NotificationSettings = () => {
 
   const userSettings = useLiveData(userSettingsService.userSettings$);
   const [isMutating, setIsMutating] = useState(false);
-  const error = useLiveData(userSettingsService.error$);
-  const errorMessage = useMemo(() => {
-    if (error) {
-      const userFriendlyError = UserFriendlyError.fromAny(error);
-      return t[`error.${userFriendlyError.name}`](userFriendlyError.data);
-    }
-    return null;
-  }, [error, t]);
 
   const disable = !userSettings || isMutating;
 
@@ -65,12 +55,6 @@ export const NotificationSettings = () => {
       <SettingWrapper
         title={t['com.affine.setting.notifications.email.title']()}
       >
-        {!userSettings && errorMessage && (
-          <>
-            <div className={styles.errorMessage}>{errorMessage}</div>
-            <br />
-          </>
-        )}
         <SettingRow
           name={t['com.affine.setting.notifications.email.mention.title']()}
           desc={t['com.affine.setting.notifications.email.mention.subtitle']()}

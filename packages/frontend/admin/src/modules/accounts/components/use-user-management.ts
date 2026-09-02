@@ -45,10 +45,11 @@ export const useCreateUser = () => {
   const revalidate = useMutateQueryResource();
 
   const create = useAsyncCallback(
-    async ({ name, email, password, features }: UserInput) => {
+    async ({ username, name, email, password, features }: UserInput) => {
       try {
         const account = await createAccount({
           input: {
+            username,
             name,
             email,
             password: password === '' ? undefined : password,
@@ -60,9 +61,9 @@ export const useCreateUser = () => {
           features,
         });
         await revalidate(listUsersQuery);
-        toast('Account updated successfully');
+        toast('Аккаунт успешно обновлён');
       } catch (e) {
-        toast.error('Failed to update account: ' + (e as Error).message);
+        toast.error('Не удалось обновить аккаунт: ' + (e as Error).message);
       }
     },
     [createAccount, revalidate, updateAccountFeatures]
@@ -89,6 +90,7 @@ export const useUpdateUser = () => {
   const update = useAsyncCallback(
     async ({
       userId,
+      username,
       name,
       email,
       features,
@@ -97,6 +99,7 @@ export const useUpdateUser = () => {
         await updateAccount({
           id: userId,
           input: {
+            username,
             name,
             email,
           },
@@ -106,9 +109,9 @@ export const useUpdateUser = () => {
           features,
         });
         await revalidate(listUsersQuery);
-        toast('Account updated successfully');
+        toast('Аккаунт успешно обновлён');
       } catch (e) {
-        toast.error('Failed to update account: ' + (e as Error).message);
+        toast.error('Не удалось обновить аккаунт: ' + (e as Error).message);
       }
     },
     [revalidate, updateAccount, updateAccountFeatures]
@@ -135,7 +138,7 @@ export const useResetUserPassword = () => {
           callback?.();
         })
         .catch(e => {
-          toast.error('Failed to reset password: ' + e.message);
+          toast.error('Не удалось сбросить пароль: ' + e.message);
         });
     },
     [resetPassword]
@@ -161,11 +164,11 @@ export const useDeleteUser = () => {
       await deleteUserById({ id })
         .then(async () => {
           await revalidate(listUsersQuery);
-          toast('User deleted successfully');
+          toast('Пользователь успешно удалён');
           callback?.();
         })
         .catch(e => {
-          toast.error('Failed to delete user: ' + e.message);
+          toast.error('Не удалось удалить пользователя: ' + e.message);
         });
     },
     [deleteUserById, revalidate]
@@ -186,11 +189,11 @@ export const useEnableUser = () => {
       await enableUserById({ id })
         .then(async ({ enableUser }) => {
           await revalidate(listUsersQuery);
-          toast(`User ${enableUser.email} enabled successfully`);
+          toast(`Пользователь ${enableUser.email} успешно включён`);
           callback?.();
         })
         .catch(e => {
-          toast.error('Failed to enable user: ' + e.message);
+          toast.error('Не удалось включить пользователя: ' + e.message);
         });
     },
     [enableUserById, revalidate]
@@ -210,11 +213,11 @@ export const useDisableUser = () => {
       await disableUserById({ id })
         .then(async ({ banUser }) => {
           await revalidate(listUsersQuery);
-          toast(`User ${banUser.email} disabled successfully`);
+          toast(`Пользователь ${banUser.email} успешно отключён`);
           callback?.();
         })
         .catch(e => {
-          toast.error('Failed to disable user: ' + e.message);
+          toast.error('Не удалось отключить пользователя: ' + e.message);
         });
     },
     [disableUserById, revalidate]
@@ -240,7 +243,7 @@ export const useImportUsers = () => {
           callback?.(importUsers);
         })
         .catch(e => {
-          toast.error('Failed to import users: ' + e.message);
+          toast.error('Не удалось импортировать пользователей: ' + e.message);
         });
     },
     [importUsers, revalidate]
@@ -257,7 +260,7 @@ export const useExportUsers = () => {
         .map(field => field.id);
 
       if (selectedFields.length === 0) {
-        alert('Please select at least one field to export');
+        alert('Выберите хотя бы одно поле для экспорта');
         return;
       }
 

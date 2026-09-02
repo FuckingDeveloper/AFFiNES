@@ -52,16 +52,16 @@ import {
 
 pdfMake.fonts = {
   Inter: {
-    normal: 'https://cdn.affine.pro/fonts/Inter-Regular.woff',
-    bold: 'https://cdn.affine.pro/fonts/Inter-SemiBold.woff',
-    italics: 'https://cdn.affine.pro/fonts/Inter-Italic.woff',
-    bolditalics: 'https://cdn.affine.pro/fonts/Inter-SemiBoldItalic.woff',
+    normal: 'https://trackwork.mrhsoftware.com/fonts/Inter-Regular.woff',
+    bold: 'https://trackwork.mrhsoftware.com/fonts/Inter-SemiBold.woff',
+    italics: 'https://trackwork.mrhsoftware.com/fonts/Inter-Italic.woff',
+    bolditalics: 'https://trackwork.mrhsoftware.com/fonts/Inter-SemiBoldItalic.woff',
   },
   SarasaGothicCL: {
-    normal: 'https://cdn.affine.pro/fonts/SarasaGothicCL-Regular.ttf',
-    bold: 'https://cdn.affine.pro/fonts/SarasaGothicCL-Regular.ttf',
-    italics: 'https://cdn.affine.pro/fonts/SarasaGothicCL-Regular.ttf',
-    bolditalics: 'https://cdn.affine.pro/fonts/SarasaGothicCL-Regular.ttf',
+    normal: 'https://trackwork.mrhsoftware.com/fonts/SarasaGothicCL-Regular.ttf',
+    bold: 'https://trackwork.mrhsoftware.com/fonts/SarasaGothicCL-Regular.ttf',
+    italics: 'https://trackwork.mrhsoftware.com/fonts/SarasaGothicCL-Regular.ttf',
+    bolditalics: 'https://trackwork.mrhsoftware.com/fonts/SarasaGothicCL-Regular.ttf',
   },
 };
 

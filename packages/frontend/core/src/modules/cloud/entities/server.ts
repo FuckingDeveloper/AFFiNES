@@ -81,6 +81,7 @@ export class Server extends Entity<{
           this.serverListStore.updateServerConfig(this.serverMetadata.id, {
             credentialsRequirement: config.credentialsRequirement,
             features: config.features,
+            authMode: config.authMode,
             oauthProviders: config.oauthProviders,
             serverName: config.name,
             type: config.type,

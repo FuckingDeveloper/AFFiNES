@@ -143,7 +143,7 @@ describe('helpers/affine-template', () => {
     const host = affine`
       <affine-page id="page">
         <affine-note id="note">
-          <affine-paragraph id="paragraph-1">Hello<anchor></anchor>World<focus></focus>Affine</affine-paragraph>
+          <affine-paragraph id="paragraph-1">Hello<anchor></anchor>World<focus></focus>TrackWork</affine-paragraph>
         </affine-note>
       </affine-page>
     `;

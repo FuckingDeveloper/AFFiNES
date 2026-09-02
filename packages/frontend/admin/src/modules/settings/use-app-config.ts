@@ -10,6 +10,7 @@ import {
 import { cloneDeep, get, merge, set } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useI18n } from '../../i18n';
 import type { AppConfig } from './config';
 import { isEqual } from './utils';
 
@@ -44,6 +45,7 @@ const getSavedAppConfig = (response: SaveResponse): Partial<AppConfig> => {
 };
 
 export const useAppConfig = () => {
+  const { t } = useI18n();
   const {
     data: { appConfig },
     mutate,
@@ -124,18 +126,18 @@ export const useAppConfig = () => {
       setUpdates({});
       setPatchedAppConfig(prev => merge({}, prev, savedAppConfig));
       notify.success({
-        title: 'Saved',
-        message: 'Settings have been saved successfully.',
+        title: t('settings.saved'),
+        message: t('settings.savedMessage'),
       });
     } catch (e) {
       const error = UserFriendlyError.fromAny(e);
       notify.error({
-        title: 'Failed to save',
+        title: t('settings.saveError'),
         message: error.message,
       });
       console.error(e);
     }
-  }, [updates, mutate, saveUpdates]);
+  }, [updates, mutate, saveUpdates, t]);
 
   const saveGroup = useCallback(
     async (module: string) => {
@@ -165,13 +167,13 @@ export const useAppConfig = () => {
         setPatchedAppConfig(prev => merge({}, prev, savedAppConfig));
         bumpGroupVersion(module);
         notify.success({
-          title: 'Saved',
-          message: 'Settings have been saved successfully.',
+          title: t('settings.saved'),
+          message: t('settings.savedMessage'),
         });
       } catch (e) {
         const error = UserFriendlyError.fromAny(e);
         notify.error({
-          title: 'Failed to save',
+          title: t('settings.saveError'),
           message: error.message,
         });
         console.error(e);
@@ -188,6 +190,7 @@ export const useAppConfig = () => {
       getEntriesByModule,
       mutate,
       saveUpdates,
+      t,
     ]
   );
 

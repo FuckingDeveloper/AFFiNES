@@ -18,21 +18,30 @@ import type { KanbanViewUILogic } from './kanban-view-ui-logic.js';
 
 const styles = css`
   affine-data-view-kanban-group {
-    width: 260px;
+    width: 272px;
     flex-shrink: 0;
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
+    padding: 8px;
+    box-sizing: border-box;
+    background-color: var(--affine-background-secondary-color);
+    border: 1px solid var(--affine-border-color);
   }
 
   .group-header {
-    height: 32px;
-    padding: 6px 4px;
+    min-height: 32px;
+    padding: 2px 4px 6px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
     overflow: hidden;
+    color: var(--affine-text-secondary-color);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   .group-header-title {
@@ -49,18 +58,18 @@ const styles = css`
   }
 
   .group-body {
-    margin-top: 4px;
+    margin-top: 0;
     display: flex;
     flex-direction: column;
-    padding: 0 4px;
-    gap: 12px;
+    padding: 0;
+    gap: 8px;
   }
 
   .add-card {
     display: flex;
     align-items: center;
-    padding: 4px;
-    border-radius: 4px;
+    padding: 6px 8px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: var(--data-view-cell-text-size);
     line-height: var(--data-view-cell-text-line-height);
@@ -76,7 +85,7 @@ const styles = css`
   }
 
   affine-data-view-kanban-group .add-card:hover {
-    background-color: var(--affine-hover-color);
+    background-color: var(--affine-background-primary-color);
     color: var(--affine-text-primary-color);
   }
 

@@ -2,6 +2,7 @@ import { test } from '@affine-test/kit/playwright';
 import {
   createRandomUser,
   enableCloudWorkspace,
+  generateTotpCode,
   loginUser,
 } from '@affine-test/kit/utils/cloud';
 import { openHomePage } from '@affine-test/kit/utils/load-page';
@@ -76,6 +77,55 @@ test.describe('login first', () => {
     const authModal = page.getByTestId('auth-modal');
     await expect(authModal).toBeVisible();
     expect(page.url()).toBe(currentUrl);
+  });
+
+  test('can enable 2FA in settings and sign in with code', async ({ page }) => {
+    await page.reload();
+    await waitForEditorLoad(page);
+
+    await clickSideBarSettingButton(page);
+    await clickUserInfoCard(page);
+
+    await page.getByTestId('two-factor-enable-button').click();
+    const secret = (
+      await page.getByTestId('two-factor-secret').textContent()
+    )?.trim();
+    expect(secret).toBeTruthy();
+    if (!secret) {
+      throw new Error('2FA secret is missing');
+    }
+
+    await page
+      .getByTestId('two-factor-setup-code-input')
+      .fill(generateTotpCode(secret));
+    await page.getByTestId('two-factor-setup-confirm-button').click();
+
+    await expect(
+      page.getByTestId('two-factor-enabled-indicator')
+    ).toBeVisible();
+
+    await clickSideBarUseAvatar(page);
+    await page.getByTestId('workspace-modal-sign-out-option').click();
+    await page.getByTestId('confirm-sign-out-button').click();
+
+    await page.reload();
+    await clickSideBarUseAvatar(page);
+    await expect(page.getByTestId('auth-modal')).toBeVisible();
+
+    await page.getByPlaceholder('Enter your email address').fill(user.email);
+    await page.getByTestId('continue-login-button').click({
+      delay: 200,
+    });
+    await page.getByTestId('password-input').fill(user.password);
+    await page.getByTestId('sign-in-button').click();
+
+    const twoFactorInput = page.getByTestId('two-factor-code-input');
+    await expect(twoFactorInput).toBeVisible();
+    await twoFactorInput.fill(generateTotpCode(secret));
+    await page.getByTestId('sign-in-button').click();
+
+    await waitForEditorLoad(page);
+    await expect(page.getByTestId('sidebar-user-avatar')).toBeVisible();
   });
 
   test('can see and change email and password in setting panel', async ({

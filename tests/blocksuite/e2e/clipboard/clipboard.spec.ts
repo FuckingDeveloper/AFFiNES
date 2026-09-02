@@ -296,7 +296,7 @@ test(
     await setSelection(page, 1, 6, 1, 11);
 
     await pasteContent(page, {
-      'text/plain': 'https://affine.pro/',
+      'text/plain': 'https://trackwork.mrhsoftware.com/',
     });
     await expect(page.locator('affine-link')).toContainText('alias');
   }

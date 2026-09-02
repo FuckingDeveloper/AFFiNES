@@ -1,0 +1,15 @@
+mutation createDevelopmentIntegration($input: CreateDevelopmentIntegrationInput!) {
+  createDevelopmentIntegration(input: $input) {
+    id
+    workspaceId
+    provider
+    name
+    baseUrl
+    enabled
+    hasToken
+    hasWebhookSecret
+    webhookUrl
+    createdAt
+    updatedAt
+  }
+}

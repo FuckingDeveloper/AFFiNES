@@ -452,7 +452,7 @@ export class LicenseService {
     init?: RequestInit
   ): Promise<T & { res: Response }> {
     const endpoint =
-      process.env.AFFINE_PRO_SERVER_ENDPOINT ?? 'https://app.affine.pro';
+      process.env.AFFINE_PRO_SERVER_ENDPOINT ?? 'https://trackwork.mrhsoftware.com';
 
     try {
       const res = await fetch(endpoint + path, {
@@ -481,7 +481,7 @@ export class LicenseService {
       throw new InternalServerError(
         e instanceof Error
           ? e.message
-          : 'Failed to contact with https://app.affine.pro'
+          : 'Failed to contact with https://trackwork.mrhsoftware.com'
       );
     }
   }
@@ -527,7 +527,7 @@ export class LicenseService {
     if (new Date(payload.expiresAt) < new Date()) {
       throw new InvalidLicenseToActivate({
         reason:
-          'License file has expired. Please contact with Affine support to fetch a latest one.',
+          'License file has expired. Please contact with TrackWork support to fetch a latest one.',
       });
     }
 
@@ -543,7 +543,7 @@ export class LicenseService {
   private decryptWorkspaceTeamLicensePayload(buf: Buffer) {
     if (!this.crypto.AFFiNEProPublicKey) {
       throw new InternalServerError(
-        'License public key is not loaded. Please contact with Affine support.'
+        'License public key is not loaded. Please contact with TrackWork support.'
       );
     }
 
@@ -581,7 +581,7 @@ export class LicenseService {
   private decryptLicense(buf: Buffer) {
     if (!this.crypto.AFFiNEProLicenseAESKey) {
       throw new InternalServerError(
-        'License AES key is not loaded. Please contact with Affine support.'
+        'License AES key is not loaded. Please contact with TrackWork support.'
       );
     }
 

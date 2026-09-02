@@ -91,7 +91,7 @@ To Shape, not to adapt. AFFiNE is built for individuals & teams who care about t
 * Airtable & Miro with their no-code programable datasheets
 * Miro & Whimiscal with their edgeless visual whiteboard
 * Remnote & Capacities with their object-based tag system
-For more details, please refer to our [RoadMap](https://docs.affine.pro/docs/core-concepts/roadmap)
+For more details, please refer to our [RoadMap](https://trackwork.mrhsoftware.com/docs/core-concepts/roadmap)
 
 ## Self Host
 
@@ -109,7 +109,7 @@ Self host AFFiNE
 
 ## Affine Development
 
-For developer or installation guides, please go to [AFFiNE Development](https://docs.affine.pro/docs/development/quick-start)
+For developer or installation guides, please go to [AFFiNE Development](https://trackwork.mrhsoftware.com/docs/development/quick-start)
 
 
 
@@ -336,7 +336,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
         "children": [
           {
             "children": [],
-            "content": "For more details, please refer to our [RoadMap](https://docs.affine.pro/docs/core-concepts/roadmap)
+            "content": "For more details, please refer to our [RoadMap](https://trackwork.mrhsoftware.com/docs/core-concepts/roadmap)
 
 ",
             "flavour": "affine:paragraph",
@@ -471,7 +471,7 @@ For developer or installation guides, please go to [AFFiNE Development](https://
           },
           {
             "children": [],
-            "content": "For developer or installation guides, please go to [AFFiNE Development](https://docs.affine.pro/docs/development/quick-start)
+            "content": "For developer or installation guides, please go to [AFFiNE Development](https://trackwork.mrhsoftware.com/docs/development/quick-start)
 
 ",
             "flavour": "affine:paragraph",
@@ -563,7 +563,7 @@ To Shape, not to adapt. AFFiNE is built for individuals & teams who care about t
 <!-- block_id=FFVmit6u1T flavour=affine:list -->
 * Remnote & Capacities with their object-based tag system
 <!-- block_id=YqnG5O6AE6 flavour=affine:paragraph -->
-For more details, please refer to our [RoadMap](https://docs.affine.pro/docs/core-concepts/roadmap)
+For more details, please refer to our [RoadMap](https://trackwork.mrhsoftware.com/docs/core-concepts/roadmap)
 
 <!-- block_id=sbDTmZMZcq flavour=affine:paragraph -->
 ## Self Host
@@ -576,7 +576,7 @@ Self host AFFiNE
 ## Affine Development
 
 <!-- block_id=9-K49otbCv flavour=affine:paragraph -->
-For developer or installation guides, please go to [AFFiNE Development](https://docs.affine.pro/docs/development/quick-start)
+For developer or installation guides, please go to [AFFiNE Development](https://trackwork.mrhsoftware.com/docs/development/quick-start)
 
 <!-- block_id=faFteK9eG- flavour=affine:paragraph -->
 
@@ -2385,13 +2385,13 @@ exports[`should read doc blocks work 1`] = `
         "prop:caption": null,
         "prop:description": "The universal editor that lets you work, play, present or create just about anything.",
         "prop:icon": "/favicon-96.png",
-        "prop:image": "https://affine.pro/og.png",
+        "prop:image": "https://trackwork.mrhsoftware.com/og.png",
         "prop:index": "a1",
         "prop:lockedBySelf": false,
         "prop:rotate": 0,
         "prop:style": "vertical",
         "prop:title": "AFFiNE - All In One KnowledgeOS",
-        "prop:url": "https://affine.pro/",
+        "prop:url": "https://trackwork.mrhsoftware.com/",
         "prop:xywh": "[-605.1053721621553,-1497.696057920688,606.4771127476911,649.7969065153833]",
         "sys:children": [],
         "sys:flavour": "affine:bookmark",
@@ -4076,13 +4076,13 @@ exports[`should read doc blocks work without root doc 1`] = `
         "prop:caption": null,
         "prop:description": "The universal editor that lets you work, play, present or create just about anything.",
         "prop:icon": "/favicon-96.png",
-        "prop:image": "https://affine.pro/og.png",
+        "prop:image": "https://trackwork.mrhsoftware.com/og.png",
         "prop:index": "a1",
         "prop:lockedBySelf": false,
         "prop:rotate": 0,
         "prop:style": "vertical",
         "prop:title": "AFFiNE - All In One KnowledgeOS",
-        "prop:url": "https://affine.pro/",
+        "prop:url": "https://trackwork.mrhsoftware.com/",
         "prop:xywh": "[-605.1053721621553,-1497.696057920688,606.4771127476911,649.7969065153833]",
         "sys:children": [],
         "sys:flavour": "affine:bookmark",

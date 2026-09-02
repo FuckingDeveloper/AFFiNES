@@ -1,6 +1,6 @@
 {
   "name": "@blocksuite/affine-widget-edgeless-zoom-toolbar",
-  "description": "Affine edgeless zoom toolbar widget.",
+  "description": "TrackWork edgeless zoom toolbar widget.",
   "type": "module",
   "scripts": {
     "build": "tsc"
