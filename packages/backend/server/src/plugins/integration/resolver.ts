@@ -8,6 +8,7 @@ import {
 } from '@nestjs/graphql';
 
 import { AuthenticationRequired, URLHelper } from '../../base';
+import { AdminAuditService } from '../../core/audit';
 import { CurrentUser } from '../../core/auth';
 import { AccessController } from '../../core/permission';
 import { WorkspaceType } from '../../core/workspaces';
@@ -366,8 +367,28 @@ export class IntegrationMutationResolver {
   constructor(
     private readonly connections: IntegrationConnectionService,
     private readonly access: AccessController,
-    private readonly url: URLHelper
+    private readonly url: URLHelper,
+    private readonly audit: AdminAuditService
   ) {}
+
+  private async auditLog(
+    actor: CurrentUser,
+    workspaceId: string,
+    action: string,
+    targetType: string,
+    targetId?: string | null,
+    metadata?: Record<string, string | number | boolean>
+  ) {
+    await this.audit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      workspaceId,
+      action,
+      targetType,
+      targetId,
+      metadata,
+    });
+  }
 
   private async assertCanManage(
     userId: string,
@@ -401,6 +422,15 @@ export class IntegrationMutationResolver {
       createdById: user.id,
     });
 
+    await this.auditLog(
+      user,
+      input.workspaceId,
+      'trackwork.integration.create',
+      'trackwork-integration',
+      record.id,
+      { provider: record.provider }
+    );
+
     return mapConnectionToType(record, this.url);
   }
 
@@ -424,6 +454,14 @@ export class IntegrationMutationResolver {
       enabled: input.enabled,
     });
 
+    await this.auditLog(
+      user,
+      record.workspaceId,
+      'trackwork.integration.update',
+      'trackwork-integration',
+      record.id
+    );
+
     return mapConnectionToType(record, this.url);
   }
 
@@ -445,6 +483,14 @@ export class IntegrationMutationResolver {
       webhookSecret: input.webhookSecret,
     });
 
+    await this.auditLog(
+      user,
+      record.workspaceId,
+      'trackwork.integration.rotate_credentials',
+      'trackwork-integration',
+      record.id
+    );
+
     return mapConnectionToType(record, this.url);
   }
 
@@ -461,6 +507,14 @@ export class IntegrationMutationResolver {
     await this.assertCanManage(user.id, connection.workspaceId);
 
     await this.connections.delete(connectionId);
+
+    await this.auditLog(
+      user,
+      connection.workspaceId,
+      'trackwork.integration.delete',
+      'trackwork-integration',
+      connectionId
+    );
 
     return true;
   }
@@ -492,13 +546,23 @@ export class IntegrationMutationResolver {
     const connection = await this.connections.get(input.connectionId);
     await this.assertCanManage(user.id, connection.workspaceId);
 
-    return this.connections.createBranch(
+    const branch = await this.connections.createBranch(
       input.connectionId,
       input.repositoryId,
       input.baseBranch,
       input.name,
       input.taskKey
     );
+
+    await this.auditLog(
+      user,
+      connection.workspaceId,
+      'trackwork.scm.create_branch',
+      'trackwork-integration',
+      input.connectionId
+    );
+
+    return branch;
   }
 
   @Mutation(() => DevelopmentMergeRequestCreatedType)
@@ -513,7 +577,7 @@ export class IntegrationMutationResolver {
     const connection = await this.connections.get(input.connectionId);
     await this.assertCanManage(user.id, connection.workspaceId);
 
-    return this.connections.createMergeRequest(
+    const mergeRequest = await this.connections.createMergeRequest(
       input.connectionId,
       input.repositoryId,
       input.sourceBranch,
@@ -522,6 +586,16 @@ export class IntegrationMutationResolver {
       input.description ?? undefined,
       input.taskKey
     );
+
+    await this.auditLog(
+      user,
+      connection.workspaceId,
+      'trackwork.scm.create_merge_request',
+      'trackwork-integration',
+      input.connectionId
+    );
+
+    return mergeRequest;
   }
 
   @Mutation(() => [DevelopmentPipelineType])
@@ -537,6 +611,14 @@ export class IntegrationMutationResolver {
     await this.assertCanManage(user.id, connection.workspaceId);
 
     const pipelines = await this.connections.refreshPipelines(connectionId);
+
+    await this.auditLog(
+      user,
+      connection.workspaceId,
+      'trackwork.scm.refresh_pipelines',
+      'trackwork-integration',
+      connectionId
+    );
 
     return pipelines.map(pipeline => ({
       externalId: pipeline.externalId,
@@ -593,13 +675,26 @@ export class IntegrationMutationResolver {
     const connection = await this.connections.get(input.connectionId);
     await this.assertCanManage(user.id, connection.workspaceId);
 
-    return this.connections.importRepository(input.connectionId, {
-      externalId: input.externalId,
-      name: input.name,
-      fullName: input.fullName,
-      webUrl: input.webUrl,
-      defaultBranch: input.defaultBranch ?? undefined,
-    });
+    const repository = await this.connections.importRepository(
+      input.connectionId,
+      {
+        externalId: input.externalId,
+        name: input.name,
+        fullName: input.fullName,
+        webUrl: input.webUrl,
+        defaultBranch: input.defaultBranch ?? undefined,
+      }
+    );
+
+    await this.auditLog(
+      user,
+      connection.workspaceId,
+      'trackwork.integration.import_repository',
+      'trackwork-repository',
+      repository.id
+    );
+
+    return repository;
   }
 
   @Mutation(() => DevelopmentRepositoryType)
@@ -616,6 +711,20 @@ export class IntegrationMutationResolver {
     const connection = await this.connections.get(repository.connectionId);
     await this.assertCanManage(user.id, connection.workspaceId);
 
-    return this.connections.setRepositoryEnabled(repositoryId, enabled);
+    const updated = await this.connections.setRepositoryEnabled(
+      repositoryId,
+      enabled
+    );
+
+    await this.auditLog(
+      user,
+      connection.workspaceId,
+      'trackwork.integration.set_repository_enabled',
+      'trackwork-repository',
+      repositoryId,
+      { enabled }
+    );
+
+    return updated;
   }
 }

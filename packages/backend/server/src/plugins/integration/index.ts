@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuditModule } from '../../core/audit';
 import { AuthModule } from '../../core/auth';
 import { PermissionModule } from '../../core/permission';
 import { WorkspaceModule } from '../../core/workspaces';
@@ -18,7 +19,13 @@ import { IntegrationConnectionService } from './service';
 import { TrackWorkModule } from '../trackwork';
 
 @Module({
-  imports: [AuthModule, PermissionModule, WorkspaceModule, TrackWorkModule],
+  imports: [
+    AuditModule,
+    AuthModule,
+    PermissionModule,
+    WorkspaceModule,
+    TrackWorkModule,
+  ],
   providers: [
     GitLabScmProvider,
     ScmProviderRegistry,
