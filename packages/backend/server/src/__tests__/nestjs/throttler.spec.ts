@@ -125,7 +125,7 @@ test.before(async t => {
 
 test.beforeEach(async t => {
   const { app } = t.context;
-  t.context.storage.storage.clear();
+  t.context.storage.reset();
   await app.initTestingDB();
 });
 

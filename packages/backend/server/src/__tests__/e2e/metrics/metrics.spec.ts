@@ -142,19 +142,6 @@ const processWebhookJobs = async (app: TestingApp) => {
   }
 };
 
-// Sign in directly instead of TestingApp.login() so the throttler storage is
-// not cleared mid-test: clearing it while webhook ttl timers are pending
-// triggers a pre-existing @nestjs/throttler race that crashes the process.
-const signIn = async (
-  app: TestingApp,
-  user: { email: string; password: string }
-) => {
-  await app.POST('/api/auth/sign-in').send({
-    email: user.email,
-    password: user.password,
-  });
-};
-
 const pushPayload = (
   projectId: number,
   ref: string,
@@ -199,7 +186,7 @@ e2e('exposes bounded TrackWork metrics without leaking secrets', async t => {
   const workspace = await metricsApp.create(Mockers.Workspace, {
     owner: { id: owner.id },
   });
-  await signIn(metricsApp, owner);
+  await metricsApp.login(owner);
   await registerTrackWorkTaskKeys(workspace.id, ['TW-142']);
 
   const connectionId = await setupConnection(metricsApp, workspace.id);
@@ -380,7 +367,7 @@ e2e('reports invalid allocation outcomes with bounded labels', async t => {
   const workspace = await metricsApp.create(Mockers.Workspace, {
     owner: { id: owner.id },
   });
-  await signIn(metricsApp, owner);
+  await metricsApp.login(owner);
 
   await t.throwsAsync(() =>
     metricsApp.gql({

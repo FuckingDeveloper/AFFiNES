@@ -14,7 +14,7 @@ function useStructuredLogging(config: Config) {
   if (mode === 'pretty') {
     return false;
   }
-  return !env.dev;
+  return !env.dev && !env.testing;
 }
 
 const LoggerProvider: Provider = {

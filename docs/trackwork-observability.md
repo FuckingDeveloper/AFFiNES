@@ -111,11 +111,11 @@ structured mode. The mode is controlled by `logger.mode`:
 }
 ```
 
-| Mode             | Behavior                                                            |
-| ---------------- | ------------------------------------------------------------------- |
-| `auto` (default) | Pretty console logs in development; JSON in production/self-hosted. |
-| `json`           | Always JSON lines to stdout.                                        |
-| `pretty`         | Always human-readable console output.                               |
+| Mode             | Behavior                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| `auto` (default) | Pretty console logs in development and test environments; JSON in production/self-hosted. |
+| `json`           | Always JSON lines to stdout.                                                              |
+| `pretty`         | Always human-readable console output.                                                     |
 
 Example line:
 
