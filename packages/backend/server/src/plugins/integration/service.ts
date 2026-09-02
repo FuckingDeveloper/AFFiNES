@@ -616,6 +616,20 @@ export class IntegrationConnectionService {
     headers: Record<string, unknown>;
     body: unknown;
   }): Promise<{ accepted: true }> {
+    return wrapCallMetric(
+      () => this.acceptScmWebhookInner(input),
+      'trackwork',
+      'webhook_ingest',
+      { provider: input.provider }
+    )();
+  }
+
+  private async acceptScmWebhookInner(input: {
+    connectionId: string;
+    provider: ScmProviderType;
+    headers: Record<string, unknown>;
+    body: unknown;
+  }): Promise<{ accepted: true }> {
     const { connectionId, provider: providerType } = input;
 
     metrics.trackwork
@@ -656,7 +670,7 @@ export class IntegrationConnectionService {
     const provider = this.providers.get(providerType);
 
     this.logger.log({
-      message: `Webhook received for connection ${connectionId} (${providerType})`,
+      message: 'SCM webhook received',
       event: 'scm.webhook.received',
       provider: providerType,
       connectionId,
@@ -671,7 +685,7 @@ export class IntegrationConnectionService {
     if (!valid) {
       recordOutcome('invalid_signature');
       this.logger.warn({
-        message: `Webhook rejected for connection ${connectionId}: invalid secret`,
+        message: 'SCM webhook rejected: invalid signature',
         event: 'scm.webhook.rejected',
         result: 'invalid_signature',
         provider: providerType,

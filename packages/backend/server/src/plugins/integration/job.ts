@@ -34,6 +34,10 @@ export class IntegrationJob {
   async onScmWebhook(job: Job<{ payload: ScmWebhookJobData }>) {
     const { connectionId, provider, payload } = job.data.payload;
 
+    if (job.attemptsMade > 0) {
+      metrics.trackwork.counter('webhook_retry').add(1, { provider });
+    }
+
     const connection = await this.connections.get(connectionId);
 
     if (!connection.enabled) {
@@ -72,7 +76,7 @@ export class IntegrationJob {
     if (!claimed) {
       recordEventResult('duplicate');
       this.logger.log({
-        message: `Skipping duplicate webhook event [${event.type}] for connection ${connectionId}`,
+        message: 'Duplicate SCM webhook event skipped',
         event: 'scm.webhook.event.duplicate',
         provider,
         eventType,
@@ -91,7 +95,7 @@ export class IntegrationJob {
       if (!repository?.enabled) {
         recordEventResult('untracked_repository');
         this.logger.log({
-          message: `Ignoring event [${event.type}] for untracked repository ${event.repository.externalId}`,
+          message: 'SCM webhook event ignored for untracked repository',
           event: 'scm.webhook.event.ignored',
           provider,
           eventType,
@@ -120,17 +124,25 @@ export class IntegrationJob {
 
       recordEventResult('processed');
       this.logger.log({
-        message: `Linked webhook event [${event.type}] for keys [${taskKeys.join(', ')}]`,
+        message: 'SCM webhook event processed',
         event: 'scm.webhook.event.processed',
         provider,
         eventType,
         result: 'processed',
         connectionId,
-        taskKeys: taskKeys.length,
+        taskCount: taskKeys.length,
       });
     } catch (error) {
       await this.links.unmarkEventProcessed(connectionId, event.idempotencyKey);
       recordEventResult('error');
+      this.logger.error({
+        message: 'SCM webhook event processing failed',
+        event: 'scm.webhook.event.error',
+        provider,
+        eventType,
+        result: 'error',
+        connectionId,
+      });
       throw error;
     }
   }

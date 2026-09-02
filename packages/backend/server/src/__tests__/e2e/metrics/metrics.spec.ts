@@ -142,6 +142,19 @@ const processWebhookJobs = async (app: TestingApp) => {
   }
 };
 
+// Sign in directly instead of TestingApp.login() so the throttler storage is
+// not cleared mid-test: clearing it while webhook ttl timers are pending
+// triggers a pre-existing @nestjs/throttler race that crashes the process.
+const signIn = async (
+  app: TestingApp,
+  user: { email: string; password: string }
+) => {
+  await app.POST('/api/auth/sign-in').send({
+    email: user.email,
+    password: user.password,
+  });
+};
+
 const pushPayload = (
   projectId: number,
   ref: string,
@@ -186,7 +199,7 @@ e2e('exposes bounded TrackWork metrics without leaking secrets', async t => {
   const workspace = await metricsApp.create(Mockers.Workspace, {
     owner: { id: owner.id },
   });
-  await metricsApp.login(owner);
+  await signIn(metricsApp, owner);
   await registerTrackWorkTaskKeys(workspace.id, ['TW-142']);
 
   const connectionId = await setupConnection(metricsApp, workspace.id);
@@ -204,6 +217,24 @@ e2e('exposes bounded TrackWork metrics without leaking secrets', async t => {
   t.is(accepted.status, 200);
   t.truthy(accepted.headers['x-request-id']);
   await processWebhookJobs(metricsApp);
+
+  const retryHandler = metricsApp.get(IntegrationJob);
+  await retryHandler.onScmWebhook({
+    attemptsMade: 1,
+    data: {
+      payload: {
+        connectionId,
+        provider: 'gitlab',
+        payload: pushPayload(999, 'refs/heads/main', [
+          {
+            id: 'retry-commit-1',
+            title: 'Retry delivery',
+            message: 'retry: TW-142 redelivery',
+          },
+        ]),
+      },
+    },
+  } as any);
 
   await sendWebhook(metricsApp, connectionId, push);
   await processWebhookJobs(metricsApp);
@@ -268,6 +299,28 @@ e2e('exposes bounded TrackWork metrics without leaking secrets', async t => {
   t.truthy(invalid);
   t.is(invalid!.value, '1');
 
+  const retried = findMetric(body, 'trackwork_webhook_retry_total', {
+    provider: 'gitlab',
+  });
+  t.truthy(retried);
+  t.is(retried!.value, '1');
+
+  const ingestOk = findMetric(body, 'trackwork_function_calls_total', {
+    name: 'webhook_ingest',
+    provider: 'gitlab',
+    error: 'false',
+  });
+  t.truthy(ingestOk);
+  t.is(ingestOk!.value, '2');
+
+  const ingestError = findMetric(body, 'trackwork_function_calls_total', {
+    name: 'webhook_ingest',
+    provider: 'gitlab',
+    error: 'true',
+  });
+  t.truthy(ingestError);
+  t.is(ingestError!.value, '1');
+
   const processed = findMetric(body, 'trackwork_webhook_event_total', {
     provider: 'gitlab',
     eventType: 'commit.pushed',
@@ -327,7 +380,7 @@ e2e('reports invalid allocation outcomes with bounded labels', async t => {
   const workspace = await metricsApp.create(Mockers.Workspace, {
     owner: { id: owner.id },
   });
-  await metricsApp.login(owner);
+  await signIn(metricsApp, owner);
 
   await t.throwsAsync(() =>
     metricsApp.gql({

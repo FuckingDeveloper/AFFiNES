@@ -27,7 +27,9 @@ Implementation agents such as Codex/DeepSeek SHALL read `proposal.md`, `design.m
 - [x] 2.1 Identify the repository's existing metrics/logger abstractions and extend them rather than introducing a parallel stack.
 - [x] 2.2 Expose Prometheus-compatible TrackWork/server metrics through a documented scrape endpoint.
 - [x] 2.3 Add bounded HTTP/GraphQL request latency/error metrics using low-cardinality labels.
+  - GraphQL latency/error metrics pre-existed (`gql_query_duration`, `gql_query_error_counter`); the webhook ingress boundary now exposes bounded latency/error metrics via `trackwork_function_timer{name="webhook_ingest"}` and `trackwork_function_calls_total{name="webhook_ingest",error=...}` with `provider`-only labels. Generic REST HTTP middleware remains deferred.
 - [x] 2.4 Add webhook receive/process/failure/retry metrics.
+  - Retry attempts are observable via `trackwork_webhook_retry_total{provider}`, incremented when a webhook job is processed with `attemptsMade > 0`.
 - [x] 2.5 Add SCM provider request latency/failure metrics.
 - [ ] 2.6 Add automation execution/failure/retry metrics.
 - [ ] 2.7 Add notification/job/queue failure and queue-depth metrics where supported.

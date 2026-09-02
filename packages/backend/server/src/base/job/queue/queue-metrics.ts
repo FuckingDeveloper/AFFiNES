@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
+import { Config } from '../../config';
 import { metrics } from '../../metrics';
 import { QUEUES } from './def';
 
@@ -18,10 +19,16 @@ const QUEUE_STATES = [
 export class QueueMetricsService {
   private readonly logger = new Logger(QueueMetricsService.name);
 
-  constructor(private readonly moduleRef: ModuleRef) {}
+  constructor(
+    private readonly config: Config,
+    private readonly moduleRef: ModuleRef
+  ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
   async collect() {
+    if (!this.config.metrics.enabled) {
+      return;
+    }
     for (const queue of QUEUES) {
       try {
         const instance = this.moduleRef.get(getQueueToken(queue), {

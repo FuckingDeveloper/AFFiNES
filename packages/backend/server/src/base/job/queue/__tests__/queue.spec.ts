@@ -8,6 +8,7 @@ import Sinon from 'sinon';
 
 import { createTestingModule } from '../../../../__tests__/utils';
 import { ConfigModule } from '../../../config';
+import { AFFiNELogger } from '../../../logger';
 import { metrics } from '../../../metrics';
 import { JobExecutor } from '../executor';
 import { JobModule, JobQueue, OnJob } from '../index';
@@ -162,24 +163,9 @@ test('should be able to record job metrics', async t => {
     'record'
   );
 
-  const jobHandlerCalls = (job: string) => [
-    [1, { queue: 'nightly' }],
-    [
-      1,
-      {
-        name: 'job_handler',
-        job,
-        namespace: 'nightly',
-        handler: 'JobHandlers.handleJob',
-        error: false,
-      },
-    ],
-    [-1, { queue: 'nightly' }],
-  ];
-
   await executor.run('nightly.__test__job', { name: 'test executor' });
 
-  t.deepEqual(counterStub.args, jobHandlerCalls('nightly.__test__job'));
+  t.snapshot(counterStub.args, '[+1 active jobs, job handler, -1 active jobs]');
   t.deepEqual(timerStub.firstCall.args[1], {
     name: 'job_handler',
     job: 'nightly.__test__job',
@@ -193,7 +179,7 @@ test('should be able to record job metrics', async t => {
 
   await executor.run('nightly.__test__job2', { name: 'test executor' });
 
-  t.deepEqual(counterStub.args, jobHandlerCalls('nightly.__test__job2'));
+  t.snapshot(counterStub.args, '[+1 active jobs, job handler, -1 active jobs]');
   t.deepEqual(timerStub.firstCall.args[1], {
     name: 'job_handler',
     job: 'nightly.__test__job2',
@@ -212,6 +198,8 @@ test('should be able to record job metrics', async t => {
     }
   );
 
+  // the throwing run additionally emits the job_failed counter and no longer
+  // matches the snapshot captured for non-throwing runs
   t.deepEqual(counterStub.args, [
     [1, { queue: 'nightly' }],
     [1, { queue: 'nightly', job: 'nightly.__test__throw' }],
@@ -234,6 +222,24 @@ test('should be able to record job metrics', async t => {
     handler: 'JobHandlers.throwJob',
     error: true,
   });
+});
+
+test('should not log job payload content', async t => {
+  const spy = Sinon.spy(AFFiNELogger.prototype, 'verbose');
+
+  try {
+    await executor.run('nightly.__test__job', {
+      name: 'secret-payload-content',
+    });
+
+    t.true(spy.called);
+    for (const call of spy.getCalls()) {
+      const serialized = JSON.stringify(call.args);
+      t.false(serialized.includes('secret-payload-content'));
+    }
+  } finally {
+    spy.restore();
+  }
 });
 
 test('should propagate the CLS request id into queued job data', async t => {

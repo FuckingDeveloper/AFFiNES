@@ -138,7 +138,14 @@ export class OpentelemetryProvider {
 
   @OnEvent('config.changed')
   async onConfigChanged(event: Events['config.changed']) {
-    if ('metrics' in event.updates) {
+    // Only `metrics.enabled` is hot-reloadable. `host`, `port` and
+    // `zipkinEndpoint` are applied when the SDK is created and require a
+    // server restart; reacting to them here would imply a live reload that
+    // does not happen.
+    if (
+      'metrics' in event.updates &&
+      'enabled' in (event.updates.metrics ?? {})
+    ) {
       await this.setup();
     }
   }
@@ -154,10 +161,9 @@ export class OpentelemetryProvider {
           strict: false,
         });
         this.#sdk = new NodeSDK(factory.create());
+        this.#sdk.start();
+        this.#logger.log('OpenTelemetry SDK started');
       }
-
-      this.#sdk.start();
-      this.#logger.log('OpenTelemetry SDK started');
     } else {
       await this.#sdk?.shutdown();
       this.#sdk = null;

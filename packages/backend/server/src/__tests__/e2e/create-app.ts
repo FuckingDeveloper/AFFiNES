@@ -165,7 +165,7 @@ export class TestingApp extends NestApplication {
   }
 
   resetRateLimit() {
-    this.get(ThrottlerStorage, { strict: false }).clearAll();
+    this.get(ThrottlerStorage, { strict: false }).storage.clear();
   }
 
   async signup(overrides?: Partial<MockUserInput>) {

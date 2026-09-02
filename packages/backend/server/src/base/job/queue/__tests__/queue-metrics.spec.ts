@@ -13,21 +13,22 @@ const fakeCounts = {
   completed: 10,
 };
 
-test('records queue depth gauges from getJobCounts', async t => {
-  const fakeQueue = {
-    getJobCounts: Sinon.stub().resolves(fakeCounts),
-  };
-  const fakeRef = {
-    get: (token: string, _opts: unknown) => {
-      if (token !== getQueueToken('integration')) {
-        throw new Error('queue not found');
-      }
-      return fakeQueue;
-    },
-  };
+const integrationRef = () => ({
+  get: (token: string, _opts: unknown) => {
+    if (token !== getQueueToken('integration')) {
+      throw new Error('queue not found');
+    }
+    return { getJobCounts: Sinon.stub().resolves(fakeCounts) };
+  },
+});
+
+test('records queue depth gauges when metrics are enabled', async t => {
   const gaugeStub = Sinon.stub(metrics.queue.gauge('job_depth'), 'record');
 
-  const service = new QueueMetricsService(fakeRef as any);
+  const service = new QueueMetricsService(
+    { metrics: { enabled: true } } as any,
+    integrationRef() as any
+  );
   await service.collect();
 
   t.is(gaugeStub.callCount, Object.keys(fakeCounts).length);
@@ -49,15 +50,39 @@ test('records queue depth gauges from getJobCounts', async t => {
   gaugeStub.restore();
 });
 
-test('skips queues that are not registered', async t => {
-  const fakeRef = {
+test('does not poll queues when metrics are disabled', async t => {
+  let getCalls = 0;
+  const ref = {
     get: () => {
-      throw new Error('queue not found');
+      getCalls += 1;
+      return { getJobCounts: Sinon.stub().resolves(fakeCounts) };
     },
   };
   const gaugeStub = Sinon.stub(metrics.queue.gauge('job_depth'), 'record');
 
-  const service = new QueueMetricsService(fakeRef as any);
+  const service = new QueueMetricsService(
+    { metrics: { enabled: false } } as any,
+    ref as any
+  );
+  await service.collect();
+
+  t.is(getCalls, 0);
+  t.is(gaugeStub.callCount, 0);
+
+  gaugeStub.restore();
+});
+
+test('skips queues that are not registered', async t => {
+  const gaugeStub = Sinon.stub(metrics.queue.gauge('job_depth'), 'record');
+
+  const service = new QueueMetricsService(
+    { metrics: { enabled: true } } as any,
+    {
+      get: () => {
+        throw new Error('queue not found');
+      },
+    } as any
+  );
   await service.collect();
 
   t.is(gaugeStub.callCount, 0);
