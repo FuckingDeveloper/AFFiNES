@@ -84,7 +84,7 @@ export class WorkspaceIntegrationResolver {
     await this.access
       .user(user.id)
       .workspace(workspace.id)
-      .assert('Workspace.Administrators.Manage');
+      .assert('Workspace.TrackWork.Integrations.Manage');
 
     const records = await this.connections.listByWorkspace(workspace.id);
 
@@ -259,7 +259,7 @@ export class IntegrationMutationResolver {
     await this.access
       .user(userId)
       .workspace(workspaceId)
-      .assert('Workspace.Administrators.Manage');
+      .assert('Workspace.TrackWork.Integrations.Manage');
   }
 
   @Mutation(() => DevelopmentIntegrationConnectionType)

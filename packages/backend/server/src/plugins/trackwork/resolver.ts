@@ -86,7 +86,7 @@ export class TrackWorkResolver {
     await this.access
       .user(user.id)
       .workspace(input.workspaceId)
-      .assert('Workspace.CreateDoc');
+      .assert('Workspace.TrackWork.Write');
     const writableTasks = await this.access
       .user(user.id)
       .workspace(input.workspaceId)
@@ -108,7 +108,7 @@ export class TrackWorkResolver {
     await this.access
       .user(user.id)
       .workspace(input.workspaceId)
-      .assert('Workspace.CreateDoc');
+      .assert('Workspace.TrackWork.Write');
     const writableLegacyTasks = await this.access
       .user(user.id)
       .workspace(input.workspaceId)
