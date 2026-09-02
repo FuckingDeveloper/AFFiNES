@@ -64,6 +64,19 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          output: sarif-results.sarif
+          upload: true
+
+      - name: CodeQL security-result gate
+        run: |
+          set -euo pipefail
+          python3 .security/check-codeql-sarif.py sarif-results.sarif .security/codeql-baseline.json
+
+      - name: CodeQL security-result gate self-test
+        run: |
+          set -euo pipefail
+          python3 .security/check-codeql-sarif.py --selftest
   lint:
     name: Lint
     runs-on: ubuntu-24.04-arm

@@ -263,37 +263,7 @@ jobs:
         with:
           app-version: ${{ inputs.app-version }}
 
-      - name: Build backend Dockerfile (scan platform, no push)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: false
-          load: true
-          pull: true
-          platforms: linux/amd64
-          provenance: false
-          file: .github/deployment/node/Dockerfile
-          tags: affine-server-scan:local
-
-      - name: Scan production image (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: image
-          image-ref: affine-server-scan:local
-          format: sarif
-          output: trivy-results.sarif
-          severity: CRITICAL,HIGH
-          exit-code: '1'
-          ignore-unfixed: false
-
-      - name: Upload Trivy report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-results
-          path: trivy-results.sarif
-
-      - name: Build backend Dockerfile (multi-platform push)
+      - name: Build backend Dockerfile (multi-platform candidate, pushed once)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -303,3 +273,77 @@ jobs:
           provenance: true
           file: .github/deployment/node/Dockerfile
           tags: ghcr.io/toeverything/affine:${{inputs.build-type}}-${{ inputs.git-short-hash }}
+
+      - name: Resolve per-platform candidate digests
+        id: digests
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect \
+            ghcr.io/toeverything/affine:${{inputs.build-type}}-${{ inputs.git-short-hash }} \
+            --format '{{json .Manifest}}' > /tmp/manifest.json
+          jq -r '.manifests[] | [.platform.os + "/" + .platform.architecture + "/" + (.platform.variant // ""), .digest] | @tsv' /tmp/manifest.json \
+            | while IFS=$'\t' read -r platform digest; do
+                case "$platform" in
+                  linux/amd64/) echo "amd64=$digest" >> "$GITHUB_OUTPUT" ;;
+                  linux/arm64/) echo "arm64=$digest" >> "$GITHUB_OUTPUT" ;;
+                  linux/arm/) echo "armv7=$digest" >> "$GITHUB_OUTPUT" ;;
+                  linux/arm/v7) echo "armv7=$digest" >> "$GITHUB_OUTPUT" ;;
+                esac
+              done
+
+      - name: Setup Trivy (pinned + checksum-verified)
+        run: |
+          set -euo pipefail
+          curl -fsSL -o trivy.tgz \
+            https://github.com/aquasecurity/trivy/releases/download/v0.74.0/trivy_0.74.0_Linux-64bit.tar.gz
+          curl -fsSL -o trivy_0.74.0_checksums.txt \
+            https://github.com/aquasecurity/trivy/releases/download/v0.74.0/trivy_0.74.0_checksums.txt
+          grep 'trivy_0.74.0_Linux-64bit.tar.gz' trivy_0.74.0_checksums.txt | sha256sum -c -
+          tar -xzf trivy.tgz trivy
+          chmod +x trivy
+
+      - name: Scan linux/amd64 candidate digest
+        run: |
+          set -euo pipefail
+          cp .trivyignore-amd64 .trivyignore
+          ./trivy image \
+            --scanners vuln \
+            --severity CRITICAL,HIGH \
+            --ignorefile .trivyignore \
+            --exit-code 1 \
+            --format sarif \
+            --output trivy-amd64.sarif \
+            ghcr.io/toeverything/affine:${{inputs.build-type}}-${{ inputs.git-short-hash }}@${{ steps.digests.outputs.amd64 }}
+
+      - name: Scan linux/arm64 candidate digest
+        run: |
+          set -euo pipefail
+          cp .trivyignore-arm64 .trivyignore
+          ./trivy image \
+            --scanners vuln \
+            --severity CRITICAL,HIGH \
+            --ignorefile .trivyignore \
+            --exit-code 1 \
+            --format sarif \
+            --output trivy-arm64.sarif \
+            ghcr.io/toeverything/affine:${{inputs.build-type}}-${{ inputs.git-short-hash }}@${{ steps.digests.outputs.arm64 }}
+
+      - name: Scan linux/arm/v7 candidate digest
+        run: |
+          set -euo pipefail
+          cp .trivyignore-armv7 .trivyignore
+          ./trivy image \
+            --scanners vuln \
+            --severity CRITICAL,HIGH \
+            --ignorefile .trivyignore \
+            --exit-code 1 \
+            --format sarif \
+            --output trivy-armv7.sarif \
+            ghcr.io/toeverything/affine:${{inputs.build-type}}-${{ inputs.git-short-hash }}@${{ steps.digests.outputs.armv7 }}
+
+      - name: Upload Trivy reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: trivy-*.sarif
