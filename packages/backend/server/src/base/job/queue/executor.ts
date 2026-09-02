@@ -84,6 +84,7 @@ export class JobExecutor implements OnModuleDestroy {
           return ret;
         } catch (e) {
           this.logger.error(`Job failed: ${signature}`, e);
+          metrics.queue.counter('job_failed').add(1, { queue: ns, job: name });
           throw e;
         }
       },

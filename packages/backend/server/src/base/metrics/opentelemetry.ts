@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import {
   CompositePropagator,
+  ExportResult,
+  ExportResultCode,
   W3CBaggagePropagator,
   W3CTraceContextPropagator,
 } from '@opentelemetry/core';
@@ -18,6 +20,7 @@ import { IMetricReader, MetricProducer } from '@opentelemetry/sdk-metrics';
 import { NodeSDK, NodeSDKConfiguration } from '@opentelemetry/sdk-node';
 import {
   BatchSpanProcessor,
+  ReadableSpan,
   SpanExporter,
   TraceIdRatioBasedSampler,
 } from '@opentelemetry/sdk-trace-node';
@@ -32,6 +35,17 @@ import { Config } from '../config';
 import { OnEvent } from '../event/def';
 import { registerCustomMetrics } from './metrics';
 import { PrismaMetricProducer } from './prisma';
+
+class NoopSpanExporter implements SpanExporter {
+  export(
+    _spans: ReadableSpan[],
+    resultCallback: (result: ExportResult) => void
+  ) {
+    resultCallback({ code: ExportResultCode.SUCCESS });
+  }
+
+  async shutdown() {}
+}
 
 export abstract class BaseOpentelemetryOptionsFactory {
   abstract getMetricReader(): IMetricReader;
@@ -82,14 +96,22 @@ export abstract class BaseOpentelemetryOptionsFactory {
 
 @Injectable()
 export class OpentelemetryOptionsFactory extends BaseOpentelemetryOptionsFactory {
+  constructor(private readonly config: Config) {
+    super();
+  }
+
   override getMetricReader(): IMetricReader {
     return new PrometheusExporter({
       metricProducers: this.getMetricsProducers(),
+      host: this.config.metrics.host,
+      port: this.config.metrics.port,
     });
   }
 
   override getSpanExporter(): SpanExporter {
-    return new ZipkinExporter();
+    return this.config.metrics.zipkinEndpoint
+      ? new ZipkinExporter({ url: this.config.metrics.zipkinEndpoint })
+      : new NoopSpanExporter();
   }
 }
 

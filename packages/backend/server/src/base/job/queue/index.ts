@@ -10,6 +10,7 @@ import { QueueRedis } from '../../redis';
 import { Queue, QUEUES } from './def';
 import { JobExecutor } from './executor';
 import { JobQueue } from './queue';
+import { QueueMetricsService } from './queue-metrics';
 import { JobHandlerScanner } from './scanner';
 
 export class JobModule {
@@ -47,7 +48,12 @@ export class JobModule {
           })
         ),
       ],
-      providers: [JobQueue, JobExecutor, JobHandlerScanner],
+      providers: [
+        JobQueue,
+        JobExecutor,
+        JobHandlerScanner,
+        QueueMetricsService,
+      ],
       exports: [JobQueue],
     };
   }

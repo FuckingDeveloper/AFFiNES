@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import test from 'ava';
 import { Queue as Bullmq, Worker } from 'bullmq';
+import { CLS_ID, ClsServiceManager } from 'nestjs-cls';
 import Sinon from 'sinon';
 
 import { createTestingModule } from '../../../../__tests__/utils';
@@ -129,6 +130,28 @@ test('should dispatch job handler', async t => {
   t.true(spy.calledOnceWithExactly({ name: 'test executor' }));
 });
 
+test('should record job failure metric when handler throws', async t => {
+  const failedStub = Sinon.stub(metrics.queue.counter('job_failed'), 'add');
+
+  await t.throwsAsync(
+    executor.run('nightly.__test__throw', { name: 'test executor' }, 'test-id'),
+    {
+      message: 'Throw in job handler',
+    }
+  );
+
+  const call = failedStub
+    .getCalls()
+    .find(call => call.args[1]?.job === 'nightly.__test__throw');
+  t.truthy(call);
+  t.deepEqual(call!.args, [
+    1,
+    { queue: 'nightly', job: 'nightly.__test__throw' },
+  ]);
+
+  failedStub.restore();
+});
+
 test('should be able to record job metrics', async t => {
   const counterStub = Sinon.stub(
     metrics.queue.counter('function_calls'),
@@ -139,9 +162,24 @@ test('should be able to record job metrics', async t => {
     'record'
   );
 
+  const jobHandlerCalls = (job: string) => [
+    [1, { queue: 'nightly' }],
+    [
+      1,
+      {
+        name: 'job_handler',
+        job,
+        namespace: 'nightly',
+        handler: 'JobHandlers.handleJob',
+        error: false,
+      },
+    ],
+    [-1, { queue: 'nightly' }],
+  ];
+
   await executor.run('nightly.__test__job', { name: 'test executor' });
 
-  t.snapshot(counterStub.args, '[+1 active jobs, job handler, -1 active jobs]');
+  t.deepEqual(counterStub.args, jobHandlerCalls('nightly.__test__job'));
   t.deepEqual(timerStub.firstCall.args[1], {
     name: 'job_handler',
     job: 'nightly.__test__job',
@@ -155,7 +193,7 @@ test('should be able to record job metrics', async t => {
 
   await executor.run('nightly.__test__job2', { name: 'test executor' });
 
-  t.snapshot(counterStub.args, '[+1 active jobs, job handler, -1 active jobs]');
+  t.deepEqual(counterStub.args, jobHandlerCalls('nightly.__test__job2'));
   t.deepEqual(timerStub.firstCall.args[1], {
     name: 'job_handler',
     job: 'nightly.__test__job2',
@@ -174,16 +212,46 @@ test('should be able to record job metrics', async t => {
     }
   );
 
-  t.snapshot(
-    counterStub.args,
-    '[+1 active jobs, job handler errored, -1 active jobs]'
-  );
+  t.deepEqual(counterStub.args, [
+    [1, { queue: 'nightly' }],
+    [1, { queue: 'nightly', job: 'nightly.__test__throw' }],
+    [
+      1,
+      {
+        name: 'job_handler',
+        job: 'nightly.__test__throw',
+        namespace: 'nightly',
+        handler: 'JobHandlers.throwJob',
+        error: true,
+      },
+    ],
+    [-1, { queue: 'nightly' }],
+  ]);
   t.deepEqual(timerStub.firstCall.args[1], {
     name: 'job_handler',
     job: 'nightly.__test__throw',
     namespace: 'nightly',
     handler: 'JobHandlers.throwJob',
     error: true,
+  });
+});
+
+test('should propagate the CLS request id into queued job data', async t => {
+  const cls = ClsServiceManager.getClsService();
+
+  const jobId = await cls.run(async () => {
+    cls.set(CLS_ID, 'selfhosted:job:test-request-id');
+    const job = await queue.add('nightly.__test__job', { name: 'req-id' });
+    return job.id!;
+  });
+
+  const queued = await queue.get(jobId, 'nightly.__test__job');
+  t.is(
+    (queued!.data as { $$requestId: string }).$$requestId,
+    'selfhosted:job:test-request-id'
+  );
+  t.deepEqual((queued!.data as { payload: unknown }).payload, {
+    name: 'req-id',
   });
 });
 // #endregion

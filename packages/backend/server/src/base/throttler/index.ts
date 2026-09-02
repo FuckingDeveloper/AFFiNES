@@ -21,7 +21,22 @@ import type { ThrottlerType } from './config';
 import { THROTTLER_PROTECTED, Throttlers } from './decorators';
 
 @Injectable()
-export class ThrottlerStorage extends ThrottlerStorageService {}
+export class ThrottlerStorage extends ThrottlerStorageService {
+  // cancel pending ttl timers first, otherwise a timer firing after the
+  // storage was cleared crashes on the missing record (resetRateLimit in tests)
+  clearAll() {
+    const timeoutIds: Map<string, NodeJS.Timeout[]> = (
+      this as unknown as {
+        timeoutIds: Map<string, NodeJS.Timeout[]>;
+      }
+    ).timeoutIds;
+    for (const ids of timeoutIds.values()) {
+      ids.forEach(clearTimeout);
+    }
+    timeoutIds.clear();
+    this.storage.clear();
+  }
+}
 
 @Injectable()
 class CustomOptionsFactory implements ThrottlerOptionsFactory {

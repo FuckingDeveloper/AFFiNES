@@ -1,11 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
 
+import { metrics } from '../../base';
 import { OnJob } from '../../base/job/queue/def';
 import { DevelopmentLinkService } from './link-service';
 import { ScmProviderRegistry } from './providers';
 import { IntegrationConnectionService } from './service';
-import type { DevelopmentEvent, ScmWebhookJobData } from './types';
+import type {
+  DevelopmentEvent,
+  ScmProviderType,
+  ScmWebhookJobData,
+} from './types';
+
+const KNOWN_EVENT_TYPES = new Set([
+  'commit.pushed',
+  'branch.updated',
+  'merge_request.opened',
+  'merge_request.updated',
+  'merge_request.merged',
+]);
 
 @Injectable()
 export class IntegrationJob {
@@ -32,20 +45,40 @@ export class IntegrationJob {
     const events = await scmProvider.parseWebhook({ body: payload });
 
     for (const event of events) {
-      await this.processEvent(connectionId, event);
+      await this.processEvent(connectionId, provider, event);
     }
   }
 
-  private async processEvent(connectionId: string, event: DevelopmentEvent) {
+  private async processEvent(
+    connectionId: string,
+    provider: ScmProviderType,
+    event: DevelopmentEvent
+  ) {
+    const eventType = KNOWN_EVENT_TYPES.has(event.type)
+      ? event.type
+      : 'unknown';
+
+    const recordEventResult = (result: string) => {
+      metrics.trackwork
+        .counter('webhook_event')
+        .add(1, { provider, eventType, result });
+    };
+
     const claimed = await this.links.markEventProcessed(
       connectionId,
       event.idempotencyKey,
       event.type
     );
     if (!claimed) {
-      this.logger.log(
-        `Skipping duplicate webhook event [${event.type}] for connection ${connectionId}`
-      );
+      recordEventResult('duplicate');
+      this.logger.log({
+        message: `Skipping duplicate webhook event [${event.type}] for connection ${connectionId}`,
+        event: 'scm.webhook.event.duplicate',
+        provider,
+        eventType,
+        result: 'duplicate',
+        connectionId,
+      });
       return;
     }
 
@@ -56,9 +89,15 @@ export class IntegrationJob {
       );
 
       if (!repository?.enabled) {
-        this.logger.log(
-          `Ignoring event [${event.type}] for untracked repository ${event.repository.externalId}`
-        );
+        recordEventResult('untracked_repository');
+        this.logger.log({
+          message: `Ignoring event [${event.type}] for untracked repository ${event.repository.externalId}`,
+          event: 'scm.webhook.event.ignored',
+          provider,
+          eventType,
+          result: 'untracked_repository',
+          connectionId,
+        });
         return;
       }
 
@@ -79,11 +118,19 @@ export class IntegrationJob {
         }
       );
 
-      this.logger.log(
-        `Linked webhook event [${event.type}] for keys [${taskKeys.join(', ')}]`
-      );
+      recordEventResult('processed');
+      this.logger.log({
+        message: `Linked webhook event [${event.type}] for keys [${taskKeys.join(', ')}]`,
+        event: 'scm.webhook.event.processed',
+        provider,
+        eventType,
+        result: 'processed',
+        connectionId,
+        taskKeys: taskKeys.length,
+      });
     } catch (error) {
       await this.links.unmarkEventProcessed(connectionId, event.idempotencyKey);
+      recordEventResult('error');
       throw error;
     }
   }
