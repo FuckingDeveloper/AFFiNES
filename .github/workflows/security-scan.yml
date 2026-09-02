@@ -3,11 +3,15 @@ name: Security Scan
 # Source-level security gates for TrackWork (OpenSpec 1.11/1.12):
 # - dependency vulnerability scanning (OSV-Scanner against yarn.lock, baseline-aware)
 # - secret scanning (Gitleaks, tracked content)
-# Static analysis (CodeQL) runs in build-test.yml (analyze job).
+# Static analysis (CodeQL) runs in build-test.yml (analyze job) with an
+# explicit SARIF security-result gate.
+# Reusable via workflow_call so release.yml runs the EXACT-commit gates as a
+# required dependency of the deploy/promotion jobs.
 # Policy: docs/security-ci.md. Actions follow the repository major-tag
 # convention; pinned binary downloads below verify official SHA256SUMS.
 
 on:
+  workflow_call:
   pull_request:
   push:
     branches:
@@ -54,6 +58,21 @@ jobs:
           echo "self-test failed: synthetic secret was NOT detected"
           exit 1
 
+      - name: Gitleaks allowlist bypass regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/gitleaks-bypass
+          cd /tmp/gitleaks-bypass
+          curl -fsSL -o gitleaks \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_amd64
+          curl -fsSL -o SHA256SUMS \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_SHA256SUMS
+          grep 'gitleaks_8.24.3_linux_amd64' SHA256SUMS | sha256sum -c -
+          chmod +x gitleaks
+          python3 "$GITHUB_WORKSPACE/.security/gitleaks-bypass-selftest.py" \
+            ./gitleaks "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/.gitleaks.toml"
+
   dependency-scan:
     name: Dependency scan (OSV-Scanner)
     runs-on: ubuntu-latest
@@ -72,6 +91,11 @@ jobs:
         run: |
           set -euo pipefail
           python3 .security/check-osv-baseline.py .security/osv-baseline.json osv-report.json
+
+      - name: OSV baseline identity self-test
+        run: |
+          set -euo pipefail
+          python3 .security/check-osv-baseline.py --selftest
 
       - name: Upload OSV report
         if: always()

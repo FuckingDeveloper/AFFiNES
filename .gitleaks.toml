@@ -1,34 +1,39 @@
 title = "AFFiNE TrackWork security config"
 
-# Every path below is scoped to a specific tracked file or narrow path and
-# covers ONLY intentionally fake credentials: logger redaction test fixtures,
-# auth/crypto/doc test specs, Helm placeholder templates, inert example
-# configs, and vendored Yarn release bundles. No directory-level exclusions.
-# Reviewed together with docs/security-ci.md.
+# Allowlist strategy (docs/security-ci.md): value-level exact-fake-value
+# entries only. No whole-file exclusions for config source, workflows, Helm
+# templates or auth/provider source; a future REAL secret in those files will
+# not match these narrow values and will be detected. Path exclusions remain
+# ONLY for vendored Yarn release bundles.
 [extend]
 useDefault = true
 
 [allowlist]
-description = "Intentionally fake credentials in tracked test fixtures, Helm placeholders, example configs and vendored bundles."
+description = "Exact intentionally fake values in tracked tests/fixtures/placeholders plus the CI self-test fixture value."
+regexTarget = "secret"
+regexes = [
+  '''glpat-abcdefghijklmnopqrst''',
+  '''ghp_abcdefghijklmnopqrstuvwxyz1234567890''',
+  '''sk-abcdefghijklmnopqrstuvwxyz123456''',
+  '''GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ''',
+  '''389c0615a69b57cca7d3fa0a4824c930''',
+  '''MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0w''',
+  '''MHcCAQEEIEtyAJLIULkphVhqXqxk4Nr8Ggty3''',
+  '''MzUwNTU4YWItZGFhYi00YjE2LWIxODAtODk4NmIwYjMwYzZkfHJlYWQ=''',
+  '''YmQ2NTg1ODktZTk5Mi00YzhiLTk2ZmUtNWQzMDg0NDBkOWM3fHJlYWQtb25seQ==''',
+  '''MjNlN2ViZmMtNDM4NS00MDViLWE0NjUtNGFhNmIyMTc1ZDVhfHJlYWQtd3JpdGU=''',
+  '''NjllM2VkOGItNjJhOS00M2RhLWJjMGYtNzAyNGI3MjFmZWI2fHJlYWQ=''',
+  '''TUFtdFdzQTJhdGJuem01TA==''',
+  '''XJYMLnuBJS27a2du''',
+  '''AIzaSyD7A_VyGaKTXsPqtga9IbwrEsbWWc4rH3Y''',
+  '''61961a7b8b90af37e7c422e0''',
+  '''eyJleHAiOjE2ODA4MjE0OTQsImlkIjoi''',
+  '''eyJleHAiOjE2NzU2Nzk1MjAsImlkIjo2''',
+  '''R8GxrNhn3gNumtapthrP6_J5eQjXLV7i-LanSPqe7hw''',
+  '''a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0''',
+]
+
 paths = [
-  '''packages/backend/server/src/base/logger/__tests__/json\.spec\.ts''',
-  '''packages/backend/server/src/base/logger/__tests__/redaction\.spec\.ts''',
-  '''packages/backend/server/src/core/auth/__tests__/totp\.spec\.ts''',
-  '''packages/backend/server/src/base/helpers/__tests__/crypto\.spec\.ts''',
-  '''packages/backend/server/src/fundamentals/helpers/__tests__/crypto\.spec\.ts''',
-  '''packages/backend/server/src/core/doc/__tests__/reader-from-rpc\.spec\.ts''',
-  '''packages/backend/server/src/fundamentals/helpers/config\.ts''',
-  '''packages/backend/server/src/fundamentals/config/default\.ts''',
-  '''packages/data-center/src/provider/affine/apis/__tests__/token\.spec\.ts''',
-  '''apps/web/src/plugins/affine/__tests__/index\.spec\.tsx''',
-  '''\.github/helm/affine-cloud/values\.yaml''',
-  '''\.github/helm/affine-cloud/templates/secret\.yaml''',
-  '''apps/server/src/config/default\.ts''',
-  '''libs/utils/src/constants\.ts''',
-  '''libs/components/account/src/login/firebase\.tsx''',
-  '''nx\.json''',
-  '''\.github/workflows/deploy\.yml''',
-  '''\.github/workflows/release-desktop\.yml''',
   '''\.yarn/releases/yarn-[0-9.]+\.cjs''',
   '''apps/electron/\.yarn/releases/yarn-[0-9.]+\.cjs''',
 ]
