@@ -7,17 +7,12 @@ import { Models, WorkspaceMemberStatus, WorkspaceRole } from '../../models';
 import { createTestingApp, TestingApp } from '../utils';
 
 // OpenSpec 1.4 reproduction: the workspace-db document
-// `db$docCustomPropertyInfo` carries the TrackWork workflow configuration
-// (taskTrackerBoards/flow/transitions/automation rules in additionalData).
-// Does the server's collaborative sync path reject a non-admin member
-// pushing updates to that document?
+// `db$docCustomPropertyInfo` carries the workspace custom-property schema,
+// including TrackWork workflow configuration (taskTrackerBoards/flow/
+// transitions/automation rules in additionalData). The server's sync push
+// path must require Workspace.Properties.Update for this document.
 
 const WS_TIMEOUT_MS = 5_000;
-const apps: TestingApp[] = [];
-
-test.after.always(async () => {
-  await Promise.all(apps.map(app => app.close()));
-});
 
 type WebsocketResponse<T> =
   | { error: { name: string; message: string } }
@@ -103,9 +98,18 @@ function workflowConfigUpdateBase64() {
   return Buffer.from(encodeStateAsUpdate(doc)).toString('base64');
 }
 
-test('collaborator can push workflow configuration updates to the properties doc', async t => {
+function genericPropertySchemaUpdateBase64() {
+  const doc = new Doc();
+  doc.getMap('docCustomPropertyInfo').set('favoriteColor', {
+    name: 'Favorite Color',
+    type: 'text',
+  });
+  return Buffer.from(encodeStateAsUpdate(doc)).toString('base64');
+}
+
+test('collaborator cannot push updates to the workspace-property schema doc', async t => {
   const app = await createTestingApp();
-  apps.push(app);
+  t.teardown(() => app.close());
   const db = app.get(PrismaClient);
 
   const models = app.get(Models);
@@ -155,22 +159,208 @@ test('collaborator can push workflow configuration updates to the properties doc
         update: workflowConfigUpdateBase64(),
       }
     );
-    // RESULT B: the server accepts the collaborator's push. The sync push
-    // path enforces only workspace membership (Workspace.Sync) and the
-    // blocked-doc flag; the per-document Doc.Update assertion in
-    // core/sync/gateway.ts is commented out.
-    const data = unwrapResponse(t, push);
-    t.true(data.accepted);
+    // Fixed behavior: the server rejects the collaborator's push with the
+    // standard SpaceAccessDenied error and persists nothing.
+    if ('data' in push) {
+      t.log(push);
+      t.fail('expected the push to be rejected');
+    } else {
+      t.is(push.error.name, 'SPACE_ACCESS_DENIED');
+    }
 
-    const persisted = await db.update.findFirst({
-      where: {
-        workspaceId: workspace.id,
-        id: 'db$docCustomPropertyInfo',
-        createdBy: collaborator.id,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    t.truthy(persisted);
+    t.is(
+      await db.update.count({
+        where: {
+          workspaceId: workspace.id,
+          id: 'db$docCustomPropertyInfo',
+          createdBy: collaborator.id,
+        },
+      }),
+      0
+    );
+  } finally {
+    socket.disconnect();
+  }
+});
+
+test('collaborator cannot push generic custom-property schema updates either', async t => {
+  const app = await createTestingApp();
+  t.teardown(() => app.close());
+  const models = app.get(Models);
+  const owner = await app.createUser();
+  const workspace = await models.workspace.create(owner.id);
+  await models.workspaceUser.setStatus(
+    workspace.id,
+    owner.id,
+    WorkspaceMemberStatus.Accepted
+  );
+  const collaborator = await app.createUser();
+  await models.workspaceUser.set(
+    workspace.id,
+    collaborator.id,
+    WorkspaceRole.Collaborator,
+    { status: WorkspaceMemberStatus.Accepted }
+  );
+  const collaboratorSession = await login(app, collaborator);
+  const url = app.url();
+
+  const socket = createClient(url, collaboratorSession.cookieHeader);
+  try {
+    await waitForConnect(socket);
+    unwrapResponse(
+      t,
+      await emitWithAck<{ clientId: string; success: boolean }>(
+        socket,
+        'space:join',
+        {
+          spaceType: 'workspace',
+          spaceId: workspace.id,
+          clientVersion: '0.26.0',
+        }
+      )
+    );
+
+    const push = await emitWithAck<{ accepted: true; timestamp?: number }>(
+      socket,
+      'space:push-doc-update',
+      {
+        spaceType: 'workspace',
+        spaceId: workspace.id,
+        docId: 'db$docCustomPropertyInfo',
+        update: genericPropertySchemaUpdateBase64(),
+      }
+    );
+    if ('data' in push) {
+      t.log(push);
+      t.fail('expected a generic property schema push to be rejected');
+    } else {
+      t.is(push.error.name, 'SPACE_ACCESS_DENIED');
+    }
+  } finally {
+    socket.disconnect();
+  }
+});
+
+test('collaborator can still push normal task document updates', async t => {
+  const app = await createTestingApp();
+  t.teardown(() => app.close());
+  const models = app.get(Models);
+  const owner = await app.createUser();
+  const workspace = await models.workspace.create(owner.id);
+  await models.workspaceUser.setStatus(
+    workspace.id,
+    owner.id,
+    WorkspaceMemberStatus.Accepted
+  );
+  const collaborator = await app.createUser();
+  await models.workspaceUser.set(
+    workspace.id,
+    collaborator.id,
+    WorkspaceRole.Collaborator,
+    { status: WorkspaceMemberStatus.Accepted }
+  );
+  const collaboratorSession = await login(app, collaborator);
+  const url = app.url();
+
+  const socket = createClient(url, collaboratorSession.cookieHeader);
+  try {
+    await waitForConnect(socket);
+    unwrapResponse(
+      t,
+      await emitWithAck<{ clientId: string; success: boolean }>(
+        socket,
+        'space:join',
+        {
+          spaceType: 'workspace',
+          spaceId: workspace.id,
+          clientVersion: '0.26.0',
+        }
+      )
+    );
+
+    const doc = new Doc();
+    doc.getMap('task').set('status', 'in-progress');
+    const update = Buffer.from(encodeStateAsUpdate(doc)).toString('base64');
+
+    const push = unwrapResponse(
+      t,
+      await emitWithAck<{ accepted: true; timestamp?: number }>(
+        socket,
+        'space:push-doc-update',
+        {
+          spaceType: 'workspace',
+          spaceId: workspace.id,
+          docId: 'task-doc-1',
+          update,
+        }
+      )
+    );
+    t.true(push.accepted);
+  } finally {
+    socket.disconnect();
+  }
+});
+
+test('workspace admin can push updates to the properties doc', async t => {
+  const app = await createTestingApp();
+  t.teardown(() => app.close());
+  const db = app.get(PrismaClient);
+  const models = app.get(Models);
+  const owner = await app.createUser();
+  const workspace = await models.workspace.create(owner.id);
+  await models.workspaceUser.setStatus(
+    workspace.id,
+    owner.id,
+    WorkspaceMemberStatus.Accepted
+  );
+  const admin = await app.createUser();
+  await models.workspaceUser.set(workspace.id, admin.id, WorkspaceRole.Admin, {
+    status: WorkspaceMemberStatus.Accepted,
+  });
+  const adminSession = await login(app, admin);
+  const url = app.url();
+
+  const socket = createClient(url, adminSession.cookieHeader);
+  try {
+    await waitForConnect(socket);
+    unwrapResponse(
+      t,
+      await emitWithAck<{ clientId: string; success: boolean }>(
+        socket,
+        'space:join',
+        {
+          spaceType: 'workspace',
+          spaceId: workspace.id,
+          clientVersion: '0.26.0',
+        }
+      )
+    );
+
+    const push = unwrapResponse(
+      t,
+      await emitWithAck<{ accepted: true; timestamp?: number }>(
+        socket,
+        'space:push-doc-update',
+        {
+          spaceType: 'workspace',
+          spaceId: workspace.id,
+          docId: 'db$docCustomPropertyInfo',
+          update: workflowConfigUpdateBase64(),
+        }
+      )
+    );
+    t.true(push.accepted);
+
+    t.is(
+      await db.update.count({
+        where: {
+          workspaceId: workspace.id,
+          id: 'db$docCustomPropertyInfo',
+          createdBy: admin.id,
+        },
+      }),
+      1
+    );
   } finally {
     socket.disconnect();
   }
@@ -178,7 +368,7 @@ test('collaborator can push workflow configuration updates to the properties doc
 
 test('owner push to the workflow properties doc also succeeds', async t => {
   const app = await createTestingApp();
-  apps.push(app);
+  t.teardown(() => app.close());
   const ownerSession = await login(app);
   const models = app.get(Models);
   const workspace = await models.workspace.create(ownerSession.user.id);
