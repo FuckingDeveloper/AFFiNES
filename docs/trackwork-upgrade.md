@@ -25,8 +25,16 @@ upgrade guarantees below.
 
 - Upgrades are supported **only from the immediately previous supported
   release** to the current release.
-- **Skipping releases is not supported.** CI verifies exactly one transition:
-  previous supported release -> current release.
+- **Skipping releases is not supported** unless a future policy explicitly
+  changes that.
+- Before the first policy-governed baseline release exists, CI runs the
+  pre-policy compatibility rehearsal: the current production image is
+  started against a database seeded with the documented pre-policy fixture,
+  and the production migration/startup path plus data integrity are
+  verified. This rehearsal does not constitute a release-to-release
+  upgrade (see "Future N-1 -> N verification").
+- Once a baseline release exists, CI verifies exactly one supported
+  transition: previous supported release -> current release.
 - Upgrades are one-directional. Rollback is not automatic and never
   supported through migrations (see rollback below).
 
@@ -114,3 +122,25 @@ The immediately preceding release that:
 Before the first baseline release exists, the upgrade smoke test uses the
 documented pre-policy compatibility fixture instead of an actual previous
 image.
+
+## Future N-1 -> N verification
+
+Once the first policy-governed baseline release exists, the upgrade smoke
+for each following release must exercise a real release-to-release
+transition instead of the pre-policy fixture:
+
+1. retain a previous supported release artifact: the previous release's
+   production image and/or a reproducible persisted database snapshot
+   produced by that release;
+2. start/restore the previous release against an empty supported database;
+3. let it create representative TrackWork persisted data through its normal
+   operations;
+4. stop the previous release, preserving the PostgreSQL/storage volumes;
+5. start the current release image against the same persisted data;
+6. run the normal `affine_migration` production path;
+7. wait for readiness;
+8. run the existing integrity assertions for keys/numbers/links/
+   associations and GraphQL reads.
+
+The pre-policy rehearsal is kept until a baseline release exists; it is not
+a substitute for this verification.

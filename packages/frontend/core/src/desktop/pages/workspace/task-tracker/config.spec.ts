@@ -71,7 +71,13 @@ import {
   parseRelatedDocs,
   parseSubtasks,
   parseTaskRelations,
+  resolveTaskTrackerBoards,
+  sanitizeAutomationRules,
+  DEFAULT_BOARD_ID,
+  DEFAULT_BOARD_TITLE,
+  DEFAULT_FLOW,
 } from '@affine/core/desktop/pages/workspace/task-tracker/config';
+import type { TaskTrackerPropertyAdditionalData } from '@affine/core/desktop/pages/workspace/task-tracker/config';
 
 describe('legacy JSON-string task properties remain readable', () => {
   it('parses legacy taskAttachments JSON strings', () => {
@@ -152,5 +158,169 @@ describe('legacy JSON-string task properties remain readable', () => {
       relatesTo: [],
       duplicates: [],
     });
+  });
+});
+
+describe('resolves persisted workspace Task Tracker configuration', () => {
+  const persistedConfig: TaskTrackerPropertyAdditionalData = {
+    taskTrackerBoards: [
+      {
+        id: 'default',
+        title: 'Main board',
+        flow: [
+          { id: 'todo', title: 'To Do' },
+          { id: 'in-progress', title: 'In Progress' },
+          { id: 'done', title: 'Done' },
+        ],
+        transitions: {
+          todo: ['todo', 'in-progress'],
+          'in-progress': ['in-progress', 'done'],
+          done: ['done'],
+        },
+        typeTransitions: {
+          task: { todo: ['todo', 'done'] },
+        },
+      },
+      {
+        id: 'board-2',
+        title: 'Release board',
+        flow: [
+          { id: 'todo', title: 'To Do' },
+          { id: 'qa', title: 'QA Testing' },
+          { id: 'done', title: 'Done' },
+        ],
+        transitions: {
+          todo: ['todo', 'qa'],
+          qa: ['qa', 'done'],
+          done: ['done', 'todo'],
+        },
+      },
+    ],
+    taskTrackerAutomationRules: [
+      {
+        id: 'rule-1',
+        eventType: 'merge_request.merged',
+        action: 'set-status',
+        stageId: 'done',
+        enabled: true,
+      },
+      {
+        id: 'rule-2',
+        eventType: 'pipeline.failed',
+        action: 'warning',
+        enabled: false,
+      },
+      {
+        id: 'rule-3',
+        eventType: 'totally.invalid',
+        action: 'set-status',
+        stageId: 'done',
+        enabled: true,
+      },
+      {
+        id: 'rule-1',
+        eventType: 'commit.pushed',
+        action: 'warning',
+        enabled: true,
+      },
+    ],
+  };
+
+  it('preserves board and stage identity and user-authored names', () => {
+    const boards = resolveTaskTrackerBoards(persistedConfig);
+
+    expect(boards).toHaveLength(2);
+    expect(boards[0].id).toBe('default');
+    expect(boards[0].title).toBe('Main board');
+    expect(boards[0].flow.map(stage => stage.id)).toEqual([
+      'todo',
+      'in-progress',
+      'done',
+    ]);
+    expect(boards[0].flow.map(stage => stage.title)).toEqual([
+      'To Do',
+      'In Progress',
+      'Done',
+    ]);
+
+    expect(boards[1].id).toBe('board-2');
+    expect(boards[1].title).toBe('Release board');
+    expect(boards[1].flow.map(stage => stage.id)).toEqual([
+      'todo',
+      'qa',
+      'done',
+    ]);
+    expect(boards[1].flow.map(stage => stage.title)).toEqual([
+      'To Do',
+      'QA Testing',
+      'Done',
+    ]);
+  });
+
+  it('preserves transitions and type transitions after sanitation', () => {
+    const boards = resolveTaskTrackerBoards(persistedConfig);
+
+    expect(boards[0].transitions).toEqual({
+      todo: ['todo', 'in-progress'],
+      'in-progress': ['in-progress', 'done'],
+      done: ['done'],
+    });
+    expect(boards[1].transitions).toEqual({
+      todo: ['todo', 'qa'],
+      qa: ['qa', 'done'],
+      done: ['done', 'todo'],
+    });
+    expect(boards[0].typeTransitions.task.todo).toEqual(['todo', 'done']);
+    expect(boards[0].typeTransitions.story.todo).toEqual([
+      'todo',
+      'in-progress',
+      'done',
+    ]);
+  });
+
+  it('filters invalid automation rules and deduplicates by id', () => {
+    const rules = sanitizeAutomationRules(
+      persistedConfig.taskTrackerAutomationRules
+    );
+
+    expect(rules).toEqual([
+      {
+        id: 'rule-1',
+        eventType: 'merge_request.merged',
+        action: 'set-status',
+        stageId: 'done',
+        enabled: true,
+      },
+      {
+        id: 'rule-2',
+        eventType: 'pipeline.failed',
+        action: 'warning',
+        stageId: undefined,
+        enabled: false,
+      },
+    ]);
+  });
+
+  it('falls back to the real default board for empty or corrupt config', () => {
+    const fallback = resolveTaskTrackerBoards(undefined);
+    expect(fallback).toHaveLength(1);
+    expect(fallback[0].id).toBe(DEFAULT_BOARD_ID);
+    expect(fallback[0].title).toBe(DEFAULT_BOARD_TITLE);
+    expect(fallback[0].flow).toEqual(DEFAULT_FLOW);
+
+    const empty = resolveTaskTrackerBoards({ taskTrackerBoards: [] });
+    expect(empty).toEqual(fallback);
+
+    const corrupt = resolveTaskTrackerBoards({
+      taskTrackerBoards: [{ id: '', title: '' }],
+    });
+    expect(corrupt).toEqual(fallback);
+  });
+
+  it('does not mutate the persisted configuration fixture', () => {
+    const snapshot = JSON.parse(JSON.stringify(persistedConfig));
+    resolveTaskTrackerBoards(persistedConfig);
+    sanitizeAutomationRules(persistedConfig.taskTrackerAutomationRules);
+    expect(persistedConfig).toEqual(snapshot);
   });
 });
