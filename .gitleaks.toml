@@ -1,0 +1,34 @@
+title = "AFFiNE TrackWork security config"
+
+# Every path below is scoped to a specific tracked file or narrow path and
+# covers ONLY intentionally fake credentials: logger redaction test fixtures,
+# auth/crypto/doc test specs, Helm placeholder templates, inert example
+# configs, and vendored Yarn release bundles. No directory-level exclusions.
+# Reviewed together with docs/security-ci.md.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Intentionally fake credentials in tracked test fixtures, Helm placeholders, example configs and vendored bundles."
+paths = [
+  '''packages/backend/server/src/base/logger/__tests__/json\.spec\.ts''',
+  '''packages/backend/server/src/base/logger/__tests__/redaction\.spec\.ts''',
+  '''packages/backend/server/src/core/auth/__tests__/totp\.spec\.ts''',
+  '''packages/backend/server/src/base/helpers/__tests__/crypto\.spec\.ts''',
+  '''packages/backend/server/src/fundamentals/helpers/__tests__/crypto\.spec\.ts''',
+  '''packages/backend/server/src/core/doc/__tests__/reader-from-rpc\.spec\.ts''',
+  '''packages/backend/server/src/fundamentals/helpers/config\.ts''',
+  '''packages/backend/server/src/fundamentals/config/default\.ts''',
+  '''packages/data-center/src/provider/affine/apis/__tests__/token\.spec\.ts''',
+  '''apps/web/src/plugins/affine/__tests__/index\.spec\.tsx''',
+  '''\.github/helm/affine-cloud/values\.yaml''',
+  '''\.github/helm/affine-cloud/templates/secret\.yaml''',
+  '''apps/server/src/config/default\.ts''',
+  '''libs/utils/src/constants\.ts''',
+  '''libs/components/account/src/login/firebase\.tsx''',
+  '''nx\.json''',
+  '''\.github/workflows/deploy\.yml''',
+  '''\.github/workflows/release-desktop\.yml''',
+  '''\.yarn/releases/yarn-[0-9.]+\.cjs''',
+  '''apps/electron/\.yarn/releases/yarn-[0-9.]+\.cjs''',
+]
