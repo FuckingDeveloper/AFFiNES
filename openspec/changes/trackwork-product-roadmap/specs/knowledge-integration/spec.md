@@ -2,6 +2,34 @@
 
 ## ADDED Requirements
 
+### Requirement: Standalone documentation pages
+TrackWork SHALL allow users to create ordinary documentation pages that have no required relationship to Task Tracker boards, tasks, sprints, epics, releases, milestones, or development artifacts.
+
+#### Scenario: Create documentation-only page
+- **WHEN** a user creates a normal page in a workspace
+- **THEN** the page can be edited, organized, linked, searched, shared, and permissioned using the document/workspace model
+- **AND** TrackWork does not require a board ID, task status, planning object, or task metadata
+
+### Requirement: Documentation hierarchy and organization
+TrackWork SHALL preserve or extend AFFiNE-native document organization so documentation can be arranged independently from planning structures.
+
+Documentation SHOULD support ordinary page/folder/tree-style organization, favorites/pins where available, links/backlinks, search, templates, and navigation without creating synthetic tasks.
+
+#### Scenario: Architecture documentation tree
+- **GIVEN** a workspace containing Architecture, Operations, API, and Runbooks documentation
+- **WHEN** users navigate these pages
+- **THEN** they can treat them as a documentation hierarchy even if no Task Tracker capability is enabled for those pages
+
+### Requirement: Optional planning association
+A standalone document MAY later be associated with tasks or planning objects without changing its canonical document identity.
+
+#### Scenario: Link existing design document to Epic
+- **GIVEN** an existing standalone design document
+- **WHEN** an authorized user associates it with an Epic
+- **THEN** the association is added
+- **AND** the document remains a normal document
+- **AND** removing or archiving the Epic does not delete the document
+
 ### Requirement: Durable document task references
 TrackWork SHALL represent recognized task references in documents as resolvable task links while preserving plain text where reference behavior is not appropriate.
 
