@@ -101,6 +101,10 @@ export type TaskHistoryEntry = {
   source?: TaskActivitySource;
 };
 
+export const shouldMaterializeTrackWorkSchema = (
+  canManageProperties: boolean | undefined
+) => canManageProperties === true;
+
 export const buildTaskActivityEntry = (
   type: TaskHistoryEntry['type'],
   message: string,

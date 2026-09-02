@@ -92,6 +92,7 @@ import {
   TASK_TRACKER_FLAG_PROPERTY,
   TASK_TYPE_PROPERTY,
   buildTaskActivityEntry,
+  shouldMaterializeTrackWorkSchema,
   type TaskActivityOperation,
   type TaskActivitySource,
   type TaskAttachment,
@@ -108,6 +109,7 @@ import {
 import * as styles from './task-tracker.css';
 
 import { AuthService } from '@affine/core/modules/cloud';
+import { GuardService } from '@affine/core/modules/permissions';
 
 type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 type DueFilter = 'all' | 'overdue' | 'today' | 'next-7-days' | 'no-date';
@@ -2767,6 +2769,10 @@ const TaskTrackerPage = () => {
   const { t, locale } = useTaskTrackerI18n();
   const authService = useService(AuthService);
   const account = useLiveData(authService.session.account$);
+  const guardService = useService(GuardService);
+  const canManageProperties = useLiveData(
+    guardService.can$('Workspace_Properties_Update')
+  );
   const docsService = useService(DocsService);
   const tagService = useService(TagService);
   const workbench = useService(WorkbenchService).workbench;
@@ -3072,6 +3078,15 @@ const TaskTrackerPage = () => {
   const initializedPropertiesRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    // Provisioning of missing TrackWork property definitions is aligned with
+    // the server boundary: only users who may update the workspace
+    // custom-property schema (Workspace.Properties.Update) materialize rows.
+    // While the permission is still loading, nothing is written and no keys
+    // are marked, so a later transition to allowed re-runs provisioning.
+    if (!shouldMaterializeTrackWorkSchema(canManageProperties)) {
+      return;
+    }
+
     const ensureProperty = (
       key: string,
       exists: boolean,
@@ -3233,6 +3248,7 @@ const TaskTrackerPage = () => {
     assigneePropertyInfo,
     attachmentsPropertyInfo,
     boardPropertyInfo,
+    canManageProperties,
     complexityPropertyInfo,
     descriptionPropertyInfo,
     dueDatePropertyInfo,
