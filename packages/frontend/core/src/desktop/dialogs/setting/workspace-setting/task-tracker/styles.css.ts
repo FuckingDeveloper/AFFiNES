@@ -148,3 +148,12 @@ export const helperText = style({
   color: cssVarV2('text/secondary'),
   marginTop: 8,
 });
+
+export const workflowSaveError = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  fontSize: 12,
+  color: cssVarV2('aI/errorText'),
+  marginBottom: 8,
+});

@@ -110,6 +110,7 @@ import * as styles from './task-tracker.css';
 
 import { AuthService } from '@affine/core/modules/cloud';
 import { GuardService } from '@affine/core/modules/permissions';
+import { useTrackWorkWorkflowConfig } from './workflow-config';
 
 type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 type DueFilter = 'all' | 'overdue' | 'today' | 'next-7-days' | 'no-date';
@@ -3264,13 +3265,20 @@ const TaskTrackerPage = () => {
     workspacePropertyService,
   ]);
 
+  const workflowConfig = useTrackWorkWorkflowConfig(workspace.id);
   const trackerAdditionalData = useMemo(() => {
+    const serverConfig = workflowConfig.data?.config as
+      | TaskTrackerPropertyAdditionalData
+      | undefined;
+    if (serverConfig?.taskTrackerBoards) {
+      return serverConfig;
+    }
     return (
       (statusPropertyInfo?.additionalData as
         | TaskTrackerPropertyAdditionalData
         | undefined) ?? {}
     );
-  }, [statusPropertyInfo]);
+  }, [statusPropertyInfo, workflowConfig.data]);
 
   const boards = useMemo(
     () => resolveTaskTrackerBoards(trackerAdditionalData),

@@ -3,6 +3,8 @@ import {
   SettingHeader,
   SettingWrapper,
 } from '@affine/component/setting-components';
+import { GraphQLService } from '@affine/core/modules/cloud';
+import { WorkspaceService } from '@affine/core/modules/workspace';
 import { WorkspacePropertyService } from '@affine/core/modules/workspace-property';
 import {
   localizeTaskTrackerStageTitle,
@@ -14,6 +16,10 @@ import { useLiveData, useService } from '@toeverything/infra';
 import { nanoid } from 'nanoid';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import {
+  updateTrackWorkWorkflowConfig,
+  useTrackWorkWorkflowConfig,
+} from '../../../../pages/workspace/task-tracker/workflow-config';
 import {
   AUTOMATION_EVENT_TYPES,
   buildDefaultTransitions,
@@ -47,6 +53,12 @@ const createDefaultBoardFlow = (): TaskFlowColumn[] => {
 export const WorkspaceTaskTrackerSetting = () => {
   const { t } = useTaskTrackerI18n();
   const workspacePropertyService = useService(WorkspacePropertyService);
+  const workspace = useService(WorkspaceService).workspace;
+  const graphql = useService(GraphQLService);
+  const workflowConfig = useTrackWorkWorkflowConfig(workspace.id);
+  const [workflowSaveError, setWorkflowSaveError] = useState<string | null>(
+    null
+  );
 
   const statusPropertyInfo = useLiveData(
     workspacePropertyService.propertyInfo$(TASK_STATUS_PROPERTY)
@@ -60,9 +72,21 @@ export const WorkspaceTaskTrackerSetting = () => {
     [statusPropertyInfo?.additionalData]
   );
 
+  // The server workflow config is authoritative while online; the local
+  // additionalData copy is only a compatibility/offline mirror.
+  const authoritativeAdditionalData = useMemo(() => {
+    const serverConfig = workflowConfig.data?.config as
+      | TaskTrackerPropertyAdditionalData
+      | undefined;
+    if (serverConfig?.taskTrackerBoards) {
+      return serverConfig;
+    }
+    return additionalData;
+  }, [workflowConfig.data, additionalData]);
+
   const boards = useMemo(
-    () => resolveTaskTrackerBoards(additionalData),
-    [additionalData]
+    () => resolveTaskTrackerBoards(authoritativeAdditionalData),
+    [authoritativeAdditionalData]
   );
 
   const [selectedBoardId, setSelectedBoardId] = useState<string>(
@@ -112,29 +136,67 @@ export const WorkspaceTaskTrackerSetting = () => {
     [t]
   );
 
+  const saveWorkflowConfig = useCallback(
+    (nextConfig: TaskTrackerPropertyAdditionalData) => {
+      setWorkflowSaveError(null);
+      updateTrackWorkWorkflowConfig(graphql, {
+        workspaceId: workspace.id,
+        expectedRevision: workflowConfig.data?.revision ?? 0,
+        config: nextConfig,
+      })
+        .then(result => {
+          // The authoritative config is on the server; mirror the already
+          // validated returned config into the legacy additionalData copy for
+          // offline/compatibility rendering. Mirror failure never changes the
+          // authoritative revision.
+          const mirrorConfig =
+            result.config as TaskTrackerPropertyAdditionalData;
+          const firstBoard = result.config.taskTrackerBoards?.[0];
+          workspacePropertyService.updatePropertyInfo(TASK_STATUS_PROPERTY, {
+            additionalData: {
+              ...additionalData,
+              taskTrackerBoards: mirrorConfig.taskTrackerBoards,
+              taskTrackerFlow: firstBoard?.flow,
+              taskTrackerTransitions: firstBoard?.transitions,
+              taskTrackerAutomationRules:
+                mirrorConfig.taskTrackerAutomationRules,
+            },
+          });
+        })
+        .catch(error => {
+          setWorkflowSaveError(
+            error instanceof Error ? error.message : String(error)
+          );
+        });
+    },
+    [
+      additionalData,
+      graphql,
+      workflowConfig.data,
+      workspace.id,
+      workspacePropertyService,
+    ]
+  );
+
   const saveBoards = useCallback(
     (nextBoards: TaskTrackerBoard[]) => {
       if (!nextBoards.length) {
         return;
       }
 
-      const firstBoard = nextBoards[0];
-      workspacePropertyService.updatePropertyInfo(TASK_STATUS_PROPERTY, {
-        additionalData: {
-          ...additionalData,
-          taskTrackerBoards: nextBoards.map(board => ({
-            id: board.id,
-            title: board.title,
-            flow: board.flow,
-            transitions: board.transitions,
-            typeTransitions: board.typeTransitions,
-          })),
-          taskTrackerFlow: firstBoard.flow,
-          taskTrackerTransitions: firstBoard.transitions,
-        },
+      saveWorkflowConfig({
+        taskTrackerBoards: nextBoards.map(board => ({
+          id: board.id,
+          title: board.title,
+          flow: board.flow,
+          transitions: board.transitions,
+          typeTransitions: board.typeTransitions,
+        })),
+        taskTrackerAutomationRules:
+          authoritativeAdditionalData.taskTrackerAutomationRules,
       });
     },
-    [additionalData, workspacePropertyService]
+    [authoritativeAdditionalData, saveWorkflowConfig]
   );
 
   const updateBoard = useCallback(
@@ -319,19 +381,17 @@ export const WorkspaceTaskTrackerSetting = () => {
   );
 
   const automationRules = sanitizeAutomationRules(
-    additionalData?.taskTrackerAutomationRules
+    authoritativeAdditionalData?.taskTrackerAutomationRules
   );
 
   const saveRules = useCallback(
     (rules: TaskTrackerAutomationRule[]) => {
-      workspacePropertyService.updatePropertyInfo(TASK_STATUS_PROPERTY, {
-        additionalData: {
-          ...additionalData,
-          taskTrackerAutomationRules: rules,
-        },
+      saveWorkflowConfig({
+        taskTrackerBoards: boards,
+        taskTrackerAutomationRules: rules,
       });
     },
-    [additionalData, workspacePropertyService]
+    [boards, saveWorkflowConfig]
   );
 
   const onAddRule = useCallback(() => {
@@ -381,6 +441,21 @@ export const WorkspaceTaskTrackerSetting = () => {
   return (
     <>
       <SettingHeader title={t('flowTitle')} subtitle={t('flowSubtitle')} />
+
+      {workflowSaveError ? (
+        <div className={styles.workflowSaveError}>
+          <span>{workflowSaveError}</span>
+          <Button
+            variant="primary"
+            onClick={() => {
+              workflowConfig.mutate();
+              setWorkflowSaveError(null);
+            }}
+          >
+            Refetch
+          </Button>
+        </div>
+      ) : null}
 
       <SettingWrapper title={t('boards')}>
         <div className={styles.boardControls}>
