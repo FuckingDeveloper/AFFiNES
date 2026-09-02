@@ -2517,6 +2517,17 @@ export const indexerSearchQuery = {
 }`,
 };
 
+export const createDevelopmentBranchMutation = {
+  id: 'createDevelopmentBranchMutation' as const,
+  op: 'createDevelopmentBranch',
+  query: `mutation createDevelopmentBranch($input: CreateDevelopmentBranchInput!) {
+  createDevelopmentBranch(input: $input) {
+    name
+    url
+  }
+}`,
+};
+
 export const createDevelopmentIntegrationMutation = {
   id: 'createDevelopmentIntegrationMutation' as const,
   op: 'createDevelopmentIntegration',
@@ -2533,6 +2544,17 @@ export const createDevelopmentIntegrationMutation = {
     webhookUrl
     createdAt
     updatedAt
+  }
+}`,
+};
+
+export const createDevelopmentMergeRequestMutation = {
+  id: 'createDevelopmentMergeRequestMutation' as const,
+  op: 'createDevelopmentMergeRequest',
+  query: `mutation createDevelopmentMergeRequest($input: CreateDevelopmentMergeRequestInput!) {
+  createDevelopmentMergeRequest(input: $input) {
+    iid
+    url
   }
 }`,
 };
@@ -2556,12 +2578,22 @@ export const developmentIntegrationsQuery = {
       provider
       name
       baseUrl
+      username
       enabled
       hasToken
       hasWebhookSecret
       webhookUrl
       createdAt
       updatedAt
+      repositories {
+        id
+        externalId
+        name
+        fullName
+        webUrl
+        defaultBranch
+        enabled
+      }
     }
   }
 }`,
@@ -2596,6 +2628,22 @@ export const importDevelopmentRepositoryMutation = {
     webUrl
     defaultBranch
     enabled
+  }
+}`,
+};
+
+export const refreshDevelopmentPipelinesMutation = {
+  id: 'refreshDevelopmentPipelinesMutation' as const,
+  op: 'refreshDevelopmentPipelines',
+  query: `mutation refreshDevelopmentPipelines($connectionId: String!) {
+  refreshDevelopmentPipelines(connectionId: $connectionId) {
+    externalId
+    number
+    name
+    status
+    url
+    startedAt
+    finishedAt
   }
 }`,
 };
@@ -2635,11 +2683,38 @@ export const testDevelopmentIntegrationMutation = {
 }`,
 };
 
+export const trackWorkActivityQuery = {
+  id: 'trackWorkActivityQuery' as const,
+  op: 'trackWorkActivity',
+  query: `query trackWorkActivity($workspaceId: String!, $taskKey: String, $first: Int = 20, $after: String) {
+  trackWorkActivity(
+    workspaceId: $workspaceId
+    taskKey: $taskKey
+    first: $first
+    after: $after
+  ) {
+    items {
+      id
+      taskKey
+      eventType
+      title
+      url
+      authorName
+      repositoryName
+      createdAt
+    }
+    nextCursor
+    hasNextPage
+  }
+}`,
+};
+
 export const trackWorkTaskDevelopmentQuery = {
   id: 'trackWorkTaskDevelopmentQuery' as const,
   op: 'trackWorkTaskDevelopment',
   query: `query trackWorkTaskDevelopment($workspaceId: String!, $taskKey: String!) {
   trackWorkTaskDevelopment(workspaceId: $workspaceId, taskKey: $taskKey) {
+    repositories
     commits {
       externalId
       title
@@ -2661,6 +2736,15 @@ export const trackWorkTaskDevelopmentQuery = {
       status
       sourceBranch
       targetBranch
+    }
+    pipelines {
+      externalId
+      number
+      name
+      status
+      url
+      startedAt
+      finishedAt
     }
   }
 }`,
@@ -3093,6 +3177,76 @@ export const subscriptionQuery = {
   }
 }`,
   deprecations: ["'id' is deprecated: removed"],
+};
+
+export const allocateTrackWorkTaskMutation = {
+  id: 'allocateTrackWorkTaskMutation' as const,
+  op: 'allocateTrackWorkTask',
+  query: `mutation allocateTrackWorkTask($input: AllocateTrackWorkTaskInput!) {
+  allocateTrackWorkTask(input: $input) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}`,
+};
+
+export const setTrackWorkTaskDocumentLinksMutation = {
+  id: 'setTrackWorkTaskDocumentLinksMutation' as const,
+  op: 'setTrackWorkTaskDocumentLinks',
+  query: `mutation setTrackWorkTaskDocumentLinks($input: SetTrackWorkTaskDocumentLinksInput!) {
+  setTrackWorkTaskDocumentLinks(input: $input) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}`,
+};
+
+export const syncTrackWorkTasksMutation = {
+  id: 'syncTrackWorkTasksMutation' as const,
+  op: 'syncTrackWorkTasks',
+  query: `mutation syncTrackWorkTasks($input: SyncTrackWorkTasksInput!) {
+  syncTrackWorkTasks(input: $input) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}`,
+};
+
+export const trackWorkDocumentBacklinksQuery = {
+  id: 'trackWorkDocumentBacklinksQuery' as const,
+  op: 'trackWorkDocumentBacklinks',
+  query: `query trackWorkDocumentBacklinks($workspaceId: String!, $documentId: String!) {
+  trackWorkDocumentBacklinks(workspaceId: $workspaceId, documentId: $documentId) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}`,
+};
+
+export const trackWorkTaskQuery = {
+  id: 'trackWorkTaskQuery' as const,
+  op: 'trackWorkTask',
+  query: `query trackWorkTask($workspaceId: String!, $taskKey: String!) {
+  trackWorkTask(workspaceId: $workspaceId, taskKey: $taskKey) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}`,
 };
 
 export const updateDocDefaultRoleMutation = {

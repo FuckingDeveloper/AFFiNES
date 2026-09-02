@@ -4,24 +4,33 @@ import {
   SettingWrapper,
 } from '@affine/component/setting-components';
 import { WorkspacePropertyService } from '@affine/core/modules/workspace-property';
-import { useTaskTrackerI18n } from '@affine/core/utils/task-tracker-i18n';
+import {
+  localizeTaskTrackerStageTitle,
+  type TaskTrackerTranslationKey,
+  useTaskTrackerI18n,
+} from '@affine/core/utils/task-tracker-i18n';
 import { DeleteIcon, PlusIcon } from '@blocksuite/icons/rc';
 import { useLiveData, useService } from '@toeverything/infra';
 import { nanoid } from 'nanoid';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
+  AUTOMATION_EVENT_TYPES,
   buildDefaultTransitions,
   buildDefaultTypeTransitions,
   DEFAULT_BOARD_ID,
   DEFAULT_BOARD_TITLE,
   DEFAULT_FLOW,
   resolveTaskTrackerBoards,
+  sanitizeAutomationRules,
   sanitizeTransitions,
   sanitizeTypeTransitions,
   TASK_STATUS_PROPERTY,
   TASK_TYPES,
   type TaskFlowColumn,
+  type TaskTrackerAutomationAction,
+  type TaskTrackerAutomationEventType,
+  type TaskTrackerAutomationRule,
   type TaskTrackerBoard,
   type TaskTrackerPropertyAdditionalData,
   type TaskType,
@@ -195,10 +204,7 @@ export const WorkspaceTaskTrackerSetting = () => {
     }
 
     updateBoard(selectedBoard.id, board => {
-      const nextFlow = [
-        ...board.flow,
-        { id: nanoid(), title: t('newStage') },
-      ];
+      const nextFlow = [...board.flow, { id: nanoid(), title: t('newStage') }];
       const nextTypeTransitions = sanitizeTypeTransitions(
         nextFlow,
         board.typeTransitions
@@ -310,6 +316,64 @@ export const WorkspaceTaskTrackerSetting = () => {
       });
     },
     [selectedBoard, selectedTaskType, updateBoard]
+  );
+
+  const automationRules = sanitizeAutomationRules(
+    additionalData?.taskTrackerAutomationRules
+  );
+
+  const saveRules = useCallback(
+    (rules: TaskTrackerAutomationRule[]) => {
+      workspacePropertyService.updatePropertyInfo(TASK_STATUS_PROPERTY, {
+        additionalData: {
+          ...additionalData,
+          taskTrackerAutomationRules: rules,
+        },
+      });
+    },
+    [additionalData, workspacePropertyService]
+  );
+
+  const onAddRule = useCallback(() => {
+    saveRules([
+      ...automationRules,
+      {
+        id: nanoid(),
+        eventType: 'merge_request.merged',
+        action: 'set-status',
+        stageId: flow[0]?.id,
+        enabled: true,
+      },
+    ]);
+  }, [automationRules, flow, saveRules]);
+
+  const onDeleteRule = useCallback(
+    (ruleId: string) => {
+      saveRules(automationRules.filter(rule => rule.id !== ruleId));
+    },
+    [automationRules, saveRules]
+  );
+
+  const onToggleRule = useCallback(
+    (ruleId: string, enabled: boolean) => {
+      saveRules(
+        automationRules.map(rule =>
+          rule.id === ruleId ? { ...rule, enabled } : rule
+        )
+      );
+    },
+    [automationRules, saveRules]
+  );
+
+  const onUpdateRule = useCallback(
+    (ruleId: string, patch: Partial<TaskTrackerAutomationRule>) => {
+      saveRules(
+        automationRules.map(rule =>
+          rule.id === ruleId ? { ...rule, ...patch } : rule
+        )
+      );
+    },
+    [automationRules, saveRules]
   );
 
   const hasProperty = !!statusPropertyInfo;
@@ -473,6 +537,106 @@ export const WorkspaceTaskTrackerSetting = () => {
             </tbody>
           </table>
         </div>
+      </SettingWrapper>
+
+      <SettingWrapper title={t('automationTitle')}>
+        <div className={styles.stagesList}>
+          {automationRules.map(rule => (
+            <div key={rule.id} className={styles.stageRow}>
+              <select
+                className={styles.input}
+                value={rule.eventType}
+                disabled={!hasProperty}
+                onChange={event => {
+                  onUpdateRule(rule.id, {
+                    eventType: event.target
+                      .value as TaskTrackerAutomationEventType,
+                  });
+                }}
+              >
+                {AUTOMATION_EVENT_TYPES.map(eventType => (
+                  <option key={eventType} value={eventType}>
+                    {t(
+                      `event${eventType
+                        .split('.')
+                        .map(
+                          part => part.charAt(0).toUpperCase() + part.slice(1)
+                        )
+                        .join('')}` as TaskTrackerTranslationKey
+                    )}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className={styles.input}
+                value={rule.action}
+                disabled={!hasProperty}
+                onChange={event => {
+                  const action = event.target
+                    .value as TaskTrackerAutomationAction;
+                  onUpdateRule(rule.id, {
+                    action,
+                    stageId:
+                      action === 'set-status'
+                        ? (rule.stageId ?? flow[0]?.id)
+                        : undefined,
+                  });
+                }}
+              >
+                <option value="set-status">{t('actionSetStatus')}</option>
+                <option value="warning">{t('actionWarning')}</option>
+              </select>
+
+              {rule.action === 'set-status' ? (
+                <select
+                  className={styles.input}
+                  value={rule.stageId ?? ''}
+                  disabled={!hasProperty}
+                  onChange={event => {
+                    onUpdateRule(rule.id, { stageId: event.target.value });
+                  }}
+                >
+                  {flow.map(stage => (
+                    <option key={stage.id} value={stage.id}>
+                      {localizeTaskTrackerStageTitle(stage, t)}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+
+              <input
+                type="checkbox"
+                checked={rule.enabled}
+                disabled={!hasProperty}
+                onChange={event => {
+                  onToggleRule(rule.id, event.target.checked);
+                }}
+                title={t('automationEnabled')}
+              />
+
+              <Button
+                variant="plain"
+                className={styles.deleteButton}
+                disabled={!hasProperty}
+                onClick={() => {
+                  onDeleteRule(rule.id);
+                }}
+              >
+                <DeleteIcon />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        {automationRules.length === 0 ? (
+          <div className={styles.helperText}>{t('automationEmpty')}</div>
+        ) : null}
+
+        <Button variant="primary" onClick={onAddRule} disabled={!hasProperty}>
+          <PlusIcon />
+          {t('automationAdd')}
+        </Button>
       </SettingWrapper>
 
       {!hasProperty ? (

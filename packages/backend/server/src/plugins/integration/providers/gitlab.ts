@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { extractTrackWorkKeys } from '@affine/trackwork';
 
 import {
@@ -127,6 +127,8 @@ const isGitLabMergeRequestPayload = (
 export class GitLabScmProvider implements ScmProvider {
   readonly type: ScmProviderType = 'gitlab';
 
+  private readonly logger = new Logger(GitLabScmProvider.name);
+
   private async request(
     baseUrl: string,
     token: string,
@@ -144,8 +146,8 @@ export class GitLabScmProvider implements ScmProvider {
     });
 
     if (!response.ok) {
-      const message = await response.text().catch(() => '');
-      throw new Error(`GitLab API error ${response.status}: ${message}`);
+      this.logger.warn(`GitLab API request failed (${response.status})`);
+      throw new Error(`GitLab API request failed (${response.status})`);
     }
 
     return response.json() as Promise<unknown>;
@@ -352,6 +354,86 @@ export class GitLabScmProvider implements ScmProvider {
         taskKeys,
       },
     ];
+  }
+
+  async createBranch(input: {
+    baseUrl: string;
+    token: string;
+    repositoryId: string;
+    baseBranch: string;
+    name: string;
+  }): Promise<{ name: string; url: string }> {
+    const url = new URL(
+      `/api/v4/projects/${encodeURIComponent(input.repositoryId)}/repository/branches`,
+      input.baseUrl
+    );
+    url.searchParams.set('branch', input.name);
+    url.searchParams.set('ref', input.baseBranch);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'PRIVATE-TOKEN': input.token },
+    });
+
+    if (!response.ok) {
+      this.logger.warn(`GitLab create branch failed (${response.status})`);
+      throw new Error(`GitLab create branch failed (${response.status})`);
+    }
+
+    const branch = (await response.json()) as {
+      name?: string;
+      web_url?: string;
+    };
+
+    return {
+      name: branch.name ?? input.name,
+      url: branch.web_url ?? url.toString(),
+    };
+  }
+
+  async createMergeRequest(input: {
+    baseUrl: string;
+    token: string;
+    repositoryId: string;
+    sourceBranch: string;
+    targetBranch: string;
+    title: string;
+    description?: string;
+  }): Promise<{ externalId: string; iid: string; url: string }> {
+    const url = new URL(
+      `/api/v4/projects/${encodeURIComponent(input.repositoryId)}/merge_requests`,
+      input.baseUrl
+    );
+    url.searchParams.set('source_branch', input.sourceBranch);
+    url.searchParams.set('target_branch', input.targetBranch);
+    url.searchParams.set('title', input.title);
+    if (input.description) {
+      url.searchParams.set('description', input.description);
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'PRIVATE-TOKEN': input.token },
+    });
+
+    if (!response.ok) {
+      this.logger.warn(`GitLab create MR failed (${response.status})`);
+      throw new Error(
+        `GitLab create merge request failed (${response.status})`
+      );
+    }
+
+    const mr = (await response.json()) as {
+      id?: number;
+      iid?: number;
+      web_url?: string;
+    };
+
+    return {
+      externalId: String(mr.id ?? mr.iid ?? ''),
+      iid: String(mr.iid ?? ''),
+      url: mr.web_url ?? url.toString(),
+    };
   }
 }
 

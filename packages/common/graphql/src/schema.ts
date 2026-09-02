@@ -296,6 +296,14 @@ export enum AiJobStatus {
   running = 'running',
 }
 
+export interface AllocateTrackWorkTaskInput {
+  docId: Scalars['String']['input'];
+  legacyTasks?: Array<TrackWorkLegacyTaskInput>;
+  prefix: Scalars['String']['input'];
+  relatedDocumentIds?: Array<Scalars['String']['input']>;
+  workspaceId: Scalars['String']['input'];
+}
+
 export interface AlreadyInSpaceDataType {
   __typename?: 'AlreadyInSpaceDataType';
   spaceId: Scalars['String']['output'];
@@ -907,13 +915,32 @@ export interface CreateCheckoutSessionInput {
   variant?: InputMaybe<SubscriptionVariant>;
 }
 
+export interface CreateDevelopmentBranchInput {
+  baseBranch: Scalars['String']['input'];
+  connectionId: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  repositoryId: Scalars['String']['input'];
+  taskKey: Scalars['String']['input'];
+}
+
 export interface CreateDevelopmentIntegrationInput {
   baseUrl: Scalars['String']['input'];
   name: Scalars['String']['input'];
   provider: Scalars['String']['input'];
   token: Scalars['String']['input'];
+  username?: InputMaybe<Scalars['String']['input']>;
   webhookSecret?: InputMaybe<Scalars['String']['input']>;
   workspaceId: Scalars['String']['input'];
+}
+
+export interface CreateDevelopmentMergeRequestInput {
+  connectionId: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  repositoryId: Scalars['String']['input'];
+  sourceBranch: Scalars['String']['input'];
+  targetBranch: Scalars['String']['input'];
+  taskKey: Scalars['String']['input'];
+  title: Scalars['String']['input'];
 }
 
 export interface CreateUserInput {
@@ -960,8 +987,33 @@ export interface DeleteSessionInput {
   workspaceId: Scalars['String']['input'];
 }
 
+export interface DevelopmentActivity {
+  __typename?: 'DevelopmentActivity';
+  authorName: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  eventType: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  repositoryName: Maybe<Scalars['String']['output']>;
+  taskKey: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+}
+
+export interface DevelopmentActivityConnection {
+  __typename?: 'DevelopmentActivityConnection';
+  hasNextPage: Scalars['Boolean']['output'];
+  items: Array<DevelopmentActivity>;
+  nextCursor: Maybe<Scalars['String']['output']>;
+}
+
 export interface DevelopmentBranch {
   __typename?: 'DevelopmentBranch';
+  name: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+}
+
+export interface DevelopmentBranchCreated {
+  __typename?: 'DevelopmentBranchCreated';
   name: Scalars['String']['output'];
   url: Scalars['String']['output'];
 }
@@ -993,7 +1045,9 @@ export interface DevelopmentIntegrationConnection {
   id: Scalars['String']['output'];
   name: Scalars['String']['output'];
   provider: Scalars['String']['output'];
+  repositories: Array<DevelopmentRepository>;
   updatedAt: Scalars['DateTime']['output'];
+  username: Maybe<Scalars['String']['output']>;
   webhookUrl: Scalars['String']['output'];
   workspaceId: Scalars['String']['output'];
 }
@@ -1006,6 +1060,23 @@ export interface DevelopmentMergeRequest {
   status: Scalars['String']['output'];
   targetBranch: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+}
+
+export interface DevelopmentMergeRequestCreated {
+  __typename?: 'DevelopmentMergeRequestCreated';
+  iid: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+}
+
+export interface DevelopmentPipeline {
+  __typename?: 'DevelopmentPipeline';
+  externalId: Scalars['String']['output'];
+  finishedAt: Maybe<Scalars['DateTime']['output']>;
+  name: Scalars['String']['output'];
+  number: Scalars['String']['output'];
+  startedAt: Maybe<Scalars['DateTime']['output']>;
+  status: Scalars['String']['output'];
   url: Scalars['String']['output'];
 }
 
@@ -1889,6 +1960,7 @@ export interface Mutation {
   addWorkspaceFeature: Scalars['Boolean']['output'];
   /** Update workspace flags and features for admin */
   adminUpdateWorkspace: Maybe<AdminWorkspace>;
+  allocateTrackWorkTask: TrackWorkTask;
   approveMember: Scalars['Boolean']['output'];
   /** Ban an user */
   banUser: UserType;
@@ -1918,7 +1990,9 @@ export interface Mutation {
   createCopilotSessionWithHistory: CopilotHistories;
   /** Create a stripe customer portal to manage payment methods */
   createCustomerPortal: Scalars['String']['output'];
+  createDevelopmentBranch: DevelopmentBranchCreated;
   createDevelopmentIntegration: DevelopmentIntegrationConnection;
+  createDevelopmentMergeRequest: DevelopmentMergeRequestCreated;
   createInviteLink: InviteLink;
   createReply: ReplyObjectType;
   createSelfhostWorkspaceCustomerPortal: Scalars['String']['output'];
@@ -1967,6 +2041,7 @@ export interface Mutation {
   /** mark notification as read */
   readNotification: Scalars['Boolean']['output'];
   recoverDoc: Scalars['DateTime']['output'];
+  refreshDevelopmentPipelines: Array<DevelopmentPipeline>;
   /** Refresh current user subscriptions and return latest. */
   refreshUserSubscriptions: Array<SubscriptionType>;
   releaseDeletedBlobs: Scalars['Boolean']['output'];
@@ -2004,8 +2079,10 @@ export interface Mutation {
   sendVerifyEmail: Scalars['Boolean']['output'];
   setBlob: Scalars['String']['output'];
   setDevelopmentRepositoryEnabled: DevelopmentRepository;
+  setTrackWorkTaskDocumentLinks: TrackWorkTask;
   settleTranscriptTask: Maybe<TranscriptionResultType>;
   submitTranscriptTask: Maybe<TranscriptionResultType>;
+  syncTrackWorkTasks: Array<TrackWorkTask>;
   testDevelopmentIntegration: DevelopmentConnectionTestResult;
   testWorkspaceByokConfig: TestWorkspaceByokConfigResultType;
   unlinkCalendarAccount: Scalars['Boolean']['output'];
@@ -2090,6 +2167,10 @@ export interface MutationAdminUpdateWorkspaceArgs {
   input: AdminUpdateWorkspaceInput;
 }
 
+export interface MutationAllocateTrackWorkTaskArgs {
+  input: AllocateTrackWorkTaskInput;
+}
+
 export interface MutationApproveMemberArgs {
   userId: Scalars['String']['input'];
   workspaceId: Scalars['String']['input'];
@@ -2169,8 +2250,16 @@ export interface MutationCreateCopilotSessionWithHistoryArgs {
   options: CreateChatSessionInput;
 }
 
+export interface MutationCreateDevelopmentBranchArgs {
+  input: CreateDevelopmentBranchInput;
+}
+
 export interface MutationCreateDevelopmentIntegrationArgs {
   input: CreateDevelopmentIntegrationInput;
+}
+
+export interface MutationCreateDevelopmentMergeRequestArgs {
+  input: CreateDevelopmentMergeRequestInput;
 }
 
 export interface MutationCreateInviteLinkArgs {
@@ -2325,6 +2414,10 @@ export interface MutationRecoverDocArgs {
   workspaceId: Scalars['String']['input'];
 }
 
+export interface MutationRefreshDevelopmentPipelinesArgs {
+  connectionId: Scalars['String']['input'];
+}
+
 export interface MutationReleaseDeletedBlobsArgs {
   workspaceId: Scalars['String']['input'];
 }
@@ -2443,6 +2536,10 @@ export interface MutationSetDevelopmentRepositoryEnabledArgs {
   repositoryId: Scalars['String']['input'];
 }
 
+export interface MutationSetTrackWorkTaskDocumentLinksArgs {
+  input: SetTrackWorkTaskDocumentLinksInput;
+}
+
 export interface MutationSettleTranscriptTaskArgs {
   taskId: Scalars['String']['input'];
   workspaceId: Scalars['String']['input'];
@@ -2454,6 +2551,10 @@ export interface MutationSubmitTranscriptTaskArgs {
   blobs?: InputMaybe<Array<Scalars['Upload']['input']>>;
   input?: InputMaybe<SubmitAudioTranscriptionInput>;
   workspaceId: Scalars['String']['input'];
+}
+
+export interface MutationSyncTrackWorkTasksArgs {
+  input: SyncTrackWorkTasksInput;
 }
 
 export interface MutationTestDevelopmentIntegrationArgs {
@@ -2795,6 +2896,9 @@ export interface Query {
   revealedAccessTokens: Array<RevealedAccessToken>;
   /** server config */
   serverConfig: ServerConfigType;
+  trackWorkActivity: DevelopmentActivityConnection;
+  trackWorkDocumentBacklinks: Array<TrackWorkTask>;
+  trackWorkTask: Maybe<TrackWorkTask>;
   trackWorkTaskDevelopment: TrackWorkDevelopmentInfo;
   /** Get user by email */
   user: Maybe<UserOrLimitedUser>;
@@ -2858,6 +2962,23 @@ export interface QueryPublicUserByIdArgs {
 }
 
 export interface QueryQueryWorkspaceEmbeddingStatusArgs {
+  workspaceId: Scalars['String']['input'];
+}
+
+export interface QueryTrackWorkActivityArgs {
+  after?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  taskKey?: InputMaybe<Scalars['String']['input']>;
+  workspaceId: Scalars['String']['input'];
+}
+
+export interface QueryTrackWorkDocumentBacklinksArgs {
+  documentId: Scalars['String']['input'];
+  workspaceId: Scalars['String']['input'];
+}
+
+export interface QueryTrackWorkTaskArgs {
+  taskKey: Scalars['String']['input'];
   workspaceId: Scalars['String']['input'];
 }
 
@@ -3175,6 +3296,12 @@ export enum ServerFeature {
   Payment = 'Payment',
 }
 
+export interface SetTrackWorkTaskDocumentLinksInput {
+  documentIds: Array<Scalars['String']['input']>;
+  taskDocId: Scalars['String']['input'];
+  workspaceId: Scalars['String']['input'];
+}
+
 export interface SpaceAccessDeniedDataType {
   __typename?: 'SpaceAccessDeniedDataType';
   spaceId: Scalars['String']['output'];
@@ -3301,6 +3428,12 @@ export enum SubscriptionVariant {
   Onetime = 'Onetime',
 }
 
+export interface SyncTrackWorkTasksInput {
+  prefix: Scalars['String']['input'];
+  tasks: Array<TrackWorkLegacyTaskInput>;
+  workspaceId: Scalars['String']['input'];
+}
+
 export interface TestWorkspaceByokConfigInput {
   apiKey?: InputMaybe<Scalars['String']['input']>;
   configId?: InputMaybe<Scalars['ID']['input']>;
@@ -3337,6 +3470,23 @@ export interface TrackWorkDevelopmentInfo {
   branches: Array<DevelopmentBranch>;
   commits: Array<DevelopmentCommit>;
   mergeRequests: Array<DevelopmentMergeRequest>;
+  pipelines: Array<DevelopmentPipeline>;
+  repositories: Array<Scalars['String']['output']>;
+}
+
+export interface TrackWorkLegacyTaskInput {
+  docId: Scalars['String']['input'];
+  relatedDocumentIds?: Array<Scalars['String']['input']>;
+  taskKey: Scalars['String']['input'];
+}
+
+export interface TrackWorkTask {
+  __typename?: 'TrackWorkTask';
+  createdAt: Scalars['DateTime']['output'];
+  docId: Scalars['String']['output'];
+  number: Scalars['Int']['output'];
+  relatedDocumentIds: Array<Scalars['String']['output']>;
+  taskKey: Scalars['String']['output'];
 }
 
 export interface TranscriptProviderMetaType {
@@ -3441,9 +3591,11 @@ export interface UpdateChatSessionInput {
 }
 
 export interface UpdateDevelopmentIntegrationInput {
+  baseUrl?: InputMaybe<Scalars['String']['input']>;
   enabled?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['String']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
+  username?: InputMaybe<Scalars['String']['input']>;
 }
 
 export interface UpdateDocDefaultRoleInput {
@@ -7293,6 +7445,19 @@ export type IndexerSearchQuery = {
   };
 };
 
+export type CreateDevelopmentBranchMutationVariables = Exact<{
+  input: CreateDevelopmentBranchInput;
+}>;
+
+export type CreateDevelopmentBranchMutation = {
+  __typename?: 'Mutation';
+  createDevelopmentBranch: {
+    __typename?: 'DevelopmentBranchCreated';
+    name: string;
+    url: string;
+  };
+};
+
 export type CreateDevelopmentIntegrationMutationVariables = Exact<{
   input: CreateDevelopmentIntegrationInput;
 }>;
@@ -7312,6 +7477,19 @@ export type CreateDevelopmentIntegrationMutation = {
     webhookUrl: string;
     createdAt: string;
     updatedAt: string;
+  };
+};
+
+export type CreateDevelopmentMergeRequestMutationVariables = Exact<{
+  input: CreateDevelopmentMergeRequestInput;
+}>;
+
+export type CreateDevelopmentMergeRequestMutation = {
+  __typename?: 'Mutation';
+  createDevelopmentMergeRequest: {
+    __typename?: 'DevelopmentMergeRequestCreated';
+    iid: string;
+    url: string;
   };
 };
 
@@ -7339,12 +7517,23 @@ export type DevelopmentIntegrationsQuery = {
       provider: string;
       name: string;
       baseUrl: string;
+      username: string | null;
       enabled: boolean;
       hasToken: boolean;
       hasWebhookSecret: boolean;
       webhookUrl: string;
       createdAt: string;
       updatedAt: string;
+      repositories: Array<{
+        __typename?: 'DevelopmentRepository';
+        id: string;
+        externalId: string;
+        name: string;
+        fullName: string;
+        webUrl: string;
+        defaultBranch: string | null;
+        enabled: boolean;
+      }>;
     }>;
   };
 };
@@ -7384,6 +7573,24 @@ export type ImportDevelopmentRepositoryMutation = {
     defaultBranch: string | null;
     enabled: boolean;
   };
+};
+
+export type RefreshDevelopmentPipelinesMutationVariables = Exact<{
+  connectionId: Scalars['String']['input'];
+}>;
+
+export type RefreshDevelopmentPipelinesMutation = {
+  __typename?: 'Mutation';
+  refreshDevelopmentPipelines: Array<{
+    __typename?: 'DevelopmentPipeline';
+    externalId: string;
+    number: string;
+    name: string;
+    status: string;
+    url: string;
+    startedAt: string | null;
+    finishedAt: string | null;
+  }>;
 };
 
 export type RotateDevelopmentIntegrationCredentialsMutationVariables = Exact<{
@@ -7428,6 +7635,33 @@ export type TestDevelopmentIntegrationMutation = {
   };
 };
 
+export type TrackWorkActivityQueryVariables = Exact<{
+  workspaceId: Scalars['String']['input'];
+  taskKey?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type TrackWorkActivityQuery = {
+  __typename?: 'Query';
+  trackWorkActivity: {
+    __typename?: 'DevelopmentActivityConnection';
+    nextCursor: string | null;
+    hasNextPage: boolean;
+    items: Array<{
+      __typename?: 'DevelopmentActivity';
+      id: string;
+      taskKey: string;
+      eventType: string;
+      title: string;
+      url: string;
+      authorName: string | null;
+      repositoryName: string | null;
+      createdAt: string;
+    }>;
+  };
+};
+
 export type TrackWorkTaskDevelopmentQueryVariables = Exact<{
   workspaceId: Scalars['String']['input'];
   taskKey: Scalars['String']['input'];
@@ -7437,6 +7671,7 @@ export type TrackWorkTaskDevelopmentQuery = {
   __typename?: 'Query';
   trackWorkTaskDevelopment: {
     __typename?: 'TrackWorkDevelopmentInfo';
+    repositories: Array<string>;
     commits: Array<{
       __typename?: 'DevelopmentCommit';
       externalId: string;
@@ -7461,6 +7696,16 @@ export type TrackWorkTaskDevelopmentQuery = {
       status: string;
       sourceBranch: string | null;
       targetBranch: string | null;
+    }>;
+    pipelines: Array<{
+      __typename?: 'DevelopmentPipeline';
+      externalId: string;
+      number: string;
+      name: string;
+      status: string;
+      url: string;
+      startedAt: string | null;
+      finishedAt: string | null;
     }>;
   };
 };
@@ -7951,6 +8196,88 @@ export type SubscriptionQuery = {
       canceledAt: string | null;
       variant: SubscriptionVariant | null;
     }>;
+  } | null;
+};
+
+export type AllocateTrackWorkTaskMutationVariables = Exact<{
+  input: AllocateTrackWorkTaskInput;
+}>;
+
+export type AllocateTrackWorkTaskMutation = {
+  __typename?: 'Mutation';
+  allocateTrackWorkTask: {
+    __typename?: 'TrackWorkTask';
+    docId: string;
+    taskKey: string;
+    number: number;
+    relatedDocumentIds: Array<string>;
+    createdAt: string;
+  };
+};
+
+export type SetTrackWorkTaskDocumentLinksMutationVariables = Exact<{
+  input: SetTrackWorkTaskDocumentLinksInput;
+}>;
+
+export type SetTrackWorkTaskDocumentLinksMutation = {
+  __typename?: 'Mutation';
+  setTrackWorkTaskDocumentLinks: {
+    __typename?: 'TrackWorkTask';
+    docId: string;
+    taskKey: string;
+    number: number;
+    relatedDocumentIds: Array<string>;
+    createdAt: string;
+  };
+};
+
+export type SyncTrackWorkTasksMutationVariables = Exact<{
+  input: SyncTrackWorkTasksInput;
+}>;
+
+export type SyncTrackWorkTasksMutation = {
+  __typename?: 'Mutation';
+  syncTrackWorkTasks: Array<{
+    __typename?: 'TrackWorkTask';
+    docId: string;
+    taskKey: string;
+    number: number;
+    relatedDocumentIds: Array<string>;
+    createdAt: string;
+  }>;
+};
+
+export type TrackWorkDocumentBacklinksQueryVariables = Exact<{
+  workspaceId: Scalars['String']['input'];
+  documentId: Scalars['String']['input'];
+}>;
+
+export type TrackWorkDocumentBacklinksQuery = {
+  __typename?: 'Query';
+  trackWorkDocumentBacklinks: Array<{
+    __typename?: 'TrackWorkTask';
+    docId: string;
+    taskKey: string;
+    number: number;
+    relatedDocumentIds: Array<string>;
+    createdAt: string;
+  }>;
+};
+
+export type TrackWorkTaskQueryVariables = Exact<{
+  workspaceId: Scalars['String']['input'];
+  taskKey: Scalars['String']['input'];
+}>;
+
+export type TrackWorkTaskQuery = {
+  __typename?: 'Query';
+  trackWorkTask: {
+    __typename?: 'TrackWorkTask';
+    docId: string;
+    taskKey: string;
+    number: number;
+    relatedDocumentIds: Array<string>;
+    createdAt: string;
   } | null;
 };
 
@@ -8778,6 +9105,11 @@ export type Queries =
       response: DevelopmentIntegrationsQuery;
     }
   | {
+      name: 'trackWorkActivityQuery';
+      variables: TrackWorkActivityQueryVariables;
+      response: TrackWorkActivityQuery;
+    }
+  | {
       name: 'trackWorkTaskDevelopmentQuery';
       variables: TrackWorkTaskDevelopmentQueryVariables;
       response: TrackWorkTaskDevelopmentQuery;
@@ -8826,6 +9158,16 @@ export type Queries =
       name: 'subscriptionQuery';
       variables: SubscriptionQueryVariables;
       response: SubscriptionQuery;
+    }
+  | {
+      name: 'trackWorkDocumentBacklinksQuery';
+      variables: TrackWorkDocumentBacklinksQueryVariables;
+      response: TrackWorkDocumentBacklinksQuery;
+    }
+  | {
+      name: 'trackWorkTaskQuery';
+      variables: TrackWorkTaskQueryVariables;
+      response: TrackWorkTaskQuery;
     }
   | {
       name: 'workspaceBlobQuotaQuery';
@@ -9195,9 +9537,19 @@ export type Mutations =
       response: GrantDocUserRolesMutation;
     }
   | {
+      name: 'createDevelopmentBranchMutation';
+      variables: CreateDevelopmentBranchMutationVariables;
+      response: CreateDevelopmentBranchMutation;
+    }
+  | {
       name: 'createDevelopmentIntegrationMutation';
       variables: CreateDevelopmentIntegrationMutationVariables;
       response: CreateDevelopmentIntegrationMutation;
+    }
+  | {
+      name: 'createDevelopmentMergeRequestMutation';
+      variables: CreateDevelopmentMergeRequestMutationVariables;
+      response: CreateDevelopmentMergeRequestMutation;
     }
   | {
       name: 'deleteDevelopmentIntegrationMutation';
@@ -9213,6 +9565,11 @@ export type Mutations =
       name: 'importDevelopmentRepositoryMutation';
       variables: ImportDevelopmentRepositoryMutationVariables;
       response: ImportDevelopmentRepositoryMutation;
+    }
+  | {
+      name: 'refreshDevelopmentPipelinesMutation';
+      variables: RefreshDevelopmentPipelinesMutationVariables;
+      response: RefreshDevelopmentPipelinesMutation;
     }
   | {
       name: 'rotateDevelopmentIntegrationCredentialsMutation';
@@ -9348,6 +9705,21 @@ export type Mutations =
       name: 'requestApplySubscriptionMutation';
       variables: RequestApplySubscriptionMutationVariables;
       response: RequestApplySubscriptionMutation;
+    }
+  | {
+      name: 'allocateTrackWorkTaskMutation';
+      variables: AllocateTrackWorkTaskMutationVariables;
+      response: AllocateTrackWorkTaskMutation;
+    }
+  | {
+      name: 'setTrackWorkTaskDocumentLinksMutation';
+      variables: SetTrackWorkTaskDocumentLinksMutationVariables;
+      response: SetTrackWorkTaskDocumentLinksMutation;
+    }
+  | {
+      name: 'syncTrackWorkTasksMutation';
+      variables: SyncTrackWorkTasksMutationVariables;
+      response: SyncTrackWorkTasksMutation;
     }
   | {
       name: 'updateDocDefaultRoleMutation';

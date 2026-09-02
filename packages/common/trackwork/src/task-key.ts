@@ -57,12 +57,15 @@ export const parseTaskNumber = (value: string | undefined): number => {
   }
 
   const trimmed = value.trim();
-  const dash = trimmed.lastIndexOf('-');
-  const candidate =
-    dash >= 0 && dash < trimmed.length - 1 ? trimmed.slice(dash + 1) : trimmed;
+  const match = /^(?:[A-Z][A-Z0-9]{1,15}-)?(\d+)$/i.exec(trimmed);
+  const candidate = match?.[1];
+  if (!candidate) {
+    return 0;
+  }
+
   const parsed = Number(candidate);
 
-  return Number.isFinite(parsed) ? parsed : 0;
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 0;
 };
 
 /**
@@ -72,7 +75,7 @@ export const parseTaskNumber = (value: string | undefined): number => {
 export const parseTaskKey = (
   key: string
 ): { prefix: string; number: number } | null => {
-  const match = new RegExp(TRACKWORK_TASK_KEY_PATTERN, 'i').exec(
+  const match = new RegExp(`^(?:${TRACKWORK_TASK_KEY_PATTERN})$`, 'i').exec(
     normalizeTaskKey(key)
   );
 
@@ -91,14 +94,3 @@ export const parseTaskKey = (
     number: Number(full.slice(dash + 1)),
   };
 };
-
-/**
- * Compute the next free task number for a workspace given the currently
- * known stored task numbers.
- *
- * The task store is document-based (no database sequence is available), so
- * callers must pair this with a deterministic duplicate-repair pass to stay
- * consistent under concurrent creation.
- */
-export const nextTaskNumber = (numbers: Array<string | undefined>): number =>
-  Math.max(0, ...numbers.map(parseTaskNumber)) + 1;

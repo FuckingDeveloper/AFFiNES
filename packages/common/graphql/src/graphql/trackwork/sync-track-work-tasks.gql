@@ -1,0 +1,9 @@
+mutation syncTrackWorkTasks($input: SyncTrackWorkTasksInput!) {
+  syncTrackWorkTasks(input: $input) {
+    docId
+    taskKey
+    number
+    relatedDocumentIds
+    createdAt
+  }
+}

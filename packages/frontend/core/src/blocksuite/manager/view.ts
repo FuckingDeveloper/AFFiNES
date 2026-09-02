@@ -27,6 +27,7 @@ import { DebugLogger } from '@affine/debug';
 import { tracker } from '@affine/track';
 import { DatabaseViewExtension } from '@blocksuite/affine/blocks/database/view';
 import { ParagraphViewExtension } from '@blocksuite/affine/blocks/paragraph/view';
+import { TaskRefViewExtension } from '@affine/core/blocksuite/view-extensions/task-ref/view';
 import type {
   PeekOptions,
   PeekViewService as BSPeekViewService,
@@ -51,6 +52,7 @@ type Configure = {
   database: (framework?: FrameworkProvider) => Configure;
   linkedDoc: (framework?: FrameworkProvider) => Configure;
   paragraph: (enableAI?: boolean) => Configure;
+  taskRef: (framework?: FrameworkProvider) => Configure;
   cloud: (framework?: FrameworkProvider, enableCloud?: boolean) => Configure;
   turboRenderer: (enableTurboRenderer?: boolean) => Configure;
   pdf: (enablePDFEmbedPreview?: boolean, reactToLit?: ReactToLit) => Configure;
@@ -118,6 +120,7 @@ class ViewProvider {
       database: this._configureDatabase,
       linkedDoc: this._configureLinkedDoc,
       paragraph: this._configureParagraph,
+      taskRef: this._configureTaskRef,
       cloud: this._configureCloud,
       turboRenderer: this._configureTurboRenderer,
       pdf: this._configurePdf,
@@ -277,6 +280,11 @@ class ViewProvider {
         },
       });
     }
+    return this.config;
+  };
+
+  private readonly _configureTaskRef = (framework?: FrameworkProvider) => {
+    this._manager.configure(TaskRefViewExtension, { framework });
     return this.config;
   };
 

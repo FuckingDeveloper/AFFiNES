@@ -1,13 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 
 import {
+  createDevelopmentBranchMutation,
   createDevelopmentIntegrationMutation,
+  createDevelopmentMergeRequestMutation,
   deleteDevelopmentIntegrationMutation,
   developmentIntegrationsQuery,
+  importDevelopmentRepositoryMutation,
   updateDevelopmentIntegrationMutation,
 } from '@affine/graphql';
 import { WorkspaceRole } from '../../../models';
 import { app, e2e, Mockers } from '../test';
+import { registerTrackWorkTaskKeys } from './trackwork-test-utils';
+import Sinon from 'sinon';
 
 const createConnectionVariables = (workspaceId: string) => ({
   input: {
@@ -171,9 +176,9 @@ e2e('webhook accepts a valid secret and rejects invalid ones', async t => {
     .POST(url)
     .set('X-Gitlab-Token', 'wrong-secret')
     .send({ object_kind: 'push' })
-    .expect(401);
+    .expect(404);
 
-  await app.POST(url).send({ object_kind: 'push' }).expect(401);
+  await app.POST(url).send({ object_kind: 'push' }).expect(404);
 
   await app
     .POST('/api/integrations/gitlab/webhook/unknown-connection')
@@ -190,4 +195,103 @@ e2e('webhook accepts a valid secret and rejects invalid ones', async t => {
     .set('X-Gitlab-Token', 'super-secret')
     .send({ object_kind: 'push' })
     .expect(404);
+});
+
+e2e('creates a gitlab branch and merge request', async t => {
+  const admin = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: admin.id },
+  });
+  await app.login(admin);
+  await registerTrackWorkTaskKeys(workspace.id, ['TW-142']);
+
+  const created = await app.gql({
+    query: createDevelopmentIntegrationMutation,
+    variables: createConnectionVariables(workspace.id),
+  });
+  const connectionId = created.createDevelopmentIntegration.id;
+
+  await app.gql({
+    query: importDevelopmentRepositoryMutation,
+    variables: {
+      input: {
+        connectionId,
+        externalId: '1',
+        name: 'auth-service',
+        fullName: 'mrh/auth-service',
+        webUrl: 'https://gitlab.example.org/mrh/auth-service',
+      },
+    },
+  });
+
+  const responses: Record<string, unknown> = {
+    branches: {
+      name: 'feature/TW-142-fix-token',
+      web_url:
+        'https://gitlab.example.org/mrh/auth-service/-/branches/feature/TW-142-fix-token',
+    },
+    merge_requests: {
+      iid: 321,
+      web_url:
+        'https://gitlab.example.org/mrh/auth-service/-/merge_requests/321',
+    },
+  };
+
+  const stub = Sinon.stub(globalThis, 'fetch').callsFake(
+    async (input: string | URL | Request, _init?: RequestInit) => {
+      const url = String(input);
+      const key = url.includes('/branches') ? 'branches' : 'merge_requests';
+      return {
+        ok: true,
+        status: 200,
+        json: async () => responses[key],
+        text: async () => '{}',
+      } as Response;
+    }
+  );
+
+  try {
+    const branch = await app.gql({
+      query: createDevelopmentBranchMutation,
+      variables: {
+        input: {
+          connectionId,
+          repositoryId: '1',
+          baseBranch: 'main',
+          name: 'feature/TW-142-fix-token',
+          taskKey: 'TW-142',
+        },
+      },
+    });
+
+    t.is(branch.createDevelopmentBranch.name, 'feature/TW-142-fix-token');
+
+    const mr = await app.gql({
+      query: createDevelopmentMergeRequestMutation,
+      variables: {
+        input: {
+          connectionId,
+          repositoryId: '1',
+          sourceBranch: 'feature/TW-142-fix-token',
+          targetBranch: 'main',
+          title: 'TW-142 Fix token race',
+          description: 'TrackWork: TW-142',
+          taskKey: 'TW-142',
+        },
+      },
+    });
+
+    t.is(mr.createDevelopmentMergeRequest.iid, '321');
+    t.true(
+      mr.createDevelopmentMergeRequest.url.includes('/merge_requests/321')
+    );
+
+    const branchCall = stub
+      .getCalls()
+      .find(call => String(call.args[0]).includes('/branches'));
+    const branchInit = branchCall!.args[1] as RequestInit;
+    t.is(branchInit.method, 'POST');
+  } finally {
+    stub.restore();
+  }
 });

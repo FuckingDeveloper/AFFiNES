@@ -71,6 +71,7 @@ export type PipelineInfo = {
   url?: string;
   commitSha?: string;
   branch?: string;
+  description?: string;
   startedAt?: Date;
   finishedAt?: Date;
 };
@@ -155,6 +156,41 @@ export interface ScmProvider {
   }): Promise<boolean>;
 
   parseWebhook(input: { body: unknown }): Promise<DevelopmentEvent[]>;
+
+  createBranch(input: {
+    baseUrl: string;
+    token: string;
+    repositoryId: string;
+    baseBranch: string;
+    name: string;
+  }): Promise<{ name: string; url: string }>;
+
+  createMergeRequest(input: {
+    baseUrl: string;
+    token: string;
+    repositoryId: string;
+    sourceBranch: string;
+    targetBranch: string;
+    title: string;
+    description?: string;
+  }): Promise<{ externalId: string; iid: string; url: string }>;
+}
+
+export interface CiProvider {
+  readonly type: string;
+
+  testConnection(input: {
+    baseUrl: string;
+    username?: string;
+    token: string;
+  }): Promise<ConnectionTestResult>;
+
+  listPipelines(input: {
+    baseUrl: string;
+    username?: string;
+    token: string;
+    limit?: number;
+  }): Promise<PipelineInfo[]>;
 }
 
 export type IntegrationConnectionRecord = DevelopmentIntegrationConnection;
@@ -166,6 +202,9 @@ export type ScmWebhookJobData = {
 };
 @ObjectType('DevelopmentIntegrationConnection')
 export class DevelopmentIntegrationConnectionType {
+  @Field(() => [DevelopmentRepositoryType])
+  repositories!: DevelopmentRepositoryType[];
+
   @Field()
   id!: string;
 
@@ -180,6 +219,9 @@ export class DevelopmentIntegrationConnectionType {
 
   @Field()
   baseUrl!: string;
+
+  @Field({ nullable: true })
+  username?: string;
 
   @Field()
   enabled!: boolean;
@@ -282,6 +324,9 @@ export class CreateDevelopmentIntegrationInput {
 
   @Field({ nullable: true })
   webhookSecret?: string;
+
+  @Field({ nullable: true })
+  username?: string;
 }
 
 @InputType()
@@ -291,6 +336,12 @@ export class UpdateDevelopmentIntegrationInput {
 
   @Field({ nullable: true })
   name?: string;
+
+  @Field({ nullable: true })
+  baseUrl?: string;
+
+  @Field({ nullable: true })
+  username?: string;
 
   @Field({ nullable: true })
   enabled?: boolean;
@@ -388,6 +439,9 @@ export class DevelopmentMergeRequestType {
 
 @ObjectType('TrackWorkDevelopmentInfo')
 export class TrackWorkDevelopmentInfoType {
+  @Field(() => [String])
+  repositories!: string[];
+
   @Field(() => [DevelopmentCommitType])
   commits!: DevelopmentCommitType[];
 
@@ -396,4 +450,130 @@ export class TrackWorkDevelopmentInfoType {
 
   @Field(() => [DevelopmentMergeRequestType])
   mergeRequests!: DevelopmentMergeRequestType[];
+
+  @Field(() => [DevelopmentPipelineType])
+  pipelines!: DevelopmentPipelineType[];
+}
+
+@ObjectType('DevelopmentPipeline')
+export class DevelopmentPipelineType {
+  @Field()
+  externalId!: string;
+
+  @Field()
+  number!: string;
+
+  @Field()
+  name!: string;
+
+  @Field()
+  status!: string;
+
+  @Field()
+  url!: string;
+
+  @Field({ nullable: true })
+  startedAt?: Date;
+
+  @Field({ nullable: true })
+  finishedAt?: Date;
+}
+
+@ObjectType('DevelopmentActivity')
+export class DevelopmentActivityType {
+  @Field()
+  id!: string;
+
+  @Field()
+  taskKey!: string;
+
+  @Field()
+  eventType!: string;
+
+  @Field()
+  title!: string;
+
+  @Field()
+  url!: string;
+
+  @Field({ nullable: true })
+  authorName?: string;
+
+  @Field({ nullable: true })
+  repositoryName?: string;
+
+  @Field(() => Date)
+  createdAt!: Date;
+}
+
+@ObjectType('DevelopmentActivityConnection')
+export class DevelopmentActivityConnectionType {
+  @Field(() => [DevelopmentActivityType])
+  items!: DevelopmentActivityType[];
+
+  @Field({ nullable: true })
+  nextCursor?: string;
+
+  @Field()
+  hasNextPage!: boolean;
+}
+
+@ObjectType('DevelopmentBranchCreated')
+export class DevelopmentBranchCreatedType {
+  @Field()
+  name!: string;
+
+  @Field()
+  url!: string;
+}
+
+@ObjectType('DevelopmentMergeRequestCreated')
+export class DevelopmentMergeRequestCreatedType {
+  @Field()
+  iid!: string;
+
+  @Field()
+  url!: string;
+}
+
+@InputType()
+export class CreateDevelopmentBranchInput {
+  @Field()
+  connectionId!: string;
+
+  @Field()
+  repositoryId!: string;
+
+  @Field()
+  baseBranch!: string;
+
+  @Field()
+  name!: string;
+
+  @Field()
+  taskKey!: string;
+}
+
+@InputType()
+export class CreateDevelopmentMergeRequestInput {
+  @Field()
+  connectionId!: string;
+
+  @Field()
+  repositoryId!: string;
+
+  @Field()
+  sourceBranch!: string;
+
+  @Field()
+  targetBranch!: string;
+
+  @Field()
+  title!: string;
+
+  @Field({ nullable: true })
+  description?: string;
+
+  @Field()
+  taskKey!: string;
 }

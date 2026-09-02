@@ -113,6 +113,7 @@ const usePatchSpecs = (mode: DocMode, shared?: boolean) => {
       .database(framework)
       .linkedDoc(framework)
       .paragraph(enableAI)
+      .taskRef(framework)
       .mobile(framework)
       .electron(framework)
       .linkPreview(framework)

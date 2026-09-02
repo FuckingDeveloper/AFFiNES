@@ -1,7 +1,9 @@
 import { Button, notify, useDraggable, useDropTarget } from '@affine/component';
+import { useMutation } from '@affine/core/components/hooks/use-mutation';
 import { useQuery } from '@affine/core/components/hooks/use-query';
 import { WorkspaceDialogService } from '@affine/core/modules/dialogs';
 import { DocsService } from '@affine/core/modules/doc';
+import { DocsSearchService } from '@affine/core/modules/docs-search';
 import { TagService } from '@affine/core/modules/tag';
 import {
   ViewBody,
@@ -20,10 +22,20 @@ import {
   type TaskTrackerTranslator,
   useTaskTrackerI18n,
 } from '@affine/core/utils/task-tracker-i18n';
-import { trackWorkTaskDevelopmentQuery } from '@affine/graphql';
+import {
+  allocateTrackWorkTaskMutation,
+  createDevelopmentBranchMutation,
+  createDevelopmentMergeRequestMutation,
+  developmentIntegrationsQuery,
+  setTrackWorkTaskDocumentLinksMutation,
+  syncTrackWorkTasksMutation,
+  trackWorkActivityQuery,
+  trackWorkTaskDevelopmentQuery,
+} from '@affine/graphql';
 import {
   formatTaskKey,
-  nextTaskNumber,
+  normalizeTaskKey,
+  parseTaskKey,
   parseTaskNumber,
 } from '@affine/trackwork';
 import { DeleteIcon, LinkIcon, PlusIcon } from '@blocksuite/icons/rc';
@@ -39,7 +51,10 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
+import { Observable } from 'rxjs';
 
+import { applyAutomationRules } from './automation';
 import {
   buildDefaultTransitions,
   buildDefaultTypeTransitions,
@@ -48,13 +63,19 @@ import {
   DEFAULT_FLOW,
   parseAttachments,
   parseHistoryEntries,
+  parseRelatedDocs,
   parseSubtasks,
+  parseTaskRelations,
   resolveTaskTrackerBoards,
+  sanitizeAutomationRules,
   stringifyAttachments,
   stringifyHistoryEntries,
+  stringifyRelatedDocs,
   stringifySubtasks,
+  stringifyTaskRelations,
   TASK_ASSIGNEE_PROPERTY,
   TASK_ATTACHMENTS_PROPERTY,
+  TASK_AUTOMATION_APPLIED_PROPERTY,
   TASK_BOARD_PROPERTY,
   TASK_COMPLEXITY_PROPERTY,
   TASK_DESCRIPTION_PROPERTY,
@@ -64,6 +85,8 @@ import {
   TASK_NUMBER_PROPERTY,
   TASK_ORDER_PROPERTY,
   TASK_PRIORITY_PROPERTY,
+  TASK_RELATED_DOCS_PROPERTY,
+  TASK_RELATIONS_PROPERTY,
   TASK_STATUS_PROPERTY,
   TASK_SUBTASKS_PROPERTY,
   TASK_TRACKER_FLAG_PROPERTY,
@@ -72,10 +95,12 @@ import {
   type TaskComplexity,
   type TaskFlowColumn,
   type TaskHistoryEntry,
+  type TaskRelations,
   type TaskSubtask,
   type TaskTrackerBoard,
   type TaskTrackerPropertyAdditionalData,
   type TaskType,
+  wouldCreateTaskCycle,
 } from './config';
 import * as styles from './task-tracker.css';
 
@@ -100,6 +125,20 @@ type TaskCard = {
   complexity: TaskComplexity;
   subtasks: TaskSubtask[];
   history: TaskHistoryEntry[];
+  relatedDocs: string[];
+  relations: TaskRelations;
+};
+
+const resolveStoredTaskKey = (
+  workspacePrefix: string,
+  storedValue: string | undefined
+): string => {
+  if (storedValue && parseTaskKey(storedValue)) {
+    return normalizeTaskKey(storedValue);
+  }
+
+  const number = parseTaskNumber(storedValue);
+  return number > 0 ? formatTaskKey(workspacePrefix, number) : '';
 };
 
 type DocTitleItem = {
@@ -705,27 +744,21 @@ const TaskCardItem = ({
   task,
   columnId,
   tagNameMap,
-  workspace,
   hasActiveFilters,
-  expanded,
-  onToggleExpanded,
+  onOpenPreview,
   onOpenEditor,
   onOpenTaskDoc,
   onDeleteTask,
-  onDownloadAttachment,
   onDraggingChange,
 }: {
   task: TaskCard;
   columnId: string;
   tagNameMap: Map<string, string>;
-  workspace: WorkspaceService['workspace'] | null;
   hasActiveFilters: boolean;
-  expanded: boolean;
-  onToggleExpanded: (taskId: string) => void;
+  onOpenPreview: (taskId: string) => void;
   onOpenEditor: (taskId: string) => void;
   onOpenTaskDoc: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
-  onDownloadAttachment: (attachment: TaskAttachment) => void;
   onDraggingChange: (dragTask: ActiveDragTask | null) => void;
 }) => {
   const { t, locale } = useTaskTrackerI18n();
@@ -767,14 +800,11 @@ const TaskCardItem = ({
   return (
     <article
       ref={dragRef}
-      className={clsx(styles.task, {
-        [styles.taskSelected]: expanded,
-        [styles.taskExpanded]: expanded,
-      })}
+      className={styles.task}
       data-dragging={dragging}
       data-testid={`task-card:${task.id}`}
       onClick={() => {
-        onToggleExpanded(task.id);
+        onOpenPreview(task.id);
       }}
     >
       <div className={styles.taskHero}>
@@ -886,72 +916,264 @@ const TaskCardItem = ({
           </span>
         ))}
       </div>
+    </article>
+  );
+};
 
-      {expanded ? (
-        <div className={styles.expandedCardSurface}>
+const TaskModal = ({
+  children,
+  onClose,
+  label,
+}: {
+  children: ReactNode;
+  onClose: () => void;
+  label: string;
+}) => {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    dialogRef.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, []);
+
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      className={styles.taskModalOverlay}
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        ref={dialogRef}
+        className={styles.taskModalSurface}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        tabIndex={-1}
+      >
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+const TaskPreview = ({
+  task,
+  workspace,
+  tagNameMap,
+  onEdit,
+  onClose,
+  onOpenTaskDoc,
+  onDownloadAttachment,
+}: {
+  task: TaskCard;
+  workspace: WorkspaceService['workspace'] | null;
+  tagNameMap: Map<string, string>;
+  onEdit: () => void;
+  onClose: () => void;
+  onOpenTaskDoc: (taskId: string) => void;
+  onDownloadAttachment: (attachment: TaskAttachment) => void;
+}) => {
+  const { t, locale } = useTaskTrackerI18n();
+  const complexity = complexityMeta(task.complexity);
+  const subtaskDoneCount = task.subtasks.filter(item => item.done).length;
+  const labels = task.labelIds
+    .map(labelId => tagNameMap.get(labelId) ?? '')
+    .filter(Boolean);
+
+  return (
+    <div className={styles.expandedCardMain}>
+      <header className={styles.expandedCardHeader}>
+        <div className={styles.expandedCardTitleBlock}>
+          <span className={styles.detailTaskNumber}>{task.number}</span>
+          <h2 id="task-preview-title" className={styles.expandedTitleText}>
+            {task.title || t('untitledTask')}
+          </h2>
+        </div>
+        <div className={styles.expandedCardHeaderActions}>
+          <Button variant="plain" onClick={onEdit}>
+            {t('openEditor')}
+          </Button>
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label={t('openTaskDocument')}
+            onClick={() => {
+              onOpenTaskDoc(task.id);
+            }}
+          >
+            <LinkIcon />
+          </button>
+          <button
+            type="button"
+            className={styles.modalCloseButton}
+            aria-label={t('close')}
+            title={t('close')}
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
+      </header>
+
+      <div className={styles.expandedTopGrid}>
+        <section className={styles.expandedOverviewCard}>
+          <div className={styles.expandedOverviewHeader}>
+            <span className={styles.sectionTitle}>{t('parameters')}</span>
+            <div className={styles.expandedMetaPills}>
+              {labels.map(label => (
+                <span className={styles.taskTag} key={label}>
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className={styles.expandedOverviewStats}>
+            <div className={styles.expandedOverviewStat}>
+              <span className={styles.expandedOverviewLabel}>{t('type')}</span>
+              <span className={styles.expandedOverviewValue}>
+                {t(task.type)}
+              </span>
+            </div>
+            <div className={styles.expandedOverviewStat}>
+              <span className={styles.expandedOverviewLabel}>
+                {t('priority')}
+              </span>
+              <span className={styles.expandedOverviewValue}>
+                {t(task.priority)}
+              </span>
+            </div>
+            <div className={styles.expandedOverviewStat}>
+              <span className={styles.expandedOverviewLabel}>
+                {t('complexity')}
+              </span>
+              <span className={styles.expandedOverviewValue}>
+                {t(complexity.value)}
+              </span>
+            </div>
+            <div className={styles.expandedOverviewStat}>
+              <span className={styles.expandedOverviewLabel}>
+                {t('dueDate')}
+              </span>
+              <span className={styles.expandedOverviewValue}>
+                {formatDueDateLabel(task.dueDate, locale, t('noDueDate'))}
+              </span>
+            </div>
+          </div>
           <div className={styles.expandedDescriptionBlock}>
             <span className={styles.sectionTitle}>{t('description')}</span>
             <div className={styles.expandedReadOnlyText}>
               {task.description || t('noDescription')}
             </div>
           </div>
-
-          <div className={styles.expandedSectionCard}>
-            <div className={styles.expandedSectionHeader}>
-              <span className={styles.sectionTitle}>{t('subtasks')}</span>
-              <span className={styles.expandedSectionMeta}>
-                {t('completedCount', {
-                  done: subtaskDoneCount,
-                  total: task.subtasks.length,
-                })}
-              </span>
-            </div>
-            {task.subtasks.length > 0 ? (
-              <div className={styles.subtasksListDetail}>
-                {task.subtasks.map(subtask => (
-                  <div
-                    key={subtask.id}
-                    className={clsx(styles.subtaskDetailItem, {
-                      [styles.subtaskDetailItemDone]: subtask.done,
-                    })}
-                  >
-                    <span
-                      className={clsx(styles.subtaskIndicator, {
-                        [styles.subtaskIndicatorDone]: subtask.done,
-                      })}
-                    />
-                    <span className={styles.subtaskDetailTitle}>
-                      {subtask.title}
-                    </span>
-                  </div>
-                ))}
+          {task.extraInfo ? (
+            <div className={styles.expandedNotesBlock}>
+              <span className={styles.sectionTitle}>{t('extraInfo')}</span>
+              <div className={styles.expandedReadOnlyText}>
+                {task.extraInfo}
               </div>
-            ) : (
-              <div className={styles.expandedEmptyState}>{t('noSubtasks')}</div>
-            )}
-          </div>
-
-          <div className={styles.expandedSectionCard}>
-            <div className={styles.expandedSectionHeader}>
-              <span className={styles.sectionTitle}>{t('files')}</span>
-              <span className={styles.expandedSectionMeta}>
-                {t('attachedCount', { count: task.attachments.length })}
-              </span>
             </div>
-            <AttachmentPreviewStrip
-              attachments={task.attachments}
-              workspace={workspace}
-              max={6}
-              large
-              onOpenAttachment={onDownloadAttachment}
-            />
-            {task.attachments.length === 0 ? (
-              <div className={styles.expandedEmptyState}>{t('noFiles')}</div>
-            ) : null}
+          ) : null}
+        </section>
+
+        <section className={styles.expandedFieldsCard}>
+          <div className={styles.expandedFieldsHeader}>
+            <span className={styles.sectionTitle}>{t('parameters')}</span>
           </div>
-        </div>
-      ) : null}
-    </article>
+          <div className={styles.expandedFieldGrid}>
+            <span className={styles.editorFieldLabel}>{t('assignee')}</span>
+            <span className={styles.expandedFieldValue}>
+              {task.assignee || t('unassigned')}
+            </span>
+            <span className={styles.editorFieldLabel}>{t('subtasks')}</span>
+            <span className={styles.expandedFieldValue}>
+              {subtaskDoneCount}/{task.subtasks.length}
+            </span>
+            <span className={styles.editorFieldLabel}>{t('files')}</span>
+            <span className={styles.expandedFieldValue}>
+              {task.attachments.length}
+            </span>
+          </div>
+        </section>
+      </div>
+
+      <div className={styles.expandedBottomGrid}>
+        <section className={styles.expandedSectionCard}>
+          <div className={styles.expandedSectionHeader}>
+            <span className={styles.sectionTitle}>{t('subtasks')}</span>
+            <span className={styles.expandedSectionMeta}>
+              {t('completedCount', {
+                done: subtaskDoneCount,
+                total: task.subtasks.length,
+              })}
+            </span>
+          </div>
+          {task.subtasks.length > 0 ? (
+            <div className={styles.subtasksListDetail}>
+              {task.subtasks.map(subtask => (
+                <div
+                  key={subtask.id}
+                  className={clsx(styles.subtaskDetailItem, {
+                    [styles.subtaskDetailItemDone]: subtask.done,
+                  })}
+                >
+                  <span
+                    className={clsx(styles.subtaskIndicator, {
+                      [styles.subtaskIndicatorDone]: subtask.done,
+                    })}
+                  />
+                  <span className={styles.subtaskDetailTitle}>
+                    {subtask.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.expandedEmptyState}>{t('noSubtasks')}</div>
+          )}
+        </section>
+
+        <section className={styles.expandedSectionCard}>
+          <div className={styles.expandedSectionHeader}>
+            <span className={styles.sectionTitle}>{t('files')}</span>
+            <span className={styles.expandedSectionMeta}>
+              {t('attachedCount', { count: task.attachments.length })}
+            </span>
+          </div>
+          <AttachmentPreviewStrip
+            attachments={task.attachments}
+            workspace={workspace}
+            max={6}
+            large
+            onOpenAttachment={onDownloadAttachment}
+          />
+          {task.attachments.length === 0 ? (
+            <div className={styles.expandedEmptyState}>{t('noFiles')}</div>
+          ) : null}
+        </section>
+      </div>
+    </div>
   );
 };
 
@@ -1002,6 +1224,13 @@ const InlineAttachmentUploader = ({
 const TaskDetailPanel = ({
   task,
   workspace,
+  taskIds,
+  allTasks,
+  onSelectTask,
+  onSetParent,
+  onAddRelation,
+  onRemoveRelation,
+  onCreateSubtask,
   tagNameMap,
   uploading,
   onClose,
@@ -1025,6 +1254,21 @@ const TaskDetailPanel = ({
   workspace: WorkspaceService['workspace'] | null;
   tagNameMap: Map<string, string>;
   uploading: boolean;
+  taskIds: string[];
+  allTasks: TaskCard[];
+  onSelectTask: (taskId: string) => void;
+  onSetParent: (taskId: string, parentId: string | undefined) => void;
+  onAddRelation: (
+    taskId: string,
+    kind: 'blockedBy' | 'relatesTo' | 'duplicates',
+    targetId: string
+  ) => void;
+  onRemoveRelation: (
+    taskId: string,
+    kind: 'blockedBy' | 'relatesTo' | 'duplicates',
+    targetId: string
+  ) => void;
+  onCreateSubtask: (parentId: string) => void;
   onClose: () => void;
   onRenameTask: (taskId: string, title: string) => void;
   onOpenTaskDoc: (taskId: string) => void;
@@ -1043,6 +1287,7 @@ const TaskDetailPanel = ({
   onDownloadAttachment: (attachment: TaskAttachment) => void;
 }) => {
   const { t, locale } = useTaskTrackerI18n();
+  const [developmentRevision, setDevelopmentRevision] = useState(0);
   const labelsText = task.labelIds
     .map(labelId => tagNameMap.get(labelId) ?? '')
     .filter(Boolean)
@@ -1050,10 +1295,11 @@ const TaskDetailPanel = ({
   const subtasksText = task.subtasks.map(item => item.title).join('\n');
 
   return (
-    <aside className={styles.detailPanel}>
+    <div className={styles.detailPanel}>
       <div className={styles.detailHeader}>
         <span className={styles.detailTaskNumber}>{task.number}</span>
         <input
+          id="task-editor-title"
           className={styles.detailTitleInput}
           defaultValue={task.title}
           onBlur={event => {
@@ -1081,8 +1327,14 @@ const TaskDetailPanel = ({
           >
             <DeleteIcon />
           </button>
-          <button type="button" className={styles.textButton} onClick={onClose}>
-            {t('close')}
+          <button
+            type="button"
+            className={styles.modalCloseButton}
+            aria-label={t('close')}
+            title={t('close')}
+            onClick={onClose}
+          >
+            ×
           </button>
         </div>
       </div>
@@ -1199,8 +1451,8 @@ const TaskDetailPanel = ({
           <span className={styles.sectionTitle}>{t('subtasks')}</span>
           <span className={styles.expandedSectionMeta}>
             {t('completedCount', {
-              done: task.subtasks.filter(item => item.done).length,
-              total: task.subtasks.length,
+              done: String(task.subtasks.filter(item => item.done).length),
+              total: String(task.subtasks.length),
             })}
           </span>
         </div>
@@ -1270,6 +1522,34 @@ const TaskDetailPanel = ({
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>{t('subTasksTitle')}</span>
+        </div>
+        <TaskSubTasksSection
+          task={task}
+          allTasks={allTasks}
+          onSelectTask={onSelectTask}
+          onSetParent={onSetParent}
+          onCreateSubtask={onCreateSubtask}
+          t={t}
+        />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>{t('relationsTitle')}</span>
+        </div>
+        <TaskRelationsSection
+          task={task}
+          allTasks={allTasks}
+          onSelectTask={onSelectTask}
+          onAddRelation={onAddRelation}
+          onRemoveRelation={onRemoveRelation}
+          t={t}
+        />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
           <span className={styles.sectionTitle}>{t('linkedTasks')}</span>
         </div>
         <div className={styles.editorEmptyState}>{t('noLinkedTasks')}</div>
@@ -1277,11 +1557,57 @@ const TaskDetailPanel = ({
 
       <section className={styles.editorSection}>
         <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>{t('developmentActions')}</span>
+        </div>
+        <TaskGitLabActionsSection
+          taskKey={task.number}
+          taskTitle={task.title}
+          t={t}
+          onCreated={() => {
+            setDevelopmentRevision(value => value + 1);
+          }}
+        />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
           <span className={styles.sectionTitle}>{t('development')}</span>
         </div>
         <TaskDevelopmentSection
+          key={`${task.id}:${developmentRevision}`}
           workspaceId={workspace?.id ?? ''}
           taskKey={task.number}
+          t={t}
+        />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>
+            {t('developmentActivity')}
+          </span>
+        </div>
+        <TaskActivitySection
+          workspaceId={workspace?.id ?? ''}
+          taskKey={task.number}
+          t={t}
+        />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>{t('relatedDocs')}</span>
+        </div>
+        <TaskRelatedDocsSection task={task} t={t} />
+      </section>
+
+      <section className={styles.editorSection}>
+        <div className={styles.editorSectionHeader}>
+          <span className={styles.sectionTitle}>{t('references')}</span>
+        </div>
+        <TaskReferencesSection
+          taskKey={task.number}
+          excludeDocIds={taskIds}
           t={t}
         />
       </section>
@@ -1310,8 +1636,65 @@ const TaskDetailPanel = ({
           <div className={styles.editorEmptyState}>{t('noHistory')}</div>
         )}
       </section>
-    </aside>
+    </div>
   );
+};
+
+const pipelineStatusClass = (status: string) => {
+  switch (status) {
+    case 'success':
+      return styles.pipelineStatusSuccess;
+    case 'failed':
+      return styles.pipelineStatusFailed;
+    case 'unstable':
+      return styles.pipelineStatusUnstable;
+    case 'running':
+      return styles.pipelineStatusRunning;
+    default:
+      return undefined;
+  }
+};
+
+const pipelineStatusLabel = (
+  t: TaskTrackerTranslator,
+  status: string
+): string => {
+  switch (status) {
+    case 'success':
+      return t('pipelineStatusSuccess');
+    case 'failed':
+      return t('pipelineStatusFailed');
+    case 'unstable':
+      return t('pipelineStatusUnstable');
+    case 'running':
+      return t('pipelineStatusRunning');
+    case 'queued':
+      return t('pipelineStatusQueued');
+    case 'canceled':
+      return t('pipelineStatusCanceled');
+    case 'skipped':
+      return t('pipelineStatusSkipped');
+    default:
+      return t('pipelineStatusUnknown');
+  }
+};
+
+const mergeRequestStatusLabel = (
+  t: TaskTrackerTranslator,
+  status: string
+): string => {
+  switch (status) {
+    case 'open':
+      return t('mrStatusOpen');
+    case 'merged':
+      return t('mrStatusMerged');
+    case 'closed':
+      return t('mrStatusClosed');
+    case 'draft':
+      return t('mrStatusDraft');
+    default:
+      return t('mrStatusUnknown');
+  }
 };
 
 const TaskDevelopmentSection = ({
@@ -1323,25 +1706,38 @@ const TaskDevelopmentSection = ({
   taskKey: string;
   t: TaskTrackerTranslator;
 }) => {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, mutate } = useQuery({
     query: trackWorkTaskDevelopmentQuery,
     variables: { workspaceId, taskKey },
   });
 
   const development = data?.trackWorkTaskDevelopment;
 
-  if (isLoading || error || !development || !workspaceId) {
+  if (error) {
     return (
       <div className={styles.editorEmptyState}>
-        {error ? `${t('developmentError')}. ` : ''}
+        {t('developmentError')}
+        <Button variant="plain" onClick={() => void mutate()}>
+          {t('developmentRetry')}
+        </Button>
+      </div>
+    );
+  }
+
+  if (isLoading || !development || !workspaceId) {
+    return (
+      <div className={styles.editorEmptyState}>
+        {isLoading ? t('loading') : null}
       </div>
     );
   }
 
   const isEmpty =
+    development.repositories.length === 0 &&
     development.commits.length === 0 &&
     development.branches.length === 0 &&
-    development.mergeRequests.length === 0;
+    development.mergeRequests.length === 0 &&
+    development.pipelines.length === 0;
 
   if (isEmpty) {
     return (
@@ -1351,6 +1747,19 @@ const TaskDevelopmentSection = ({
 
   return (
     <div>
+      {development.repositories.length > 0 ? (
+        <div className={styles.developmentGroup}>
+          <span className={styles.developmentGroupTitle}>
+            {t('developmentRepository')}
+          </span>
+          {development.repositories.map(repository => (
+            <div key={repository} className={styles.developmentItem}>
+              <span className={styles.developmentItemTitle}>{repository}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {development.branches.length > 0 ? (
         <div className={styles.developmentGroup}>
           <span className={styles.developmentGroupTitle}>
@@ -1358,7 +1767,14 @@ const TaskDevelopmentSection = ({
           </span>
           {development.branches.map(branch => (
             <div key={branch.name} className={styles.developmentItem}>
-              <span className={styles.developmentItemTitle}>{branch.name}</span>
+              <a
+                className={styles.developmentLink}
+                href={branch.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {branch.name}
+              </a>
             </div>
           ))}
         </div>
@@ -1380,9 +1796,35 @@ const TaskDevelopmentSection = ({
                 !{mr.iid} {mr.title}
               </a>
               <span className={styles.developmentItemMeta}>
-                {t(
-                  `mrStatus${mr.status.charAt(0).toUpperCase()}${mr.status.slice(1)}` as TaskTrackerTranslationKey
+                {mergeRequestStatusLabel(t, mr.status)}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {development.pipelines.length > 0 ? (
+        <div className={styles.developmentGroup}>
+          <span className={styles.developmentGroupTitle}>
+            {t('developmentPipelines')}
+          </span>
+          {development.pipelines.slice(0, 10).map(pipeline => (
+            <div key={pipeline.externalId} className={styles.developmentItem}>
+              <a
+                className={styles.developmentLink}
+                href={pipeline.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {pipeline.name} #{pipeline.number}
+              </a>
+              <span
+                className={clsx(
+                  styles.developmentItemMeta,
+                  pipelineStatusClass(pipeline.status)
                 )}
+              >
+                {pipelineStatusLabel(t, pipeline.status)}
               </span>
             </div>
           ))}
@@ -1415,6 +1857,892 @@ const TaskDevelopmentSection = ({
   );
 };
 
+const activityEventLabel = (
+  t: TaskTrackerTranslator,
+  eventType: string
+): string => {
+  const key = `activity${eventType
+    .split('.')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')}` as TaskTrackerTranslationKey;
+  return t(key);
+};
+
+const TaskActivitySection = ({
+  workspaceId,
+  taskKey,
+  t,
+}: {
+  workspaceId: string;
+  taskKey: string;
+  t: TaskTrackerTranslator;
+}) => {
+  const { locale } = useTaskTrackerI18n();
+  const { data, isLoading, error, mutate } = useQuery({
+    query: trackWorkActivityQuery,
+    variables: { workspaceId, taskKey, first: 20 },
+  });
+
+  const items = data?.trackWorkActivity?.items;
+
+  if (error) {
+    return (
+      <div className={styles.editorEmptyState}>
+        {t('developmentActivityError')}
+        <Button variant="plain" onClick={() => void mutate()}>
+          {t('developmentRetry')}
+        </Button>
+      </div>
+    );
+  }
+
+  if (isLoading || !items || !workspaceId) {
+    return (
+      <div className={styles.editorEmptyState}>
+        {isLoading ? t('loading') : null}
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className={styles.editorEmptyState}>
+        {t('developmentActivityEmpty')}
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.activityList}>
+      {items.map(item => (
+        <div key={item.id} className={styles.activityItem}>
+          <span className={styles.developmentItemMeta}>
+            {new Intl.DateTimeFormat(locale, {
+              hour: '2-digit',
+              minute: '2-digit',
+            }).format(new Date(item.createdAt))}
+          </span>
+          <span className={styles.activityItemType}>
+            {activityEventLabel(t, item.eventType)}
+          </span>
+          <a
+            className={styles.developmentLink}
+            href={item.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {item.title}
+          </a>
+          {item.authorName ? (
+            <span className={styles.developmentItemMeta}>
+              {item.authorName}
+            </span>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const TaskRelatedDocsSection = ({
+  task,
+  t,
+}: {
+  task: TaskCard;
+  t: TaskTrackerTranslator;
+}) => {
+  const docsService = useService(DocsService);
+  const docsSearch = useService(DocsSearchService);
+  const workbench = useService(WorkbenchService).workbench;
+  const workspace = useService(WorkspaceService).workspace;
+  const { trigger: setDocumentLinks } = useMutation({
+    mutation: setTrackWorkTaskDocumentLinksMutation,
+  });
+  const [query, setQuery] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const queryTrimmed = query.trim();
+
+  const searchResults = useLiveData(
+    useMemo(() => {
+      if (!queryTrimmed) {
+        return LiveData.from(new Observable<string[]>(() => {}), []);
+      }
+
+      return LiveData.from(
+        docsSearch.searchTitle$(queryTrimmed),
+        [] as string[]
+      ).map(results =>
+        results.filter(
+          docId => docId !== task.id && !task.relatedDocs.includes(docId)
+        )
+      );
+    }, [docsSearch, queryTrimmed, task.id, task.relatedDocs])
+  );
+
+  const updateDocumentLinks = useCallback(
+    async (documentIds: string[]) => {
+      const doc = docsService.list.doc$(task.id).value;
+      if (!doc) {
+        return;
+      }
+
+      try {
+        const result = await setDocumentLinks({
+          input: {
+            workspaceId: workspace.id,
+            taskDocId: task.id,
+            documentIds,
+          },
+        });
+        doc.setCustomProperty(
+          TASK_RELATED_DOCS_PROPERTY,
+          stringifyRelatedDocs(
+            result.setTrackWorkTaskDocumentLinks.relatedDocumentIds
+          )
+        );
+      } catch {
+        notify.error({ title: t('relatedDocsUpdateFailed') });
+        return false;
+      }
+      return true;
+    },
+    [docsService.list, setDocumentLinks, t, task.id, workspace.id]
+  );
+
+  const handleAdd = useCallback(
+    async (docId: string) => {
+      const updated = await updateDocumentLinks([...task.relatedDocs, docId]);
+      if (!updated) {
+        return;
+      }
+      setQuery('');
+      setAdding(false);
+    },
+    [task.relatedDocs, updateDocumentLinks]
+  );
+
+  const handleRemove = useCallback(
+    async (docId: string) => {
+      await updateDocumentLinks(task.relatedDocs.filter(id => id !== docId));
+    },
+    [task.relatedDocs, updateDocumentLinks]
+  );
+
+  return (
+    <div>
+      {task.relatedDocs.length > 0 ? (
+        <div className={styles.developmentGroup}>
+          {task.relatedDocs.map(docId => (
+            <div key={docId} className={styles.developmentItem}>
+              <RelatedDocTitle docId={docId} onOpen={workbench.openDoc} />
+              <button
+                type="button"
+                className={styles.textButton}
+                onClick={() => {
+                  void handleRemove(docId);
+                }}
+              >
+                {t('relatedDocsRemove')}
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className={styles.editorEmptyState}>{t('relatedDocsEmpty')}</div>
+      )}
+
+      {adding ? (
+        <div className={styles.developmentGroup}>
+          <input
+            className={styles.fieldInput}
+            value={query}
+            placeholder={t('relatedDocsSearchPlaceholder')}
+            onChange={event => {
+              setQuery(event.target.value);
+            }}
+          />
+          {searchResults.map(docId => (
+            <div key={docId} className={styles.developmentItem}>
+              <button
+                type="button"
+                className={styles.textButton}
+                onClick={() => {
+                  void handleAdd(docId);
+                }}
+              >
+                <RelatedDocTitle docId={docId} onOpen={() => undefined} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <Button
+        variant="plain"
+        onClick={() => {
+          setAdding(current => !current);
+        }}
+      >
+        <PlusIcon />
+        {t('relatedDocsAdd')}
+      </Button>
+    </div>
+  );
+};
+
+const TaskReferencesSection = ({
+  taskKey,
+  excludeDocIds,
+  t,
+}: {
+  taskKey: string;
+  excludeDocIds: string[];
+  t: TaskTrackerTranslator;
+}) => {
+  const docsSearch = useService(DocsSearchService);
+  const workbench = useService(WorkbenchService).workbench;
+
+  const results = useLiveData(
+    useMemo(
+      () =>
+        LiveData.from(
+          docsSearch.search$(taskKey),
+          [] as Array<{
+            docId: string;
+            title: string;
+          }>
+        ).map(items =>
+          items.filter(item => !excludeDocIds.includes(item.docId))
+        ),
+      [docsSearch, excludeDocIds, taskKey]
+    )
+  );
+
+  if (results.length === 0) {
+    return (
+      <div className={styles.editorEmptyState}>{t('referencesEmpty')}</div>
+    );
+  }
+
+  return (
+    <div className={styles.developmentGroup}>
+      {results.slice(0, 10).map(item => (
+        <div key={item.docId} className={styles.developmentItem}>
+          <RelatedDocTitle docId={item.docId} onOpen={workbench.openDoc} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const RelatedDocTitle = ({
+  docId,
+  onOpen,
+}: {
+  docId: string;
+  onOpen: (docId: string) => void;
+}) => {
+  const { t } = useTaskTrackerI18n();
+  const docsService = useService(DocsService);
+  const doc = docsService.list.doc$(docId).value;
+  const title = useLiveData(
+    useMemo(
+      () =>
+        doc?.meta$?.map(meta => meta.title) ??
+        LiveData.from(new Observable<string>(() => {}), t('untitledDocument')),
+      [doc, t]
+    )
+  );
+
+  return (
+    <button
+      type="button"
+      className={styles.textButton}
+      onClick={() => {
+        onOpen(docId);
+      }}
+    >
+      {title}
+    </button>
+  );
+};
+
+const TaskSubTasksSection = ({
+  task,
+  allTasks,
+  onSelectTask,
+  onSetParent,
+  onCreateSubtask,
+  t,
+}: {
+  task: TaskCard;
+  allTasks: TaskCard[];
+  onSelectTask: (taskId: string) => void;
+  onSetParent: (taskId: string, parentId: string | undefined) => void;
+  onCreateSubtask: (parentId: string) => void;
+  t: TaskTrackerTranslator;
+}) => {
+  const [linking, setLinking] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const children = allTasks.filter(item => item.relations.parentId === task.id);
+
+  const candidates = query.trim()
+    ? allTasks.filter(
+        item =>
+          item.id !== task.id &&
+          item.relations.parentId !== task.id &&
+          (item.title.toLowerCase().includes(query.trim().toLowerCase()) ||
+            item.number.toLowerCase().includes(query.trim().toLowerCase()))
+      )
+    : [];
+
+  return (
+    <div>
+      {children.length > 0 ? (
+        <div className={styles.developmentGroup}>
+          {children.map(child => (
+            <div key={child.id} className={styles.developmentItem}>
+              <span className={styles.developmentItemMeta}>{child.number}</span>
+              <button
+                type="button"
+                className={styles.textButton}
+                onClick={() => {
+                  onSelectTask(child.id);
+                }}
+              >
+                {child.title || t('untitledTask')}
+              </button>
+              <button
+                type="button"
+                className={styles.textButton}
+                onClick={() => {
+                  onSetParent(child.id, undefined);
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className={styles.editorEmptyState}>{t('subTasksEmpty')}</div>
+      )}
+
+      <Button
+        variant="plain"
+        onClick={() => {
+          onCreateSubtask(task.id);
+        }}
+      >
+        <PlusIcon />
+        {t('addSubtask')}
+      </Button>
+
+      <Button
+        variant="plain"
+        onClick={() => {
+          setLinking(current => !current);
+        }}
+      >
+        {t('linkTask')}
+      </Button>
+
+      {linking ? (
+        <div className={styles.developmentGroup}>
+          <input
+            className={styles.fieldInput}
+            value={query}
+            placeholder={t('relationSearchPlaceholder')}
+            onChange={event => {
+              setQuery(event.target.value);
+            }}
+          />
+          {candidates.length === 0 ? (
+            <div className={styles.editorEmptyState}>
+              {t('taskSearchEmpty')}
+            </div>
+          ) : (
+            candidates.slice(0, 8).map(candidate => (
+              <div key={candidate.id} className={styles.developmentItem}>
+                <button
+                  type="button"
+                  className={styles.textButton}
+                  onClick={() => {
+                    onSetParent(candidate.id, task.id);
+                    setLinking(false);
+                    setQuery('');
+                  }}
+                >
+                  {candidate.number} {candidate.title || t('untitledTask')}
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+const TaskRelationsSection = ({
+  task,
+  allTasks,
+  onSelectTask,
+  onAddRelation,
+  onRemoveRelation,
+  t,
+}: {
+  task: TaskCard;
+  allTasks: TaskCard[];
+  onSelectTask: (taskId: string) => void;
+  onAddRelation: (
+    taskId: string,
+    kind: 'blockedBy' | 'relatesTo' | 'duplicates',
+    targetId: string
+  ) => void;
+  onRemoveRelation: (
+    taskId: string,
+    kind: 'blockedBy' | 'relatesTo' | 'duplicates',
+    targetId: string
+  ) => void;
+  t: TaskTrackerTranslator;
+}) => {
+  type RelationKind = 'blockedBy' | 'blocks' | 'relatesTo' | 'duplicates';
+
+  const [activeKind, setActiveKind] = useState<RelationKind>('blockedBy');
+  const [linking, setLinking] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const taskById = new Map(allTasks.map(item => [item.id, item]));
+  const blockedTasks = allTasks.filter(item =>
+    item.relations.blockedBy.includes(task.id)
+  );
+  const relationTaskIds: Record<RelationKind, string[]> = {
+    blockedBy: task.relations.blockedBy,
+    blocks: blockedTasks.map(item => item.id),
+    relatesTo: task.relations.relatesTo,
+    duplicates: task.relations.duplicates,
+  };
+  const activeTaskIds = relationTaskIds[activeKind];
+  const relatedTaskIds = new Set(Object.values(relationTaskIds).flat());
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const candidates = normalizedQuery
+    ? allTasks.filter(
+        item =>
+          item.id !== task.id &&
+          !relatedTaskIds.has(item.id) &&
+          (item.title.toLowerCase().includes(normalizedQuery) ||
+            item.number.toLowerCase().includes(normalizedQuery))
+      )
+    : [];
+
+  const renderRelationRow = (taskId: string) => {
+    const linked = taskById.get(taskId);
+    if (!linked) {
+      return null;
+    }
+    return (
+      <div key={taskId} className={styles.relationItem}>
+        <span className={styles.relationItemKey}>{linked.number}</span>
+        <button
+          type="button"
+          className={styles.relationItemTitle}
+          onClick={() => {
+            onSelectTask(taskId);
+          }}
+        >
+          {linked.title || t('untitledTask')}
+        </button>
+        <button
+          type="button"
+          className={styles.relationRemoveButton}
+          aria-label={t('relatedDocsRemove')}
+          title={t('relatedDocsRemove')}
+          onClick={() => {
+            if (activeKind === 'blocks') {
+              onRemoveRelation(taskId, 'blockedBy', task.id);
+            } else {
+              onRemoveRelation(task.id, activeKind, taskId);
+            }
+          }}
+        >
+          ×
+        </button>
+      </div>
+    );
+  };
+
+  const relationKinds: RelationKind[] = [
+    'blockedBy',
+    'blocks',
+    'relatesTo',
+    'duplicates',
+  ];
+
+  return (
+    <div className={styles.relationsEditor}>
+      <div className={styles.relationTabs} role="tablist">
+        {relationKinds.map(kind => (
+          <button
+            key={kind}
+            type="button"
+            role="tab"
+            aria-selected={activeKind === kind}
+            className={clsx(styles.relationTab, {
+              [styles.relationTabActive]: activeKind === kind,
+            })}
+            onClick={() => {
+              setActiveKind(kind);
+              setLinking(false);
+              setQuery('');
+            }}
+          >
+            <span>{t(kind)}</span>
+            <span className={styles.relationTabCount}>
+              {relationTaskIds[kind].length}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.relationPanel} role="tabpanel">
+        <div className={styles.relationPanelHeader}>
+          <span className={styles.relationPanelTitle}>{t(activeKind)}</span>
+          <Button
+            variant="plain"
+            onClick={() => {
+              setLinking(current => !current);
+              setQuery('');
+            }}
+          >
+            <PlusIcon />
+            {t('linkTask')}
+          </Button>
+        </div>
+
+        {activeTaskIds.length === 0 ? (
+          <div className={styles.relationEmptyState}>{t('noLinkedTasks')}</div>
+        ) : (
+          <div className={styles.relationList}>
+            {activeTaskIds.map(renderRelationRow)}
+          </div>
+        )}
+
+        {linking ? (
+          <div className={styles.relationSearch}>
+            <input
+              autoFocus
+              className={styles.relationSearchInput}
+              value={query}
+              placeholder={t('relationSearchPlaceholder')}
+              onChange={event => {
+                setQuery(event.target.value);
+              }}
+            />
+            {normalizedQuery && candidates.length === 0 ? (
+              <div className={styles.relationSearchEmpty}>
+                {t('taskSearchEmpty')}
+              </div>
+            ) : null}
+            {candidates.length > 0 ? (
+              <div className={styles.relationCandidateList}>
+                {candidates.slice(0, 8).map(candidate => (
+                  <button
+                    key={candidate.id}
+                    type="button"
+                    className={styles.relationCandidate}
+                    onClick={() => {
+                      if (activeKind === 'blocks') {
+                        onAddRelation(candidate.id, 'blockedBy', task.id);
+                      } else {
+                        onAddRelation(task.id, activeKind, candidate.id);
+                      }
+                      setLinking(false);
+                      setQuery('');
+                    }}
+                  >
+                    <span className={styles.relationItemKey}>
+                      {candidate.number}
+                    </span>
+                    <span className={styles.relationCandidateTitle}>
+                      {candidate.title || t('untitledTask')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+const makeBranchSlug = (title: string): string =>
+  title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40) || 'task';
+
+const TaskGitLabActionsSection = ({
+  taskKey,
+  taskTitle,
+  t,
+  onCreated,
+}: {
+  taskKey: string;
+  taskTitle: string;
+  t: TaskTrackerTranslator;
+  onCreated: () => void;
+}) => {
+  const workspaceService = useService(WorkspaceService);
+  const workspaceId = workspaceService.workspace.id;
+  const [mode, setMode] = useState<'branch' | 'mr' | null>(null);
+  const [repositoryId, setRepositoryId] = useState('');
+  const [baseBranch, setBaseBranch] = useState('main');
+  const [branchName, setBranchName] = useState('');
+  const [sourceBranch, setSourceBranch] = useState('');
+  const [targetBranch, setTargetBranch] = useState('main');
+  const [mrTitle, setMrTitle] = useState('');
+  const [mrDescription, setMrDescription] = useState('');
+
+  const { data } = useQuery({
+    query: developmentIntegrationsQuery,
+    variables: { workspaceId },
+  });
+
+  const gitlabConnection = data?.workspace?.developmentIntegrations?.find(
+    item => item.provider === 'gitlab' && item.enabled
+  );
+
+  const repositories =
+    gitlabConnection?.repositories.filter(repository => repository.enabled) ??
+    [];
+
+  const { trigger: branchTrigger } = useMutation({
+    mutation: createDevelopmentBranchMutation,
+  });
+  const { trigger: mrTrigger } = useMutation({
+    mutation: createDevelopmentMergeRequestMutation,
+  });
+
+  const slug = makeBranchSlug(taskTitle);
+  const suggestedBranch = `feature/${taskKey}-${slug}`;
+
+  const openBranchForm = () => {
+    setMode('branch');
+    setRepositoryId(repositories[0]?.externalId ?? '');
+    setBaseBranch(repositories[0]?.defaultBranch ?? 'main');
+    setBranchName(suggestedBranch);
+  };
+
+  const openMrForm = () => {
+    setMode('mr');
+    setRepositoryId(repositories[0]?.externalId ?? '');
+    setTargetBranch(repositories[0]?.defaultBranch ?? 'main');
+    setSourceBranch(suggestedBranch);
+    setMrTitle(`${taskKey} ${taskTitle}`);
+    setMrDescription(`TrackWork: ${taskKey}`);
+  };
+
+  const handleCreateBranch = async () => {
+    if (!gitlabConnection || !repositoryId || !branchName) {
+      return;
+    }
+    try {
+      await branchTrigger({
+        input: {
+          connectionId: gitlabConnection.id,
+          repositoryId,
+          baseBranch,
+          name: branchName,
+          taskKey,
+        },
+      });
+      notify.success({ title: t('branchCreated') });
+      onCreated();
+      setMode(null);
+    } catch {
+      notify.error({ title: t('createBranchFailed') });
+    }
+  };
+
+  const handleCreateMr = async () => {
+    if (
+      !gitlabConnection ||
+      !repositoryId ||
+      !sourceBranch ||
+      !targetBranch ||
+      !mrTitle
+    ) {
+      return;
+    }
+    try {
+      await mrTrigger({
+        input: {
+          connectionId: gitlabConnection.id,
+          repositoryId,
+          sourceBranch,
+          targetBranch,
+          title: mrTitle,
+          description: mrDescription || undefined,
+          taskKey,
+        },
+      });
+      notify.success({ title: t('mrCreated') });
+      onCreated();
+      setMode(null);
+    } catch {
+      notify.error({ title: t('createMrFailed') });
+    }
+  };
+
+  if (!gitlabConnection || repositories.length === 0) {
+    return (
+      <div className={styles.editorEmptyState}>
+        {t('gitlabActionsUnavailable')}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className={styles.row}>
+        <Button variant="plain" onClick={openBranchForm}>
+          {t('createBranch')}
+        </Button>
+        <Button variant="plain" onClick={openMrForm}>
+          {t('createMr')}
+        </Button>
+      </div>
+
+      {mode === 'branch' ? (
+        <div className={styles.form}>
+          <label className={styles.label}>
+            {t('repository')}
+            <select
+              className={styles.gitlabInput}
+              value={repositoryId}
+              onChange={event => {
+                setRepositoryId(event.target.value);
+                const repository = repositories.find(
+                  item => item.externalId === event.target.value
+                );
+                setBaseBranch(repository?.defaultBranch ?? 'main');
+              }}
+            >
+              {repositories.map(repository => (
+                <option
+                  key={repository.externalId}
+                  value={repository.externalId}
+                >
+                  {repository.fullName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.label}>
+            {t('baseBranch')}
+            <input
+              className={styles.gitlabInput}
+              value={baseBranch}
+              onChange={event => {
+                setBaseBranch(event.target.value);
+              }}
+            />
+          </label>
+          <label className={styles.label}>
+            {t('branchName')}
+            <input
+              className={styles.gitlabInput}
+              value={branchName}
+              onChange={event => {
+                setBranchName(event.target.value);
+              }}
+            />
+          </label>
+          <Button onClick={() => void handleCreateBranch()}>
+            {t('createBranch')}
+          </Button>
+        </div>
+      ) : null}
+
+      {mode === 'mr' ? (
+        <div className={styles.form}>
+          <label className={styles.label}>
+            {t('repository')}
+            <select
+              className={styles.gitlabInput}
+              value={repositoryId}
+              onChange={event => {
+                setRepositoryId(event.target.value);
+                const repository = repositories.find(
+                  item => item.externalId === event.target.value
+                );
+                setTargetBranch(repository?.defaultBranch ?? 'main');
+              }}
+            >
+              {repositories.map(repository => (
+                <option
+                  key={repository.externalId}
+                  value={repository.externalId}
+                >
+                  {repository.fullName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.label}>
+            {t('sourceBranch')}
+            <input
+              className={styles.gitlabInput}
+              value={sourceBranch}
+              onChange={event => {
+                setSourceBranch(event.target.value);
+              }}
+            />
+          </label>
+          <label className={styles.label}>
+            {t('targetBranch')}
+            <input
+              className={styles.gitlabInput}
+              value={targetBranch}
+              onChange={event => {
+                setTargetBranch(event.target.value);
+              }}
+            />
+          </label>
+          <label className={styles.label}>
+            {t('mrTitle')}
+            <input
+              className={styles.gitlabInput}
+              value={mrTitle}
+              onChange={event => {
+                setMrTitle(event.target.value);
+              }}
+            />
+          </label>
+          <label className={styles.label}>
+            {t('mrDescription')}
+            <input
+              className={styles.gitlabInput}
+              value={mrDescription}
+              onChange={event => {
+                setMrDescription(event.target.value);
+              }}
+            />
+          </label>
+          <Button onClick={() => void handleCreateMr()}>{t('createMr')}</Button>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 const TaskTrackerPage = () => {
   const { t, locale } = useTaskTrackerI18n();
   const docsService = useService(DocsService);
@@ -1423,6 +2751,13 @@ const TaskTrackerPage = () => {
   const workspacePropertyService = useService(WorkspacePropertyService);
   const workspaceDialogService = useService(WorkspaceDialogService);
   const workspace = useService(WorkspaceService).workspace;
+  const { trigger: allocateTrackWorkTask } = useMutation({
+    mutation: allocateTrackWorkTaskMutation,
+  });
+  const { trigger: syncTrackWorkTasks } = useMutation({
+    mutation: syncTrackWorkTasksMutation,
+  });
+  const lastRegistrySyncRef = useRef('');
 
   const trackerEnabledValues = useLiveData(
     useMemo(
@@ -1556,6 +2891,41 @@ const TaskTrackerPage = () => {
     )
   );
 
+  const appliedEventsByDoc = useLiveData(
+    useMemo(
+      () =>
+        LiveData.from(
+          docsService.propertyValues$(
+            `custom:${TASK_AUTOMATION_APPLIED_PROPERTY}`
+          ),
+          new Map<string, string | undefined>()
+        ),
+      [docsService]
+    )
+  );
+
+  const relatedDocsValues = useLiveData(
+    useMemo(
+      () =>
+        LiveData.from(
+          docsService.propertyValues$(`custom:${TASK_RELATED_DOCS_PROPERTY}`),
+          new Map<string, string | undefined>()
+        ),
+      [docsService]
+    )
+  );
+
+  const relationsValues = useLiveData(
+    useMemo(
+      () =>
+        LiveData.from(
+          docsService.propertyValues$(`custom:${TASK_RELATIONS_PROPERTY}`),
+          new Map<string, string | undefined>()
+        ),
+      [docsService]
+    )
+  );
+
   const complexityValues = useLiveData(
     useMemo(
       () =>
@@ -1669,7 +3039,9 @@ const TaskTrackerPage = () => {
   const [labelFilter, setLabelFilter] = useState('all');
   const [dueFilter, setDueFilter] = useState<DueFilter>('all');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [taskModalMode, setTaskModalMode] = useState<'view' | 'edit' | null>(
+    null
+  );
   const [uploadingTaskId, setUploadingTaskId] = useState<string | null>(null);
   const [activeDragTask, setActiveDragTask] = useState<ActiveDragTask | null>(
     null
@@ -1968,10 +3340,12 @@ const TaskTrackerPage = () => {
       .map((docId: string) => {
         return {
           id: docId,
-          number: formatTaskKey(
+          number: resolveStoredTaskKey(
             workspaceTaskKey,
-            parseTaskNumber(numberValues.get(docId))
+            numberValues.get(docId)
           ),
+          relatedDocs: parseRelatedDocs(relatedDocsValues.get(docId)),
+          relations: parseTaskRelations(relationsValues.get(docId)),
           title: titleMap.get(docId) ?? '',
           boardId: boardValues.get(docId) || DEFAULT_BOARD_ID,
           status: statusValues.get(docId) || fallbackStatus,
@@ -2002,6 +3376,8 @@ const TaskTrackerPage = () => {
     numberValues,
     orderValues,
     priorityValues,
+    relatedDocsValues,
+    relationsValues,
     statusValues,
     subtaskValues,
     typeValues,
@@ -2013,34 +3389,64 @@ const TaskTrackerPage = () => {
   ]);
 
   useEffect(() => {
-    const sorted = [...tasks].sort((a, b) => a.id.localeCompare(b.id));
-    const seen = new Set<number>();
-    const toFix: TaskCard[] = [];
-
-    for (const task of sorted) {
-      const number = parseTaskNumber(task.number);
-      if (number > 0 && !seen.has(number)) {
-        seen.add(number);
-      } else {
-        toFix.push(task);
-      }
-    }
-
-    if (toFix.length === 0) {
+    if (workspace.flavour === 'local' || tasks.length === 0) {
       return;
     }
 
-    let next = Math.max(0, ...seen) + 1;
-    for (const task of toFix) {
-      const doc = docsService.list.doc$(task.id).value;
-      if (!doc) {
-        continue;
-      }
-      doc.setCustomProperty(TASK_NUMBER_PROPERTY, String(next));
-      seen.add(next);
-      next += 1;
+    const registryTasks = tasks.map(task => ({
+      docId: task.id,
+      taskKey: task.number,
+      relatedDocumentIds: task.relatedDocs,
+    }));
+    const signature = JSON.stringify(registryTasks);
+    if (lastRegistrySyncRef.current === signature) {
+      return;
     }
-  }, [docsService.list, tasks]);
+    lastRegistrySyncRef.current = signature;
+
+    syncTrackWorkTasks({
+      input: {
+        workspaceId: workspace.id,
+        prefix: workspaceTaskKey,
+        tasks: registryTasks,
+      },
+    })
+      .then(result => {
+        for (const registered of result.syncTrackWorkTasks) {
+          const doc = docsService.list.doc$(registered.docId).value;
+          if (!doc) {
+            continue;
+          }
+          if (
+            doc.customProperty$(TASK_NUMBER_PROPERTY).value !==
+            registered.taskKey
+          ) {
+            doc.setCustomProperty(TASK_NUMBER_PROPERTY, registered.taskKey);
+          }
+          const relatedDocuments = stringifyRelatedDocs(
+            registered.relatedDocumentIds
+          );
+          if (
+            doc.customProperty$(TASK_RELATED_DOCS_PROPERTY).value !==
+            relatedDocuments
+          ) {
+            doc.setCustomProperty(TASK_RELATED_DOCS_PROPERTY, relatedDocuments);
+          }
+        }
+      })
+      .catch(() => {
+        lastRegistrySyncRef.current = '';
+        notify.error({ title: t('registrySyncFailed') });
+      });
+  }, [
+    docsService.list,
+    syncTrackWorkTasks,
+    t,
+    tasks,
+    workspace.flavour,
+    workspace.id,
+    workspaceTaskKey,
+  ]);
 
   const selectedBoardTasks = useMemo(() => {
     const currentBoardId = selectedBoard?.id;
@@ -2254,6 +3660,7 @@ const TaskTrackerPage = () => {
       !selectedBoardTasks.some(task => task.id === selectedTaskId)
     ) {
       setSelectedTaskId(null);
+      setTaskModalMode(null);
     }
   }, [selectedBoardTasks, selectedTaskId]);
 
@@ -2337,19 +3744,142 @@ const TaskTrackerPage = () => {
     [docsService.list, tasks]
   );
 
-  const handleCreateTask = useCallback(() => {
+  const automationRules = useMemo(
+    () =>
+      sanitizeAutomationRules(
+        statusPropertyInfo?.additionalData?.taskTrackerAutomationRules
+      ),
+    [statusPropertyInfo]
+  );
+
+  const { data: automationActivity } = useQuery({
+    query: trackWorkActivityQuery,
+    variables: { workspaceId: workspace.id, taskKey: undefined, first: 100 },
+  });
+
+  useEffect(() => {
+    if (automationRules.length === 0) {
+      return;
+    }
+
+    const events = automationActivity?.trackWorkActivity?.items ?? [];
+
+    if (events.length === 0) {
+      return;
+    }
+
+    const taskByKey = new Map<
+      string,
+      { docId: string; board?: TaskTrackerBoard }
+    >();
+    for (const task of tasks) {
+      const board = boardMap.get(task.boardId);
+      taskByKey.set(task.number, { docId: task.id, board });
+    }
+
+    for (const task of tasks) {
+      const appliedIds = new Set<string>(
+        JSON.parse(appliedEventsByDoc.get(task.id) ?? '[]') as string[]
+      );
+
+      const result = applyAutomationRules(
+        automationRules,
+        events.filter(event => event.taskKey === task.number),
+        appliedIds,
+        taskByKey
+      );
+
+      if (
+        result.statusUpdates.length === 0 &&
+        result.warningEvents.length === 0
+      ) {
+        continue;
+      }
+
+      const doc = docsService.list.doc$(task.id).value;
+      if (!doc) {
+        continue;
+      }
+
+      for (const update of result.statusUpdates) {
+        doc.setCustomProperty(TASK_STATUS_PROPERTY, update.stageId);
+        const stage = boardMap
+          .get(task.boardId)
+          ?.flow.find(column => column.id === update.stageId);
+        appendTaskHistory(
+          task.id,
+          buildHistoryEntry(
+            'edited',
+            `${t('automationStatusChanged')}: ${
+              stage ? localizeTaskTrackerStageTitle(stage, t) : update.stageId
+            }`
+          ),
+          task.history
+        );
+      }
+
+      for (const warning of result.warningEvents) {
+        notify.error({
+          title: `${t('automationWarningTitle')}: ${warning.eventType}`,
+        });
+      }
+
+      const nextApplied = [...appliedIds, ...result.appliedEventIds];
+      doc.setCustomProperty(
+        TASK_AUTOMATION_APPLIED_PROPERTY,
+        JSON.stringify(nextApplied)
+      );
+    }
+  }, [
+    appendTaskHistory,
+    appliedEventsByDoc,
+    automationActivity,
+    automationRules,
+    boardMap,
+    docsService.list,
+    t,
+    tasks,
+  ]);
+
+  const handleCreateTask = useCallback(async () => {
     const targetColumn = flow[0];
     if (!targetColumn) {
       return;
     }
 
+    if (workspace.flavour === 'local') {
+      notify.error({ title: t('registryRequired') });
+      return;
+    }
+
     const nextOrder =
       (allTasksByColumn.get(targetColumn.id)?.length ?? 0) * 1000 + 1000;
-    const nextNumber = nextTaskNumber(tasks.map(task => task.number));
 
     const doc = docsService.createDoc({
       primaryMode: 'page',
     });
+
+    let taskKey: string;
+    try {
+      const result = await allocateTrackWorkTask({
+        input: {
+          workspaceId: workspace.id,
+          docId: doc.id,
+          prefix: workspaceTaskKey,
+          relatedDocumentIds: [],
+          legacyTasks: tasks.map(task => ({
+            docId: task.id,
+            taskKey: task.number,
+            relatedDocumentIds: task.relatedDocs,
+          })),
+        },
+      });
+      taskKey = result.allocateTrackWorkTask.taskKey;
+    } catch {
+      doc.moveToTrash();
+      notify.error({ title: t('createTaskFailed') });
+      return;
+    }
 
     doc.setCustomProperty(TASK_TRACKER_FLAG_PROPERTY, 'true');
     doc.setCustomProperty(
@@ -2362,7 +3892,7 @@ const TaskTrackerPage = () => {
     doc.setCustomProperty(TASK_ASSIGNEE_PROPERTY, '');
     doc.setCustomProperty(TASK_DUE_DATE_PROPERTY, '');
     doc.setCustomProperty(TASK_ORDER_PROPERTY, String(nextOrder));
-    doc.setCustomProperty(TASK_NUMBER_PROPERTY, String(nextNumber));
+    doc.setCustomProperty(TASK_NUMBER_PROPERTY, taskKey);
     doc.setCustomProperty(TASK_DESCRIPTION_PROPERTY, '');
     doc.setCustomProperty(TASK_EXTRA_INFO_PROPERTY, '');
     doc.setCustomProperty(TASK_ATTACHMENTS_PROPERTY, '[]');
@@ -2379,7 +3909,20 @@ const TaskTrackerPage = () => {
       notify.error({ title: t('setTitleFailed') });
     });
     setSelectedTaskId(doc.id);
-  }, [allTasksByColumn, docsService, flow, selectedBoard, t, tasks]);
+    setTaskModalMode('edit');
+    return doc.id;
+  }, [
+    allocateTrackWorkTask,
+    allTasksByColumn,
+    docsService,
+    flow,
+    selectedBoard,
+    t,
+    tasks,
+    workspace.flavour,
+    workspace.id,
+    workspaceTaskKey,
+  ]);
 
   const handleRenameTask = useCallback(
     (taskId: string, title: string) => {
@@ -2407,6 +3950,7 @@ const TaskTrackerPage = () => {
       doc?.moveToTrash();
       if (selectedTaskId === taskId) {
         setSelectedTaskId(null);
+        setTaskModalMode(null);
       }
     },
     [docsService.list, selectedTaskId]
@@ -2880,6 +4424,101 @@ const TaskTrackerPage = () => {
     setSelectedBoardId(board.id);
   }, [boards, saveBoardsConfig, t]);
 
+  const updateTaskRelations = useCallback(
+    (taskId: string, updater: (relations: TaskRelations) => TaskRelations) => {
+      const task = tasks.find(item => item.id === taskId);
+      if (!task) {
+        return;
+      }
+      const doc = docsService.list.doc$(taskId).value;
+      if (!doc) {
+        return;
+      }
+      doc.setCustomProperty(
+        TASK_RELATIONS_PROPERTY,
+        stringifyTaskRelations(updater(task.relations))
+      );
+    },
+    [docsService.list, tasks]
+  );
+
+  const setTaskParent = useCallback(
+    (taskId: string, parentId: string | undefined) => {
+      if (taskId === parentId) {
+        notify.error({ title: t('relationCyclicError') });
+        return;
+      }
+
+      if (parentId) {
+        const getParent = (id: string) =>
+          tasks.find(item => item.id === id)?.relations.parentId;
+        if (wouldCreateTaskCycle(taskId, parentId, getParent)) {
+          notify.error({ title: t('relationCyclicError') });
+          return;
+        }
+      }
+
+      updateTaskRelations(taskId, relations => ({
+        ...relations,
+        parentId,
+      }));
+    },
+    [t, tasks, updateTaskRelations]
+  );
+
+  const addTaskRelation = useCallback(
+    (
+      taskId: string,
+      kind: 'blockedBy' | 'relatesTo' | 'duplicates',
+      targetId: string
+    ) => {
+      if (taskId === targetId) {
+        return;
+      }
+      updateTaskRelations(taskId, relations => ({
+        ...relations,
+        [kind]: [...new Set([...relations[kind], targetId])],
+      }));
+      if (kind === 'relatesTo' || kind === 'duplicates') {
+        updateTaskRelations(targetId, relations => ({
+          ...relations,
+          [kind]: [...new Set([...relations[kind], taskId])],
+        }));
+      }
+    },
+    [updateTaskRelations]
+  );
+
+  const removeTaskRelation = useCallback(
+    (
+      taskId: string,
+      kind: 'blockedBy' | 'relatesTo' | 'duplicates',
+      targetId: string
+    ) => {
+      updateTaskRelations(taskId, relations => ({
+        ...relations,
+        [kind]: relations[kind].filter(id => id !== targetId),
+      }));
+      if (kind === 'relatesTo' || kind === 'duplicates') {
+        updateTaskRelations(targetId, relations => ({
+          ...relations,
+          [kind]: relations[kind].filter(id => id !== taskId),
+        }));
+      }
+    },
+    [updateTaskRelations]
+  );
+
+  const handleCreateSubtask = useCallback(
+    async (parentId: string) => {
+      const newTaskId = await handleCreateTask();
+      if (newTaskId) {
+        setTaskParent(newTaskId, parentId);
+      }
+    },
+    [handleCreateTask, setTaskParent]
+  );
+
   const handleDeleteBoard = useCallback(() => {
     if (!selectedBoard || boards.length <= 1) {
       return;
@@ -2953,7 +4592,7 @@ const TaskTrackerPage = () => {
             >
               {t('boardSettings')}
             </Button>
-            <Button onClick={() => handleCreateTask()}>
+            <Button onClick={() => void handleCreateTask()}>
               <PlusIcon />
               {t('newTask')}
             </Button>
@@ -3111,11 +4750,7 @@ const TaskTrackerPage = () => {
             <div className={styles.filterHint}>{t('filtersDisableDrag')}</div>
           ) : null}
 
-          <div
-            className={clsx(styles.boardLayout, {
-              [styles.boardLayoutSingle]: !selectedTask,
-            })}
-          >
+          <div className={styles.boardLayout}>
             <div className={styles.boardScroller}>
               <div className={styles.board}>
                 {flow.map(column => {
@@ -3196,22 +4831,17 @@ const TaskTrackerPage = () => {
                                   task={task}
                                   columnId={column.id}
                                   tagNameMap={tagNameMap}
-                                  workspace={workspace}
                                   hasActiveFilters={hasActiveFilters}
-                                  expanded={expandedTaskId === task.id}
-                                  onToggleExpanded={taskId => {
-                                    setExpandedTaskId(current =>
-                                      current === taskId ? null : taskId
-                                    );
+                                  onOpenPreview={taskId => {
+                                    setSelectedTaskId(taskId);
+                                    setTaskModalMode('view');
                                   }}
-                                  onOpenEditor={setSelectedTaskId}
+                                  onOpenEditor={taskId => {
+                                    setSelectedTaskId(taskId);
+                                    setTaskModalMode('edit');
+                                  }}
                                   onOpenTaskDoc={handleOpenTaskDoc}
                                   onDeleteTask={handleDeleteTask}
-                                  onDownloadAttachment={attachment => {
-                                    handleDownloadAttachment(attachment).catch(
-                                      () => {}
-                                    );
-                                  }}
                                   onDraggingChange={handleDraggingChange}
                                 />
                               </TaskCardDropTarget>
@@ -3233,15 +4863,62 @@ const TaskTrackerPage = () => {
                 })}
               </div>
             </div>
+          </div>
 
-            {selectedTask ? (
-              <TaskDetailPanel
+          {selectedTask && taskModalMode === 'view' ? (
+            <TaskModal
+              label={`${selectedTask.number} ${selectedTask.title || t('untitledTask')}`}
+              onClose={() => {
+                setSelectedTaskId(null);
+                setTaskModalMode(null);
+              }}
+            >
+              <TaskPreview
                 task={selectedTask}
                 workspace={workspace}
+                tagNameMap={tagNameMap}
+                onEdit={() => {
+                  setTaskModalMode('edit');
+                }}
+                onClose={() => {
+                  setSelectedTaskId(null);
+                  setTaskModalMode(null);
+                }}
+                onOpenTaskDoc={handleOpenTaskDoc}
+                onDownloadAttachment={attachment => {
+                  handleDownloadAttachment(attachment).catch(() => {});
+                }}
+              />
+            </TaskModal>
+          ) : null}
+
+          {selectedTask && taskModalMode === 'edit' ? (
+            <TaskModal
+              label={`${selectedTask.number} ${selectedTask.title || t('untitledTask')}`}
+              onClose={() => {
+                setSelectedTaskId(null);
+                setTaskModalMode(null);
+              }}
+            >
+              <TaskDetailPanel
+                key={selectedTask.id}
+                task={selectedTask}
+                workspace={workspace}
+                taskIds={tasks.map(task => task.id)}
+                allTasks={tasks}
+                onSelectTask={taskId => {
+                  setSelectedTaskId(taskId);
+                  setTaskModalMode('edit');
+                }}
+                onSetParent={setTaskParent}
+                onAddRelation={addTaskRelation}
+                onRemoveRelation={removeTaskRelation}
+                onCreateSubtask={handleCreateSubtask}
                 tagNameMap={tagNameMap}
                 uploading={uploadingTaskId === selectedTask.id}
                 onClose={() => {
                   setSelectedTaskId(null);
+                  setTaskModalMode(null);
                 }}
                 onRenameTask={handleRenameTask}
                 onOpenTaskDoc={handleOpenTaskDoc}
@@ -3263,8 +4940,8 @@ const TaskTrackerPage = () => {
                   handleDownloadAttachment(attachment).catch(() => {});
                 }}
               />
-            ) : null}
-          </div>
+            </TaskModal>
+          ) : null}
         </div>
       </ViewBody>
     </>

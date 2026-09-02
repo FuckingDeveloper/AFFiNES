@@ -23,10 +23,30 @@ export type TaskTrackerBoard = {
   typeTransitions: TaskTypeTransitions;
 };
 
+export type TaskTrackerAutomationEventType =
+  | 'merge_request.opened'
+  | 'merge_request.updated'
+  | 'merge_request.merged'
+  | 'pipeline.success'
+  | 'pipeline.failed'
+  | 'pipeline.unstable'
+  | 'commit.pushed';
+
+export type TaskTrackerAutomationAction = 'set-status' | 'warning';
+
+export type TaskTrackerAutomationRule = {
+  id: string;
+  eventType: TaskTrackerAutomationEventType;
+  action: TaskTrackerAutomationAction;
+  stageId?: string;
+  enabled: boolean;
+};
+
 export type TaskTrackerPropertyAdditionalData = {
   taskTrackerBoards?: TaskTrackerBoardConfig[];
   taskTrackerFlow?: TaskFlowColumn[];
   taskTrackerTransitions?: TaskFlowTransitions;
+  taskTrackerAutomationRules?: TaskTrackerAutomationRule[];
 };
 
 export type TaskAttachment = {
@@ -64,6 +84,7 @@ export const TASK_DESCRIPTION_PROPERTY = 'taskDescription';
 export const TASK_EXTRA_INFO_PROPERTY = 'taskExtraInfo';
 export const TASK_ATTACHMENTS_PROPERTY = 'taskAttachments';
 export const TASK_NUMBER_PROPERTY = 'taskNumber';
+export const TASK_AUTOMATION_APPLIED_PROPERTY = 'taskAutomationAppliedEvents';
 export const TASK_COMPLEXITY_PROPERTY = 'taskComplexity';
 export const TASK_SUBTASKS_PROPERTY = 'taskSubtasks';
 export const TASK_HISTORY_PROPERTY = 'taskHistory';
@@ -308,4 +329,135 @@ export const resolveTaskTrackerBoards = (
     });
 
   return boards.length > 0 ? boards : [fallbackBoard];
+};
+
+export const AUTOMATION_EVENT_TYPES: TaskTrackerAutomationEventType[] = [
+  'merge_request.opened',
+  'merge_request.updated',
+  'merge_request.merged',
+  'pipeline.success',
+  'pipeline.failed',
+  'pipeline.unstable',
+  'commit.pushed',
+];
+
+export const sanitizeAutomationRules = (
+  rules: TaskTrackerAutomationRule[] | undefined
+): TaskTrackerAutomationRule[] => {
+  if (!Array.isArray(rules)) {
+    return [];
+  }
+
+  const seenIds = new Set<string>();
+
+  return rules
+    .filter(rule => rule?.id)
+    .filter(rule => AUTOMATION_EVENT_TYPES.includes(rule.eventType))
+    .filter(rule => rule.action === 'set-status' || rule.action === 'warning')
+    .filter(rule => {
+      if (seenIds.has(rule.id)) {
+        return false;
+      }
+      seenIds.add(rule.id);
+      return true;
+    })
+    .map(rule => ({
+      id: rule.id,
+      eventType: rule.eventType,
+      action: rule.action,
+      stageId: rule.action === 'set-status' ? rule.stageId : undefined,
+      enabled: rule.enabled !== false,
+    }));
+};
+
+export const TASK_RELATED_DOCS_PROPERTY = 'taskRelatedDocs';
+
+export const parseRelatedDocs = (value: string | undefined): string[] => {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+export const stringifyRelatedDocs = (docIds: string[]): string =>
+  JSON.stringify([...new Set(docIds)]);
+
+export const TASK_RELATIONS_PROPERTY = 'taskRelations';
+
+export type TaskRelations = {
+  parentId?: string;
+  blockedBy: string[];
+  relatesTo: string[];
+  duplicates: string[];
+};
+
+export const parseTaskRelations = (
+  value: string | undefined
+): TaskRelations => {
+  if (!value) {
+    return { blockedBy: [], relatesTo: [], duplicates: [] };
+  }
+
+  try {
+    const parsed = JSON.parse(value) as Partial<TaskRelations>;
+    return {
+      parentId:
+        typeof parsed.parentId === 'string' ? parsed.parentId : undefined,
+      blockedBy: Array.isArray(parsed.blockedBy)
+        ? parsed.blockedBy.filter(
+            (item): item is string => typeof item === 'string'
+          )
+        : [],
+      relatesTo: Array.isArray(parsed.relatesTo)
+        ? parsed.relatesTo.filter(
+            (item): item is string => typeof item === 'string'
+          )
+        : [],
+      duplicates: Array.isArray(parsed.duplicates)
+        ? parsed.duplicates.filter(
+            (item): item is string => typeof item === 'string'
+          )
+        : [],
+    };
+  } catch {
+    return { blockedBy: [], relatesTo: [], duplicates: [] };
+  }
+};
+
+export const stringifyTaskRelations = (relations: TaskRelations): string =>
+  JSON.stringify({
+    parentId: relations.parentId ?? null,
+    blockedBy: [...new Set(relations.blockedBy)],
+    relatesTo: [...new Set(relations.relatesTo)],
+    duplicates: [...new Set(relations.duplicates)],
+  });
+
+export const wouldCreateTaskCycle = (
+  taskId: string,
+  parentId: string,
+  getParent: (id: string) => string | undefined
+): boolean => {
+  let current: string | undefined = parentId;
+  const seen = new Set<string>();
+
+  while (current) {
+    if (current === taskId) {
+      return true;
+    }
+    if (seen.has(current)) {
+      return true;
+    }
+    seen.add(current);
+    current = getParent(current);
+  }
+
+  return false;
 };

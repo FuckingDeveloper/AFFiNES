@@ -1,5 +1,6 @@
 query trackWorkTaskDevelopment($workspaceId: String!, $taskKey: String!) {
   trackWorkTaskDevelopment(workspaceId: $workspaceId, taskKey: $taskKey) {
+    repositories
     commits {
       externalId
       title
@@ -21,6 +22,15 @@ query trackWorkTaskDevelopment($workspaceId: String!, $taskKey: String!) {
       status
       sourceBranch
       targetBranch
+    }
+    pipelines {
+      externalId
+      number
+      name
+      status
+      url
+      startedAt
+      finishedAt
     }
   }
 }

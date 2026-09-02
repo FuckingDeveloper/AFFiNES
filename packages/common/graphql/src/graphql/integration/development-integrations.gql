@@ -6,12 +6,22 @@ query developmentIntegrations($workspaceId: String!) {
       provider
       name
       baseUrl
+      username
       enabled
       hasToken
       hasWebhookSecret
       webhookUrl
       createdAt
       updatedAt
+      repositories {
+        id
+        externalId
+        name
+        fullName
+        webUrl
+        defaultBranch
+        enabled
+      }
     }
   }
 }

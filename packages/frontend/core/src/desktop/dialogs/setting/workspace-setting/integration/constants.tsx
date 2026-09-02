@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 
 import { CalendarSettingPanel } from './calendar/setting-panel';
 import { GitLabSettingPanel } from './gitlab/setting-panel';
+import { JenkinsSettingPanel } from './jenkins/setting-panel';
 import MCPIcon from './mcp-server/MCP.inline.svg';
 import { McpServerSettingPanel } from './mcp-server/setting-panel';
 import { ReadwiseSettingPanel } from './readwise/setting-panel';
@@ -40,6 +41,13 @@ const INTEGRATION_LIST = [
     desc: 'com.affine.integration.gitlab.desc',
     icon: <GithubIcon />,
     setting: <GitLabSettingPanel />,
+  },
+  {
+    id: 'jenkins' as const,
+    name: 'com.affine.integration.jenkins.name',
+    desc: 'com.affine.integration.jenkins.desc',
+    icon: <GithubIcon />,
+    setting: <JenkinsSettingPanel />,
   },
   {
     id: 'mcp-server' as const,

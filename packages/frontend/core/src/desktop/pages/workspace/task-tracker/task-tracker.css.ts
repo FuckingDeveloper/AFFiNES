@@ -152,19 +152,10 @@ export const boardScroller = style({
 
 export const boardLayout = style({
   display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr) minmax(420px, 520px)',
+  gridTemplateColumns: 'minmax(0, 1fr)',
   gap: 16,
   minHeight: 0,
   flex: 1,
-  '@media': {
-    '(max-width: 1320px)': {
-      gridTemplateColumns: '1fr',
-    },
-  },
-});
-
-export const boardLayoutSingle = style({
-  gridTemplateColumns: '1fr',
 });
 
 export const board = style({
@@ -430,18 +421,6 @@ export const taskSummaryValue = style({
   fontSize: 12,
   fontWeight: 700,
   color: cssVarV2('text/primary'),
-});
-
-export const taskSelected = style({
-  borderColor: '#0c66e4',
-  boxShadow: '0 0 0 2px rgba(12, 102, 228, 0.24)',
-});
-
-export const taskExpanded = style({
-  gap: 14,
-  padding: 14,
-  borderRadius: 14,
-  boxShadow: '0 12px 36px rgba(9, 30, 66, 0.14)',
 });
 
 export const taskHeader = style({
@@ -852,20 +831,78 @@ export const attachmentName = style({
   },
 });
 
-export const detailPanel = style({
+export const taskModalOverlay = style({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 1000,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 24,
+  background: 'rgba(9, 30, 66, 0.42)',
+  backdropFilter: 'blur(6px)',
+  WebkitBackdropFilter: 'blur(6px)',
+  '@media': {
+    '(max-width: 720px)': {
+      padding: 0,
+    },
+  },
+});
+
+export const taskModalSurface = style({
+  width: 'min(1040px, calc(100vw - 48px))',
+  maxHeight: 'calc(100vh - 48px)',
+  minHeight: 0,
+  overflowY: 'auto',
+  padding: 20,
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
   borderRadius: 18,
-  background: 'rgba(255,255,255,0.96)',
-  padding: 16,
+  outline: 'none',
+  background: cssVarV2('layer/background/primary'),
+  boxShadow: '0 24px 80px rgba(9, 30, 66, 0.28)',
+  '@media': {
+    '(max-width: 720px)': {
+      width: '100vw',
+      height: '100vh',
+      maxHeight: '100vh',
+      padding: 16,
+      border: 'none',
+      borderRadius: 0,
+    },
+  },
+});
+
+export const modalCloseButton = style({
+  width: 32,
+  height: 32,
+  flexShrink: 0,
+  padding: 0,
+  border: 'none',
+  borderRadius: 8,
+  background: 'transparent',
+  color: cssVarV2('icon/secondary'),
+  fontSize: 22,
+  lineHeight: '32px',
+  textAlign: 'center',
+  cursor: 'pointer',
+  selectors: {
+    '&:hover': {
+      background: cssVarV2('layer/background/hoverOverlay'),
+      color: cssVarV2('icon/primary'),
+    },
+    '&:focus-visible': {
+      outline: `2px solid ${cssVarV2('button/primary')}`,
+      outlineOffset: 2,
+    },
+  },
+});
+
+export const detailPanel = style({
+  width: '100%',
   minHeight: 0,
-  maxHeight: 'calc(100vh - 140px)',
-  overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column',
-  gap: 14,
-  position: 'sticky',
-  top: 12,
-  boxShadow: '0 18px 48px rgba(9, 30, 66, 0.14)',
+  gap: 16,
 });
 
 export const editorSection = style({
@@ -873,10 +910,9 @@ export const editorSection = style({
   flexDirection: 'column',
   gap: 12,
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
-  borderRadius: 16,
-  background:
-    'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(247,248,252,0.98) 100%)',
-  padding: 14,
+  borderRadius: 12,
+  background: cssVarV2('layer/background/primary'),
+  padding: 16,
 });
 
 export const editorSectionHeader = style({
@@ -891,6 +927,12 @@ export const editorFieldGrid = style({
   gridTemplateColumns: 'minmax(92px, 0.36fr) minmax(0, 1fr)',
   gap: '10px 12px',
   alignItems: 'center',
+  '@media': {
+    '(max-width: 640px)': {
+      gridTemplateColumns: 'minmax(0, 1fr)',
+      gap: 6,
+    },
+  },
 });
 
 export const editorFieldLabel = style({
@@ -926,14 +968,6 @@ export const editorEmptyState = style({
   color: cssVarV2('text/secondary'),
   fontSize: 12,
   background: 'rgba(9, 30, 66, 0.03)',
-});
-
-export const expandedCardSurface = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 14,
-  borderTop: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
-  paddingTop: 14,
 });
 
 export const expandedCardMain = style({
@@ -977,6 +1011,7 @@ export const expandedTitleInput = style({
 });
 
 export const expandedTitleText = style({
+  margin: 0,
   color: cssVarV2('text/primary'),
   fontSize: 20,
   lineHeight: 1.25,
@@ -1013,8 +1048,7 @@ export const expandedOverviewCard = style({
   gap: 14,
   borderRadius: 16,
   padding: 16,
-  background:
-    'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(246,248,252,0.96) 100%)',
+  background: cssVarV2('layer/background/primary'),
   border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
 });
 
@@ -1145,8 +1179,13 @@ export const expandedFieldValue = style({
 
 export const expandedBottomGrid = style({
   display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr)',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gap: 14,
+  '@media': {
+    '(max-width: 780px)': {
+      gridTemplateColumns: 'minmax(0, 1fr)',
+    },
+  },
 });
 
 export const expandedSectionCard = style({
@@ -1246,10 +1285,26 @@ export const detailHeader = style({
   display: 'flex',
   alignItems: 'center',
   gap: 8,
+  position: 'sticky',
+  top: -20,
+  zIndex: 2,
+  margin: '-20px -20px 0',
+  padding: '18px 20px 14px',
+  borderBottom: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+  background: cssVarV2('layer/background/primary'),
+  '@media': {
+    '(max-width: 720px)': {
+      top: -16,
+      margin: '-16px -16px 0',
+      padding: '14px 16px 12px',
+      flexWrap: 'wrap',
+    },
+  },
 });
 
 export const detailTitleInput = style({
   flex: 1,
+  minWidth: 180,
   border: 'none',
   background: 'transparent',
   color: cssVarV2('text/primary'),
@@ -1417,4 +1472,293 @@ export const developmentLink = style({
       textDecoration: 'underline',
     },
   },
+});
+
+export const relationsEditor = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 10,
+  minWidth: 0,
+});
+
+export const relationTabs = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+  gap: 4,
+  padding: 4,
+  borderRadius: 10,
+  background: cssVarV2('layer/background/secondary'),
+});
+
+export const relationTab = style({
+  minWidth: 0,
+  height: 32,
+  padding: '0 8px',
+  border: 'none',
+  borderRadius: 7,
+  background: 'transparent',
+  color: cssVarV2('text/secondary'),
+  fontSize: 12,
+  fontWeight: 500,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  selectors: {
+    '&:hover': {
+      background: cssVarV2('layer/background/hoverOverlay'),
+      color: cssVarV2('text/primary'),
+    },
+  },
+});
+
+export const relationTabActive = style({
+  background: cssVarV2('layer/background/primary'),
+  color: cssVarV2('text/primary'),
+  fontWeight: 600,
+  boxShadow: `inset 0 0 0 1px ${cssVarV2('layer/insideBorder/border')}`,
+});
+
+export const relationTabCount = style({
+  minWidth: 18,
+  height: 18,
+  padding: '0 5px',
+  borderRadius: 9,
+  background: cssVarV2('layer/background/hoverOverlay'),
+  color: cssVarV2('text/secondary'),
+  fontSize: 11,
+  lineHeight: '18px',
+  textAlign: 'center',
+});
+
+export const relationPanel = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  minWidth: 0,
+  padding: 12,
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+  borderRadius: 10,
+  background: cssVarV2('layer/background/primary'),
+});
+
+export const relationPanelHeader = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 8,
+  minWidth: 0,
+});
+
+export const relationPanelTitle = style({
+  color: cssVarV2('text/primary'),
+  fontSize: 13,
+  fontWeight: 600,
+});
+
+export const relationList = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+});
+
+export const relationItem = style({
+  display: 'grid',
+  gridTemplateColumns: 'auto minmax(0, 1fr) 28px',
+  alignItems: 'center',
+  gap: 8,
+  minHeight: 36,
+  padding: '2px 4px 2px 8px',
+  borderRadius: 8,
+  selectors: {
+    '&:hover': {
+      background: cssVarV2('layer/background/hoverOverlay'),
+    },
+  },
+});
+
+export const relationItemKey = style({
+  flexShrink: 0,
+  color: cssVarV2('text/secondary'),
+  fontSize: 12,
+  fontWeight: 600,
+  whiteSpace: 'nowrap',
+});
+
+export const relationItemTitle = style({
+  minWidth: 0,
+  padding: 0,
+  border: 'none',
+  background: 'transparent',
+  color: cssVarV2('text/primary'),
+  fontSize: 13,
+  lineHeight: '20px',
+  textAlign: 'left',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  cursor: 'pointer',
+});
+
+export const relationRemoveButton = style({
+  width: 28,
+  height: 28,
+  padding: 0,
+  border: 'none',
+  borderRadius: 7,
+  background: 'transparent',
+  color: cssVarV2('icon/secondary'),
+  fontSize: 19,
+  lineHeight: '28px',
+  cursor: 'pointer',
+  selectors: {
+    '&:hover': {
+      background: cssVarV2('layer/background/hoverOverlay'),
+      color: cssVarV2('text/primary'),
+    },
+  },
+});
+
+export const relationEmptyState = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: 48,
+  padding: '8px 12px',
+  borderRadius: 8,
+  background: cssVarV2('layer/background/secondary'),
+  color: cssVarV2('text/secondary'),
+  fontSize: 12,
+  textAlign: 'center',
+});
+
+export const relationSearch = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  paddingTop: 10,
+  borderTop: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+});
+
+export const relationSearchInput = style({
+  width: '100%',
+  height: 34,
+  boxSizing: 'border-box',
+  padding: '0 10px',
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+  borderRadius: 8,
+  outline: 'none',
+  background: cssVarV2('layer/background/primary'),
+  color: cssVarV2('text/primary'),
+  fontSize: 13,
+  selectors: {
+    '&:focus': {
+      borderColor: cssVarV2('button/primary'),
+      boxShadow: '0 0 0 2px rgba(12, 102, 228, 0.14)',
+    },
+  },
+});
+
+export const relationSearchEmpty = style({
+  padding: '8px 10px',
+  color: cssVarV2('text/secondary'),
+  fontSize: 12,
+  textAlign: 'center',
+});
+
+export const relationCandidateList = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  maxHeight: 224,
+  overflowY: 'auto',
+});
+
+export const relationCandidate = style({
+  width: '100%',
+  minWidth: 0,
+  minHeight: 34,
+  padding: '6px 10px',
+  border: 'none',
+  borderRadius: 8,
+  background: 'transparent',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  textAlign: 'left',
+  cursor: 'pointer',
+  selectors: {
+    '&:hover': {
+      background: cssVarV2('layer/background/hoverOverlay'),
+    },
+  },
+});
+
+export const relationCandidateTitle = style({
+  minWidth: 0,
+  color: cssVarV2('text/primary'),
+  fontSize: 13,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+export const pipelineStatusSuccess = style({ color: '#216e4e' });
+export const pipelineStatusFailed = style({ color: '#ae2a19' });
+export const pipelineStatusUnstable = style({ color: '#a15c00' });
+export const pipelineStatusRunning = style({ color: '#0c66e4' });
+
+export const activityList = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+});
+
+export const activityItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  fontSize: 13,
+  lineHeight: '20px',
+  minWidth: 0,
+});
+
+export const activityItemType = style({
+  flexShrink: 0,
+  fontSize: 12,
+  lineHeight: '16px',
+  color: '#6b7280',
+});
+
+export const row = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  flexWrap: 'wrap',
+});
+
+export const form = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 10,
+  marginTop: 10,
+});
+
+export const label = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4,
+  fontSize: 12,
+  lineHeight: '16px',
+  color: '#6b7280',
+});
+
+export const gitlabInput = style({
+  padding: '6px 10px',
+  borderRadius: 6,
+  border: '1px solid #d9d9d9',
+  fontSize: 13,
+  lineHeight: '20px',
 });

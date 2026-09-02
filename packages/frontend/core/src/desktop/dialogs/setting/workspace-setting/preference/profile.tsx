@@ -125,8 +125,10 @@ export const ProfilePanel = () => {
 
   const handleUpdateTaskKey = useCallback(() => {
     const nextTaskKey = normalizeWorkspaceTaskKey(taskKey);
-    if (nextTaskKey.length !== 4) {
-      notify.error({ title: 'Workspace task key must contain 4 letters' });
+    if (!/^[A-Z][A-Z0-9]{1,15}$/.test(nextTaskKey)) {
+      notify.error({
+        title: 'Workspace task key must contain 2–16 letters or digits',
+      });
       return;
     }
 
@@ -221,8 +223,8 @@ export const ProfilePanel = () => {
             style={{ width: 280, height: 32 }}
             data-testid="workspace-task-key-input"
             placeholder="TASK"
-            maxLength={4}
-            minLength={0}
+            maxLength={16}
+            minLength={2}
             onChange={value => {
               setTaskKey(normalizeWorkspaceTaskKey(value));
             }}

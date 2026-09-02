@@ -63,6 +63,7 @@ import { IndexerModule } from './plugins/indexer';
 import { LicenseModule } from './plugins/license';
 import { OAuthModule } from './plugins/oauth';
 import { PaymentModule } from './plugins/payment';
+import { TrackWorkModule } from './plugins/trackwork';
 import { WorkerModule } from './plugins/worker';
 
 export const FunctionalityModules = [
@@ -204,6 +205,7 @@ export function buildAppModule(env: Env) {
       OAuthModule,
       CalendarModule,
       IntegrationModule,
+      TrackWorkModule,
       CustomerIoModule,
       TelemetryModule,
       CommentModule,
