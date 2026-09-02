@@ -4,6 +4,7 @@ import {
   SettingWrapper,
 } from '@affine/component/setting-components';
 import { GraphQLService } from '@affine/core/modules/cloud';
+import { GuardService } from '@affine/core/modules/permissions';
 import { WorkspaceService } from '@affine/core/modules/workspace';
 import { WorkspacePropertyService } from '@affine/core/modules/workspace-property';
 import {
@@ -55,6 +56,10 @@ export const WorkspaceTaskTrackerSetting = () => {
   const workspacePropertyService = useService(WorkspacePropertyService);
   const workspace = useService(WorkspaceService).workspace;
   const graphql = useService(GraphQLService);
+  const guardService = useService(GuardService);
+  const canManageWorkflow = useLiveData(
+    guardService.can$('Workspace_TrackWork_Workflow_Manage')
+  );
   const workflowConfig = useTrackWorkWorkflowConfig(workspace.id);
   const [workflowSaveError, setWorkflowSaveError] = useState<string | null>(
     null
@@ -437,6 +442,19 @@ export const WorkspaceTaskTrackerSetting = () => {
   );
 
   const hasProperty = !!statusPropertyInfo;
+
+  if (canManageWorkflow === false) {
+    return (
+      <>
+        <SettingHeader title={t('flowTitle')} subtitle={t('flowSubtitle')} />
+        <SettingWrapper title={t('boards')}>
+          <span className={styles.helperText}>
+            {t('noWorkflowManagePermission')}
+          </span>
+        </SettingWrapper>
+      </>
+    );
+  }
 
   return (
     <>

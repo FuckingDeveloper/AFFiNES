@@ -29,6 +29,8 @@ const resources = {
     flowSubtitle: 'Configure boards, statuses, and allowed drag transitions.',
     initializeHint:
       'Open Task Tracker board once to initialize workflow properties.',
+    noWorkflowManagePermission:
+      'Workflow administration requires an administrator role; edits made by other members are not saved.',
     defaultBoard: 'Main board',
     defaultTodo: 'To Do',
     defaultInProgress: 'In Progress',
@@ -250,6 +252,8 @@ const resources = {
       'Настройте доски, статусы и разрешённые переходы при перетаскивании.',
     initializeHint:
       'Откройте доску трекера задач один раз, чтобы инициализировать свойства процесса.',
+    noWorkflowManagePermission:
+      'Управление рабочим процессом требует роли администратора; изменения других участников не сохраняются.',
     defaultBoard: 'Основная доска',
     defaultTodo: 'К выполнению',
     defaultInProgress: 'В работе',

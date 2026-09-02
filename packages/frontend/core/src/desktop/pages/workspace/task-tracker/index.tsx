@@ -108,9 +108,12 @@ import {
 } from './config';
 import * as styles from './task-tracker.css';
 
-import { AuthService } from '@affine/core/modules/cloud';
+import { AuthService, GraphQLService } from '@affine/core/modules/cloud';
 import { GuardService } from '@affine/core/modules/permissions';
-import { useTrackWorkWorkflowConfig } from './workflow-config';
+import {
+  updateTrackWorkWorkflowConfig,
+  useTrackWorkWorkflowConfig,
+} from './workflow-config';
 
 type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 type DueFilter = 'all' | 'overdue' | 'today' | 'next-7-days' | 'no-date';
@@ -2770,9 +2773,13 @@ const TaskTrackerPage = () => {
   const { t, locale } = useTaskTrackerI18n();
   const authService = useService(AuthService);
   const account = useLiveData(authService.session.account$);
+  const graphql = useService(GraphQLService);
   const guardService = useService(GuardService);
   const canManageProperties = useLiveData(
     guardService.can$('Workspace_Properties_Update')
+  );
+  const canManageWorkflow = useLiveData(
+    guardService.can$('Workspace_TrackWork_Workflow_Manage')
   );
   const docsService = useService(DocsService);
   const tagService = useService(TagService);
@@ -3284,42 +3291,6 @@ const TaskTrackerPage = () => {
     () => resolveTaskTrackerBoards(trackerAdditionalData),
     [trackerAdditionalData]
   );
-
-  useEffect(() => {
-    if (!statusPropertyInfo) {
-      return;
-    }
-
-    const hasBoards =
-      Array.isArray(trackerAdditionalData.taskTrackerBoards) &&
-      trackerAdditionalData.taskTrackerBoards.length > 0;
-
-    if (hasBoards) {
-      return;
-    }
-
-    const firstBoard = boards[0];
-    workspacePropertyService.updatePropertyInfo(TASK_STATUS_PROPERTY, {
-      additionalData: {
-        ...trackerAdditionalData,
-        taskTrackerBoards: boards.map(board => ({
-          id: board.id,
-          title: board.title,
-          flow: board.flow,
-          transitions: board.transitions,
-          typeTransitions: board.typeTransitions,
-        })),
-        taskTrackerFlow: firstBoard?.flow ?? DEFAULT_FLOW,
-        taskTrackerTransitions:
-          firstBoard?.transitions ?? buildDefaultTransitions(DEFAULT_FLOW),
-      },
-    });
-  }, [
-    boards,
-    statusPropertyInfo,
-    trackerAdditionalData,
-    workspacePropertyService,
-  ]);
 
   useEffect(() => {
     if (!boards.some(board => board.id === selectedBoardId)) {
@@ -4538,10 +4509,14 @@ const TaskTrackerPage = () => {
         return;
       }
 
-      const firstBoard = nextBoards[0];
-      workspacePropertyService.updatePropertyInfo(TASK_STATUS_PROPERTY, {
-        additionalData: {
-          ...trackerAdditionalData,
+      // Workflow management goes through the authoritative semantic mutation;
+      // only the already-validated returned config is mirrored into the
+      // legacy additionalData copy. No draft is mirrored before server
+      // acceptance.
+      updateTrackWorkWorkflowConfig(graphql, {
+        workspaceId: workspace.id,
+        expectedRevision: workflowConfig.data?.revision ?? 0,
+        config: {
           taskTrackerBoards: nextBoards.map(board => ({
             id: board.id,
             title: board.title,
@@ -4549,12 +4524,37 @@ const TaskTrackerPage = () => {
             transitions: board.transitions,
             typeTransitions: board.typeTransitions,
           })),
-          taskTrackerFlow: firstBoard.flow,
-          taskTrackerTransitions: firstBoard.transitions,
+          taskTrackerAutomationRules:
+            trackerAdditionalData.taskTrackerAutomationRules,
         },
-      });
+      })
+        .then(result => {
+          const firstBoard = result.config.taskTrackerBoards?.[0];
+          workspacePropertyService.updatePropertyInfo(TASK_STATUS_PROPERTY, {
+            additionalData: {
+              ...trackerAdditionalData,
+              taskTrackerBoards: result.config.taskTrackerBoards,
+              taskTrackerFlow: firstBoard?.flow,
+              taskTrackerTransitions: firstBoard?.transitions,
+              taskTrackerAutomationRules:
+                result.config.taskTrackerAutomationRules,
+            },
+          });
+        })
+        .catch(error => {
+          notify.error({
+            title: error instanceof Error ? error.message : String(error),
+          });
+        });
     },
-    [trackerAdditionalData, workspacePropertyService]
+    [
+      graphql,
+      notify,
+      trackerAdditionalData,
+      workflowConfig.data,
+      workspace.id,
+      workspacePropertyService,
+    ]
   );
 
   const handleCreateBoard = useCallback(() => {
@@ -4783,7 +4783,7 @@ const TaskTrackerPage = () => {
               ))}
             </select>
 
-            {selectedBoard ? (
+            {canManageWorkflow === true && selectedBoard ? (
               <input
                 className={styles.boardNameInput}
                 defaultValue={localizeTaskTrackerBoardTitle(selectedBoard, t)}
@@ -4794,19 +4794,23 @@ const TaskTrackerPage = () => {
               />
             ) : null}
 
-            <Button variant="plain" onClick={handleCreateBoard}>
-              <PlusIcon />
-              {t('newBoard')}
-            </Button>
+            {canManageWorkflow === true ? (
+              <Button variant="plain" onClick={handleCreateBoard}>
+                <PlusIcon />
+                {t('newBoard')}
+              </Button>
+            ) : null}
 
-            <Button
-              variant="plain"
-              disabled={boards.length <= 1}
-              onClick={handleDeleteBoard}
-            >
-              <DeleteIcon />
-              {t('deleteBoard')}
-            </Button>
+            {canManageWorkflow === true ? (
+              <Button
+                variant="plain"
+                disabled={boards.length <= 1}
+                onClick={handleDeleteBoard}
+              >
+                <DeleteIcon />
+                {t('deleteBoard')}
+              </Button>
+            ) : null}
           </div>
 
           <div className={styles.toolbar}>
