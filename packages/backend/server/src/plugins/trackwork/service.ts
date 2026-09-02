@@ -429,6 +429,22 @@ export class TrackWorkRegistryService {
     return task ? this.mapTask(task) : null;
   }
 
+  async getByKeys(workspaceId: string, taskKeys: string[]) {
+    workspaceId = this.validateIdentifier(workspaceId, 'workspace id');
+    const normalized = [...new Set(taskKeys.map(normalizeTaskKey))];
+    if (normalized.length === 0) {
+      return new Map<string, string>();
+    }
+    const tasks = await this.prisma.trackWorkTask.findMany({
+      where: {
+        workspaceId,
+        taskKey: { in: normalized },
+      },
+      select: { taskKey: true, docId: true },
+    });
+    return new Map(tasks.map(task => [task.taskKey, task.docId]));
+  }
+
   async getDocumentBacklinks(workspaceId: string, documentId: string) {
     workspaceId = this.validateIdentifier(workspaceId, 'workspace id');
     documentId = this.validateIdentifier(documentId, 'document id');

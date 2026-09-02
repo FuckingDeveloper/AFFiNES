@@ -13,6 +13,7 @@ import { AccessController } from '../../core/permission';
 import { WorkspaceType } from '../../core/workspaces';
 import { DevelopmentLinkService } from './link-service';
 import { IntegrationConnectionService } from './service';
+import { TrackWorkRegistryService } from '../trackwork/service';
 import {
   CreateDevelopmentBranchInput,
   CreateDevelopmentIntegrationInput,
@@ -116,6 +117,7 @@ export class DevelopmentInfoResolver {
   constructor(
     private readonly links: DevelopmentLinkService,
     private readonly connections: IntegrationConnectionService,
+    private readonly registry: TrackWorkRegistryService,
     private readonly access: AccessController
   ) {}
 
@@ -133,6 +135,21 @@ export class DevelopmentInfoResolver {
       .user(user.id)
       .workspace(workspaceId)
       .assert('Workspace.Read');
+
+    const task = await this.registry.getByKey(workspaceId, taskKey);
+    if (!task) {
+      return {
+        repositories: [],
+        commits: [],
+        branches: [],
+        mergeRequests: [],
+        pipelines: [],
+      };
+    }
+    await this.access
+      .user(user.id)
+      .doc(workspaceId, task.docId)
+      .assert('Doc.Read');
 
     const links = await this.links.listByTaskKey(workspaceId, taskKey);
     const repositories = await this.connections.listRepositoriesByIds(
@@ -220,15 +237,52 @@ export class DevelopmentInfoResolver {
       .workspace(workspaceId)
       .assert('Workspace.Read');
 
-    const { nodes, nextCursor, hasNextPage } = await this.links.listActivity({
-      workspaceId,
-      taskKey,
-      first: Math.min(first ?? 20, 50),
-      after,
-    });
+    const size = Math.min(first ?? 20, 50);
 
+    if (taskKey) {
+      const task = await this.registry.getByKey(workspaceId, taskKey);
+      if (!task) {
+        return { items: [], nextCursor: null, hasNextPage: false };
+      }
+      await this.access
+        .user(user.id)
+        .doc(workspaceId, task.docId)
+        .assert('Doc.Read');
+
+      const page = await this.links.listActivity({
+        workspaceId,
+        taskKey,
+        first: size,
+        after,
+      });
+      return this.mapActivity(page);
+    }
+
+    const page = await this.listReadableActivity(
+      user.id,
+      workspaceId,
+      size,
+      after
+    );
+    return this.mapActivity(page);
+  }
+
+  private mapActivity(page: {
+    nodes: Array<{
+      id: string;
+      taskKey: string;
+      eventType: string;
+      title: string;
+      url: string;
+      authorName: string | null;
+      repositoryName: string | null;
+      createdAt: Date;
+    }>;
+    nextCursor: string | null;
+    hasNextPage: boolean;
+  }) {
     return {
-      items: nodes.map(node => ({
+      items: page.nodes.map(node => ({
         id: node.id,
         taskKey: node.taskKey,
         eventType: node.eventType,
@@ -238,8 +292,71 @@ export class DevelopmentInfoResolver {
         repositoryName: node.repositoryName,
         createdAt: node.createdAt,
       })),
-      nextCursor,
-      hasNextPage,
+      nextCursor: page.nextCursor,
+      hasNextPage: page.hasNextPage,
+    };
+  }
+
+  private async listReadableActivity(
+    userId: string,
+    workspaceId: string,
+    size: number,
+    after?: string
+  ) {
+    const collected: Awaited<
+      ReturnType<DevelopmentLinkService['listActivity']>
+    >['nodes'] = [];
+    let cursor: string | undefined = after;
+    let hasMore = true;
+    let consumed = 0;
+    const maxConsumed = Math.max(size * 5, 100);
+    let lastCursor: string | null = null;
+
+    while (collected.length < size && hasMore && consumed < maxConsumed) {
+      const page = await this.links.listActivity({
+        workspaceId,
+        first: size,
+        after: cursor,
+      });
+      lastCursor = page.nextCursor;
+      consumed += page.nodes.length;
+
+      const docIdsByTaskKey = await this.registry.getByKeys(
+        workspaceId,
+        page.nodes.map(node => node.taskKey)
+      );
+      const readableDocIds = new Set(
+        (
+          await this.access
+            .user(userId)
+            .workspace(workspaceId)
+            .docs(
+              page.nodes
+                .map(node => {
+                  const docId = docIdsByTaskKey.get(node.taskKey);
+                  return docId ? { docId } : null;
+                })
+                .filter((entry): entry is { docId: string } => entry !== null),
+              'Doc.Read'
+            )
+        ).map(item => item.docId)
+      );
+
+      for (const node of page.nodes) {
+        const docId = docIdsByTaskKey.get(node.taskKey);
+        if (docId && readableDocIds.has(docId)) {
+          collected.push(node);
+        }
+      }
+
+      cursor = page.nextCursor ?? undefined;
+      hasMore = page.hasNextPage;
+    }
+
+    return {
+      nodes: collected.slice(0, size),
+      nextCursor: lastCursor,
+      hasNextPage: hasMore,
     };
   }
 }

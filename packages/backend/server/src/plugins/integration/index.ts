@@ -15,9 +15,10 @@ import {
   WorkspaceIntegrationResolver,
 } from './resolver';
 import { IntegrationConnectionService } from './service';
+import { TrackWorkModule } from '../trackwork';
 
 @Module({
-  imports: [AuthModule, PermissionModule, WorkspaceModule],
+  imports: [AuthModule, PermissionModule, WorkspaceModule, TrackWorkModule],
   providers: [
     GitLabScmProvider,
     ScmProviderRegistry,

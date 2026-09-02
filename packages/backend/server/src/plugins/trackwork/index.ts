@@ -8,5 +8,6 @@ import { TrackWorkRegistryService } from './service';
 @Module({
   imports: [AuthModule, PermissionModule],
   providers: [TrackWorkRegistryService, TrackWorkResolver],
+  exports: [TrackWorkRegistryService],
 })
 export class TrackWorkModule {}
