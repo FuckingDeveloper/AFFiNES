@@ -8,6 +8,7 @@ import {
   mapDocRoleToPermissions,
   mapWorkspaceRoleToPermissions,
   WORKSPACE_ACTION_TO_MINIMAL_ROLE_MAP,
+  workspaceActionRequiredRole,
   WorkspaceRole,
 } from '../types';
 
@@ -16,6 +17,11 @@ test('should be able to get the correct action path', t => {
   t.is(Action.Workspace.Users.Read, 'Workspace.Users.Read');
   t.is(Action.Doc.Copy, 'Doc.Copy');
   t.is(Action.Doc.Users.Manage, 'Doc.Users.Manage');
+  t.is(Action.Workspace.TrackWork.Write, 'Workspace.TrackWork.Write');
+  t.is(
+    Action.Workspace.TrackWork.Integrations.Manage,
+    'Workspace.TrackWork.Integrations.Manage'
+  );
 
   t.not(Action.Workspace.Delete, 'Wrong.Action.Name');
 
@@ -24,6 +30,32 @@ test('should be able to get the correct action path', t => {
   test(Action.Workspace.CreateDoc);
   // @ts-expect-error make sure type checked
   test('Wrong.Action.Name');
+});
+
+test('TrackWork capabilities map to the intended workspace roles', t => {
+  t.is(
+    workspaceActionRequiredRole('Workspace.TrackWork.Write'),
+    WorkspaceRole.Collaborator
+  );
+  t.is(
+    workspaceActionRequiredRole('Workspace.TrackWork.Integrations.Manage'),
+    WorkspaceRole.Owner
+  );
+  t.true(
+    mapWorkspaceRoleToPermissions(WorkspaceRole.Collaborator)[
+      'Workspace.TrackWork.Write'
+    ]
+  );
+  t.false(
+    mapWorkspaceRoleToPermissions(WorkspaceRole.Admin)[
+      'Workspace.TrackWork.Integrations.Manage'
+    ]
+  );
+  t.true(
+    mapWorkspaceRoleToPermissions(WorkspaceRole.Owner)[
+      'Workspace.TrackWork.Integrations.Manage'
+    ]
+  );
 });
 
 const workspaceRoles = Object.values(WorkspaceRole).filter(

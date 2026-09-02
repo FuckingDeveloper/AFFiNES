@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
+import { metrics as otelMetrics } from '@opentelemetry/api';
 import {
   CompositePropagator,
+  ExportResult,
+  ExportResultCode,
   W3CBaggagePropagator,
   W3CTraceContextPropagator,
 } from '@opentelemetry/core';
@@ -18,6 +21,7 @@ import { IMetricReader, MetricProducer } from '@opentelemetry/sdk-metrics';
 import { NodeSDK, NodeSDKConfiguration } from '@opentelemetry/sdk-node';
 import {
   BatchSpanProcessor,
+  ReadableSpan,
   SpanExporter,
   TraceIdRatioBasedSampler,
 } from '@opentelemetry/sdk-trace-node';
@@ -30,8 +34,19 @@ import { PrismaInstrumentation } from '@prisma/instrumentation';
 
 import { Config } from '../config';
 import { OnEvent } from '../event/def';
-import { registerCustomMetrics } from './metrics';
+import { registerCustomMetrics, resetMetrics } from './metrics';
 import { PrismaMetricProducer } from './prisma';
+
+class NoopSpanExporter implements SpanExporter {
+  export(
+    _spans: ReadableSpan[],
+    resultCallback: (result: ExportResult) => void
+  ) {
+    resultCallback({ code: ExportResultCode.SUCCESS });
+  }
+
+  async shutdown() {}
+}
 
 export abstract class BaseOpentelemetryOptionsFactory {
   abstract getMetricReader(): IMetricReader;
@@ -82,14 +97,22 @@ export abstract class BaseOpentelemetryOptionsFactory {
 
 @Injectable()
 export class OpentelemetryOptionsFactory extends BaseOpentelemetryOptionsFactory {
+  constructor(private readonly config: Config) {
+    super();
+  }
+
   override getMetricReader(): IMetricReader {
     return new PrometheusExporter({
       metricProducers: this.getMetricsProducers(),
+      host: this.config.metrics.host,
+      port: this.config.metrics.port,
     });
   }
 
   override getSpanExporter(): SpanExporter {
-    return new ZipkinExporter();
+    return this.config.metrics.zipkinEndpoint
+      ? new ZipkinExporter({ url: this.config.metrics.zipkinEndpoint })
+      : new NoopSpanExporter();
   }
 }
 
@@ -110,13 +133,19 @@ export class OpentelemetryProvider {
     }
     if (event.config.metrics.enabled) {
       await this.setup();
-      registerCustomMetrics();
     }
   }
 
   @OnEvent('config.changed')
   async onConfigChanged(event: Events['config.changed']) {
-    if ('metrics' in event.updates) {
+    // Only `metrics.enabled` is hot-reloadable. `host`, `port` and
+    // `zipkinEndpoint` are applied when the SDK is created and require a
+    // server restart; reacting to them here would imply a live reload that
+    // does not happen.
+    if (
+      'metrics' in event.updates &&
+      'enabled' in (event.updates.metrics ?? {})
+    ) {
       await this.setup();
     }
   }
@@ -132,12 +161,19 @@ export class OpentelemetryProvider {
           strict: false,
         });
         this.#sdk = new NodeSDK(factory.create());
+        this.#sdk.start();
+        // Bind instrument creation and host metrics to the new SDK's meter
+        // provider so a runtime re-enable exposes the full metric surface.
+        resetMetrics();
+        registerCustomMetrics();
+        this.#logger.log('OpenTelemetry SDK started');
       }
-
-      this.#sdk.start();
-      this.#logger.log('OpenTelemetry SDK started');
     } else {
       await this.#sdk?.shutdown();
+      // Unregister the global meter provider: setGlobalMeterProvider ignores
+      // repeat registrations, so without this the next enable would keep
+      // recording into the shut-down provider.
+      otelMetrics.disable();
       this.#sdk = null;
       this.#logger.log('OpenTelemetry SDK stopped');
     }

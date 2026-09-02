@@ -10,6 +10,8 @@ on:
       - 'packages/frontend/apps/web/**'
       - 'packages/frontend/core/**'
       - 'scripts/start-docker-selfhost.sh'
+      - 'scripts/smoke-upgrade.sh'
+      - 'scripts/docker-smoke/**'
       - '.github/workflows/trackwork-docker-smoke.yml'
   workflow_dispatch:
 
@@ -20,7 +22,7 @@ concurrency:
 jobs:
   smoke:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -63,6 +65,79 @@ jobs:
             -d '{"email":"smoke-admin","password":"TrackWork-ci-1234"}' \
             http://127.0.0.1:3010/api/auth/sign-in > /tmp/login.json
           grep -q '"username":"smoke-admin"' /tmp/login.json
+          python3 -c '
+            import json
+            with open("/tmp/admin.json") as f:
+                print(json.load(f)["id"], file=open("/tmp/smoke-user-id", "w"))
+          '
+
+      - name: Verify minimal TrackWork operation
+        run: |
+          curl -fsS -b /tmp/cookies.txt \
+            -H 'content-type: application/json' \
+            -H 'x-affine-version: 0.26.3' \
+            -d '{"query":"mutation { createWorkspace { id } }"}' \
+            http://127.0.0.1:3010/graphql > /tmp/workspace.json
+          python3 -c '
+            import json
+            with open("/tmp/workspace.json") as f:
+                payload = json.load(f)
+            assert "errors" not in payload, payload
+            print(payload["data"]["createWorkspace"]["id"], file=open("/tmp/smoke-workspace-id", "w"))
+          '
+          workspace_id="$(cat /tmp/smoke-workspace-id)"
+          curl -fsS -b /tmp/cookies.txt \
+            -H 'content-type: application/json' \
+            -H 'x-affine-version: 0.26.3' \
+            -d "{\"query\":\"mutation(\$input: AllocateTrackWorkTaskInput!) { allocateTrackWorkTask(input: \$input) { taskKey number } }\",\"variables\":{\"input\":{\"workspaceId\":\"${workspace_id}\",\"docId\":\"smoke-task-doc-1\",\"prefix\":\"SMOKE\",\"relatedDocumentIds\":[],\"legacyTasks\":[]}}}" \
+            http://127.0.0.1:3010/graphql > /tmp/allocate.json
+          python3 -c '
+            import json
+            with open("/tmp/allocate.json") as f:
+                payload = json.load(f)
+            assert "errors" not in payload, payload
+            task = payload["data"]["allocateTrackWorkTask"]
+            assert task["taskKey"] == "SMOKE-1", task
+          '
+
+      - name: Production image upgrade smoke
+        run: |
+          export SMOKE_WORKSPACE_ID="$(cat /tmp/smoke-workspace-id)"
+          export SMOKE_CREATED_BY_ID="$(cat /tmp/smoke-user-id)"
+          ./scripts/smoke-upgrade.sh
+
+      - name: Verify TrackWork data integrity after upgrade
+        run: |
+          workspace_id="$(cat /tmp/smoke-workspace-id)"
+          curl -fsS -b /tmp/cookies.txt \
+            -H 'content-type: application/json' \
+            -H 'x-affine-version: 0.26.3' \
+            -d "{\"query\":\"query(\$workspaceId: String!, \$taskKey: String!) { trackWorkTask(workspaceId: \$workspaceId, taskKey: \$taskKey) { taskKey number docId } }\",\"variables\":{\"workspaceId\":\"${workspace_id}\",\"taskKey\":\"TW-10\"}}" \
+            http://127.0.0.1:3010/graphql > /tmp/fixture-task.json
+          python3 -c '
+            import json
+            with open("/tmp/fixture-task.json") as f:
+                payload = json.load(f)
+            assert "errors" not in payload, payload
+            task = payload["data"]["trackWorkTask"]
+            assert task is not None, payload
+            assert task["taskKey"] == "TW-10", task
+            assert task["number"] == 10, task
+          '
+          curl -fsS -b /tmp/cookies.txt \
+            -H 'content-type: application/json' \
+            -H 'x-affine-version: 0.26.3' \
+            -d "{\"query\":\"query(\$workspaceId: String!, \$taskKey: String!) { trackWorkTask(workspaceId: \$workspaceId, taskKey: \$taskKey) { taskKey number } }\",\"variables\":{\"workspaceId\":\"${workspace_id}\",\"taskKey\":\"SMOKE-1\"}}" \
+            http://127.0.0.1:3010/graphql > /tmp/smoke-task.json
+          python3 -c '
+            import json
+            with open("/tmp/smoke-task.json") as f:
+                payload = json.load(f)
+            assert "errors" not in payload, payload
+            task = payload["data"]["trackWorkTask"]
+            assert task is not None, payload
+            assert task["taskKey"] == "SMOKE-1", task
+          '
 
       - name: Show diagnostics
         if: always()
@@ -73,3 +148,9 @@ jobs:
           docker compose --env-file .docker/selfhost/.env \
             -f .docker/selfhost/compose.yml \
             -f .docker/selfhost/compose.local.yml logs --tail=150
+          for f in /tmp/ready.json /tmp/admin.json /tmp/login.json /tmp/workspace.json /tmp/allocate.json /tmp/fixture-task.json /tmp/smoke-task.json /tmp/upgrade-ready.json; do
+            if [[ -f "${f}" ]]; then
+              echo "=== ${f} ==="
+              cat "${f}"
+            fi
+          done

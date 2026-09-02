@@ -13,6 +13,7 @@ import {
 import { PrismaClient } from '@prisma/client';
 import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
 import { isNil, omitBy } from 'lodash-es';
+import { GraphQLJSON } from 'graphql-scalars';
 
 import {
   ActionForbidden,
@@ -33,6 +34,7 @@ import {
 } from '../../models';
 import { processImage } from '../../native';
 import { Public } from '../auth/guard';
+import { AdminAuditService } from '../audit';
 import { sessionUser } from '../auth/service';
 import { CurrentUser } from '../auth/session';
 import { Admin } from '../common';
@@ -276,6 +278,12 @@ class AdminAuditLogType {
   @Field(() => String, { nullable: true })
   targetId!: string | null;
 
+  @Field(() => String, { nullable: true })
+  workspaceId!: string | null;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  metadata!: unknown;
+
   @Field(() => Date)
   createdAt!: Date;
 }
@@ -293,24 +301,9 @@ const UserImportResultType = createUnionType({
 export class UserManagementResolver {
   constructor(
     private readonly db: PrismaClient,
-    private readonly models: Models
+    private readonly models: Models,
+    private readonly audit: AdminAuditService
   ) {}
-
-  private async audit(
-    actor: CurrentUser,
-    action: string,
-    targetId?: string | null
-  ) {
-    await this.db.adminAuditLog.create({
-      data: {
-        actorId: actor.id,
-        actorEmail: actor.email,
-        action,
-        targetType: 'user',
-        targetId,
-      },
-    });
-  }
 
   @Query(() => [AdminAuditLogType], {
     description: 'List recent administrative actions',
@@ -399,7 +392,13 @@ export class UserManagementResolver {
       ...input,
       registered: true,
     });
-    await this.audit(actor, 'user.create', id);
+    await this.audit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: 'user.create',
+      targetType: 'user',
+      targetId: id,
+    });
 
     // data returned by `createUser` does not satisfies `UserType`
     return this.getUser(id);
@@ -414,7 +413,12 @@ export class UserManagementResolver {
     input: ImportUsersInput
   ): Promise<(typeof UserImportResultType)[]> {
     const results = await this.models.user.importUsers(input.users);
-    await this.audit(actor, 'user.import', null);
+    await this.audit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: 'user.import',
+      targetType: 'user',
+    });
 
     return results.map((result, i) => {
       if (result.status === 'fulfilled') {
@@ -439,7 +443,13 @@ export class UserManagementResolver {
       throw new CannotDeleteOwnAccount();
     }
     await this.models.user.delete(id);
-    await this.audit(user, 'user.delete', id);
+    await this.audit.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      action: 'user.delete',
+      targetType: 'user',
+      targetId: id,
+    });
     return { success: true };
   }
 
@@ -469,7 +479,13 @@ export class UserManagementResolver {
       email: input.email,
       name: input.name,
     });
-    await this.audit(actor, 'user.update', id);
+    await this.audit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: 'user.update',
+      targetType: 'user',
+      targetId: id,
+    });
     return sessionUser(updated);
   }
 
@@ -481,7 +497,13 @@ export class UserManagementResolver {
     @Args('id') id: string
   ): Promise<UserType> {
     const user = await this.models.user.ban(id);
-    await this.audit(actor, 'user.disable', id);
+    await this.audit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: 'user.disable',
+      targetType: 'user',
+      targetId: id,
+    });
     return sessionUser(user);
   }
 
@@ -493,7 +515,13 @@ export class UserManagementResolver {
     @Args('id') id: string
   ): Promise<UserType> {
     const user = await this.models.user.enable(id);
-    await this.audit(actor, 'user.enable', id);
+    await this.audit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: 'user.enable',
+      targetType: 'user',
+      targetId: id,
+    });
     return sessionUser(user);
   }
 }

@@ -91,6 +91,9 @@ import {
   TASK_SUBTASKS_PROPERTY,
   TASK_TRACKER_FLAG_PROPERTY,
   TASK_TYPE_PROPERTY,
+  buildTaskActivityEntry,
+  type TaskActivityOperation,
+  type TaskActivitySource,
   type TaskAttachment,
   type TaskComplexity,
   type TaskFlowColumn,
@@ -103,6 +106,8 @@ import {
   wouldCreateTaskCycle,
 } from './config';
 import * as styles from './task-tracker.css';
+
+import { AuthService } from '@affine/core/modules/cloud';
 
 type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 type DueFilter = 'all' | 'overdue' | 'today' | 'next-7-days' | 'no-date';
@@ -303,16 +308,6 @@ const formatHistoryTime = (timestamp: number, locale: string): string => {
     return '';
   }
 };
-
-const buildHistoryEntry = (
-  type: TaskHistoryEntry['type'],
-  message: string
-): TaskHistoryEntry => ({
-  id: nanoid(),
-  type,
-  message,
-  createdAt: Date.now(),
-});
 
 const complexityMeta = (complexity: TaskComplexity) => {
   return (
@@ -1955,6 +1950,8 @@ const TaskRelatedDocsSection = ({
   const docsSearch = useService(DocsSearchService);
   const workbench = useService(WorkbenchService).workbench;
   const workspace = useService(WorkspaceService).workspace;
+  const authService = useService(AuthService);
+  const account = useLiveData(authService.session.account$);
   const { trigger: setDocumentLinks } = useMutation({
     mutation: setTrackWorkTaskDocumentLinksMutation,
   });
@@ -2001,13 +1998,36 @@ const TaskRelatedDocsSection = ({
             result.setTrackWorkTaskDocumentLinks.relatedDocumentIds
           )
         );
+        const nextHistory = [
+          buildTaskActivityEntry('edited', 'Updated related documents', {
+            operation: 'task.related_documents_changed',
+            actorId: account?.id,
+            actorName: account?.label,
+            taskKey: task.number,
+          }),
+          ...(task.history ?? []),
+        ].slice(0, 30);
+        doc.setCustomProperty(
+          TASK_HISTORY_PROPERTY,
+          stringifyHistoryEntries(nextHistory)
+        );
       } catch {
         notify.error({ title: t('relatedDocsUpdateFailed') });
         return false;
       }
       return true;
     },
-    [docsService.list, setDocumentLinks, t, task.id, workspace.id]
+    [
+      account?.id,
+      account?.label,
+      docsService.list,
+      setDocumentLinks,
+      t,
+      task.history,
+      task.id,
+      task.number,
+      workspace.id,
+    ]
   );
 
   const handleAdd = useCallback(
@@ -2745,6 +2765,8 @@ const TaskGitLabActionsSection = ({
 
 const TaskTrackerPage = () => {
   const { t, locale } = useTaskTrackerI18n();
+  const authService = useService(AuthService);
+  const account = useLiveData(authService.session.account$);
   const docsService = useService(DocsService);
   const tagService = useService(TagService);
   const workbench = useService(WorkbenchService).workbench;
@@ -3722,6 +3744,24 @@ const TaskTrackerPage = () => {
     [docsService.list]
   );
 
+  const makeHistoryEntry = useCallback(
+    (
+      type: TaskHistoryEntry['type'],
+      message: string,
+      operation: TaskActivityOperation,
+      taskKey?: string,
+      source: TaskActivitySource = 'user'
+    ): TaskHistoryEntry =>
+      buildTaskActivityEntry(type, message, {
+        operation,
+        actorId: source === 'user' ? account?.id : undefined,
+        actorName: source === 'user' ? account?.label : undefined,
+        taskKey,
+        source,
+      }),
+    [account]
+  );
+
   const appendTaskHistory = useCallback(
     (
       taskId: string,
@@ -3808,11 +3848,14 @@ const TaskTrackerPage = () => {
           ?.flow.find(column => column.id === update.stageId);
         appendTaskHistory(
           task.id,
-          buildHistoryEntry(
+          makeHistoryEntry(
             'edited',
             `${t('automationStatusChanged')}: ${
               stage ? localizeTaskTrackerStageTitle(stage, t) : update.stageId
-            }`
+            }`,
+            'task.status_changed',
+            task.number,
+            'automation'
           ),
           task.history
         );
@@ -3901,7 +3944,12 @@ const TaskTrackerPage = () => {
     doc.setCustomProperty(
       TASK_HISTORY_PROPERTY,
       stringifyHistoryEntries([
-        buildHistoryEntry('created', `Created in ${targetColumn.title}`),
+        makeHistoryEntry(
+          'created',
+          `Created in ${targetColumn.title}`,
+          'task.created',
+          taskKey
+        ),
       ])
     );
 
@@ -3937,7 +3985,12 @@ const TaskTrackerPage = () => {
       });
       appendTaskHistory(
         taskId,
-        buildHistoryEntry('edited', `Renamed task to “${nextTitle}”`),
+        makeHistoryEntry(
+          'edited',
+          `Renamed task to “${nextTitle}”`,
+          'task.renamed',
+          task.number
+        ),
         task.history
       );
     },
@@ -3947,13 +4000,30 @@ const TaskTrackerPage = () => {
   const handleDeleteTask = useCallback(
     (taskId: string) => {
       const doc = docsService.list.doc$(taskId).value;
+      const task = tasks.find(item => item.id === taskId);
+      appendTaskHistory(
+        taskId,
+        makeHistoryEntry(
+          'edited',
+          'Task moved to trash',
+          'task.trashed',
+          task?.number
+        ),
+        task?.history
+      );
       doc?.moveToTrash();
       if (selectedTaskId === taskId) {
         setSelectedTaskId(null);
         setTaskModalMode(null);
       }
     },
-    [docsService.list, selectedTaskId]
+    [
+      appendTaskHistory,
+      docsService.list,
+      makeHistoryEntry,
+      selectedTaskId,
+      tasks,
+    ]
   );
 
   const handlePriorityChange = useCallback(
@@ -3966,7 +4036,12 @@ const TaskTrackerPage = () => {
       doc?.setCustomProperty(TASK_PRIORITY_PROPERTY, priority);
       appendTaskHistory(
         taskId,
-        buildHistoryEntry('edited', `Changed priority to ${priority}`),
+        makeHistoryEntry(
+          'edited',
+          `Changed priority to ${priority}`,
+          'task.priority_changed',
+          task.number
+        ),
         task.history
       );
     },
@@ -3983,7 +4058,12 @@ const TaskTrackerPage = () => {
       doc?.setCustomProperty(TASK_TYPE_PROPERTY, type);
       appendTaskHistory(
         taskId,
-        buildHistoryEntry('edited', `Changed type to ${type}`),
+        makeHistoryEntry(
+          'edited',
+          `Changed type to ${type}`,
+          'task.type_changed',
+          task.number
+        ),
         task.history
       );
     },
@@ -4001,9 +4081,11 @@ const TaskTrackerPage = () => {
       doc?.setCustomProperty(TASK_ASSIGNEE_PROPERTY, nextAssignee);
       appendTaskHistory(
         taskId,
-        buildHistoryEntry(
+        makeHistoryEntry(
           'edited',
-          nextAssignee ? `Assigned to ${nextAssignee}` : 'Cleared assignee'
+          nextAssignee ? `Assigned to ${nextAssignee}` : 'Cleared assignee',
+          'task.assignee_changed',
+          task.number
         ),
         task.history
       );
@@ -4021,9 +4103,11 @@ const TaskTrackerPage = () => {
       doc?.setCustomProperty(TASK_DUE_DATE_PROPERTY, dueDate);
       appendTaskHistory(
         taskId,
-        buildHistoryEntry(
+        makeHistoryEntry(
           'edited',
-          dueDate ? `Set due date to ${dueDate}` : 'Cleared due date'
+          dueDate ? `Set due date to ${dueDate}` : 'Cleared due date',
+          'task.due_date_changed',
+          task.number
         ),
         task.history
       );
@@ -4064,11 +4148,13 @@ const TaskTrackerPage = () => {
       if (task) {
         appendTaskHistory(
           taskId,
-          buildHistoryEntry(
+          makeHistoryEntry(
             'edited',
             labelIds.length > 0
               ? `Updated tags: ${names.join(', ')}`
-              : 'Cleared tags'
+              : 'Cleared tags',
+            'task.labels_changed',
+            task.number
           ),
           task.history
         );
@@ -4088,7 +4174,12 @@ const TaskTrackerPage = () => {
       doc?.setCustomProperty(TASK_DESCRIPTION_PROPERTY, nextValue);
       appendTaskHistory(
         taskId,
-        buildHistoryEntry('edited', 'Updated description'),
+        makeHistoryEntry(
+          'edited',
+          'Updated description',
+          'task.description_changed',
+          task.number
+        ),
         task.history
       );
     },
@@ -4106,7 +4197,12 @@ const TaskTrackerPage = () => {
       doc?.setCustomProperty(TASK_EXTRA_INFO_PROPERTY, nextValue);
       appendTaskHistory(
         taskId,
-        buildHistoryEntry('edited', 'Updated extra info'),
+        makeHistoryEntry(
+          'edited',
+          'Updated extra info',
+          'task.extra_info_changed',
+          task.number
+        ),
         task.history
       );
     },
@@ -4124,9 +4220,11 @@ const TaskTrackerPage = () => {
       doc.setCustomProperty(TASK_COMPLEXITY_PROPERTY, complexity);
       appendTaskHistory(
         taskId,
-        buildHistoryEntry(
+        makeHistoryEntry(
           'edited',
-          `Changed complexity from ${complexityMeta(task.complexity).label} to ${complexityMeta(complexity).label}`
+          `Changed complexity from ${complexityMeta(task.complexity).label} to ${complexityMeta(complexity).label}`,
+          'task.complexity_changed',
+          task.number
         ),
         task.history
       );
@@ -4160,11 +4258,13 @@ const TaskTrackerPage = () => {
       );
       appendTaskHistory(
         taskId,
-        buildHistoryEntry(
+        makeHistoryEntry(
           'edited',
           nextSubtasks.length > task.subtasks.length
             ? `Updated subtasks to ${nextSubtasks.length} items`
-            : `Reworked subtasks list (${nextSubtasks.length} items)`
+            : `Reworked subtasks list (${nextSubtasks.length} items)`,
+          'task.subtasks_changed',
+          task.number
         ),
         task.history
       );
@@ -4194,9 +4294,11 @@ const TaskTrackerPage = () => {
       );
       appendTaskHistory(
         taskId,
-        buildHistoryEntry(
+        makeHistoryEntry(
           'edited',
-          `${changed.done ? 'Completed' : 'Reopened'} subtask “${changed.title}”`
+          `${changed.done ? 'Completed' : 'Reopened'} subtask “${changed.title}”`,
+          'task.subtask_toggled',
+          task.number
         ),
         task.history
       );
@@ -4253,17 +4355,29 @@ const TaskTrackerPage = () => {
 
       if (resolvedFromColumnId === toColumnId) {
         setTaskStatusAndOrder(toColumnId, targetIds);
+        appendTaskHistory(
+          taskId,
+          makeHistoryEntry(
+            'edited',
+            'Reordered in column',
+            'task.reordered',
+            draggedTask?.number
+          ),
+          draggedTask?.history
+        );
       } else {
         setTaskStatusAndOrder(resolvedFromColumnId, sourceIds);
         setTaskStatusAndOrder(toColumnId, targetIds);
         appendTaskHistory(
           taskId,
-          buildHistoryEntry(
+          makeHistoryEntry(
             'moved',
             `Moved from ${
               flow.find(column => column.id === resolvedFromColumnId)?.title ??
               resolvedFromColumnId
-            } to ${flow.find(column => column.id === toColumnId)?.title ?? toColumnId}`
+            } to ${flow.find(column => column.id === toColumnId)?.title ?? toColumnId}`,
+            'task.status_changed',
+            draggedTask?.number
           ),
           draggedTask?.history
         );
@@ -4321,13 +4435,23 @@ const TaskTrackerPage = () => {
           TASK_ATTACHMENTS_PROPERTY,
           stringifyAttachments(nextAttachments)
         );
+        appendTaskHistory(
+          taskId,
+          makeHistoryEntry(
+            'edited',
+            `Uploaded ${files.length} attachment${files.length === 1 ? '' : 's'}`,
+            'task.attachments_changed',
+            currentTask.number
+          ),
+          currentTask.history
+        );
       } catch {
         notify.error({ title: t('uploadFailed') });
       } finally {
         setUploadingTaskId(current => (current === taskId ? null : current));
       }
     },
-    [docsService.list, t, tasks, workspace]
+    [appendTaskHistory, docsService.list, makeHistoryEntry, t, tasks, workspace]
   );
 
   const handleDownloadAttachment = useCallback(
@@ -4438,8 +4562,18 @@ const TaskTrackerPage = () => {
         TASK_RELATIONS_PROPERTY,
         stringifyTaskRelations(updater(task.relations))
       );
+      appendTaskHistory(
+        taskId,
+        makeHistoryEntry(
+          'edited',
+          'Updated task relations',
+          'task.relation_changed',
+          task.number
+        ),
+        task.history
+      );
     },
-    [docsService.list, tasks]
+    [appendTaskHistory, docsService.list, makeHistoryEntry, tasks]
   );
 
   const setTaskParent = useCallback(

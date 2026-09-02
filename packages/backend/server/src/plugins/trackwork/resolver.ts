@@ -1,6 +1,7 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import { AuthenticationRequired } from '../../base';
+import { AdminAuditService } from '../../core/audit';
 import { CurrentUser } from '../../core/auth';
 import { AccessController } from '../../core/permission';
 import { TrackWorkRegistryService } from './service';
@@ -15,7 +16,8 @@ import {
 export class TrackWorkResolver {
   constructor(
     private readonly registry: TrackWorkRegistryService,
-    private readonly access: AccessController
+    private readonly access: AccessController,
+    private readonly audit: AdminAuditService
   ) {}
 
   private requireUser(user: CurrentUser | null) {
@@ -86,7 +88,7 @@ export class TrackWorkResolver {
     await this.access
       .user(user.id)
       .workspace(input.workspaceId)
-      .assert('Workspace.CreateDoc');
+      .assert('Workspace.TrackWork.Write');
     const writableTasks = await this.access
       .user(user.id)
       .workspace(input.workspaceId)
@@ -96,7 +98,21 @@ export class TrackWorkResolver {
       input.workspaceId,
       writableTasks
     );
-    return this.registry.sync(input.workspaceId, input.prefix, tasks, user.id);
+    const synced = await this.registry.sync(
+      input.workspaceId,
+      input.prefix,
+      tasks,
+      user.id
+    );
+    await this.audit.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      workspaceId: input.workspaceId,
+      action: 'trackwork.task.sync',
+      targetType: 'trackwork-task',
+      metadata: { taskCount: synced.length },
+    });
+    return synced;
   }
 
   @Mutation(() => TrackWorkTaskType)
@@ -108,7 +124,7 @@ export class TrackWorkResolver {
     await this.access
       .user(user.id)
       .workspace(input.workspaceId)
-      .assert('Workspace.CreateDoc');
+      .assert('Workspace.TrackWork.Write');
     const writableLegacyTasks = await this.access
       .user(user.id)
       .workspace(input.workspaceId)
@@ -123,10 +139,19 @@ export class TrackWorkResolver {
       input.workspaceId,
       input.relatedDocumentIds
     );
-    return this.registry.allocate(
+    const allocated = await this.registry.allocate(
       { ...input, legacyTasks, relatedDocumentIds },
       user.id
     );
+    await this.audit.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      workspaceId: input.workspaceId,
+      action: 'trackwork.task.allocate',
+      targetType: 'trackwork-task',
+      targetId: allocated.taskKey,
+    });
+    return allocated;
   }
 
   @Mutation(() => TrackWorkTaskType)
@@ -144,12 +169,22 @@ export class TrackWorkResolver {
       input.workspaceId,
       input.documentIds
     );
-    return this.registry.setDocumentLinks(
+    const updated = await this.registry.setDocumentLinks(
       input.workspaceId,
       input.taskDocId,
       documentIds,
       user.id
     );
+    await this.audit.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      workspaceId: input.workspaceId,
+      action: 'trackwork.task.set_links',
+      targetType: 'trackwork-task',
+      targetId: updated.taskKey,
+      metadata: { linkCount: documentIds.length },
+    });
+    return updated;
   }
 
   @Query(() => TrackWorkTaskType, { nullable: true })

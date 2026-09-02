@@ -74,16 +74,16 @@ export class JobExecutor implements OnModuleDestroy {
         const signature = `[${name}] (${handler.name}, id=${jobId})`;
         try {
           const ts = Date.now();
-          this.logger.verbose(`Job started: ${signature}`, payload);
+          this.logger.verbose(`Job started: ${signature}`);
           const ret = await handler.fn(payload);
           this.logger.verbose(`Job finished: ${signature}`, {
             signature,
-            signal: ret,
             cost: Date.now() - ts,
           });
           return ret;
         } catch (e) {
           this.logger.error(`Job failed: ${signature}`, e);
+          metrics.queue.counter('job_failed').add(1, { queue: ns, job: name });
           throw e;
         }
       },

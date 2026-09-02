@@ -35,6 +35,12 @@ export const Actions = {
       Read: '',
       Update: '',
     },
+    TrackWork: {
+      Write: '',
+      Integrations: {
+        Manage: '',
+      },
+    },
     Blobs: {
       Read: '',
       List: '',
@@ -95,6 +101,7 @@ export const RoleActionsMap = {
         Action.Workspace.Blobs.Write,
         Action.Workspace.Blobs.List,
         Action.Workspace.Copilot,
+        Action.Workspace.TrackWork.Write,
       ];
     },
     get [WorkspaceRole.Admin]() {
@@ -112,6 +119,7 @@ export const RoleActionsMap = {
         ...this[WorkspaceRole.Admin],
         Action.Workspace.Delete,
         Action.Workspace.Administrators.Manage,
+        Action.Workspace.TrackWork.Integrations.Manage,
         Action.Workspace.TransferOwner,
         Action.Workspace.Payment.Manage,
       ];
