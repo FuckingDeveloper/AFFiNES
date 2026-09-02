@@ -1,0 +1,33 @@
+schema: spec-driven
+
+context: |
+  Product: TrackWork, a self-hosted-first project/task and software-development workspace built as an AFFiNE fork.
+  Core stack: TypeScript, Node.js, React, GraphQL, PostgreSQL/Prisma, Redis, Docker.
+  Repository: monorepo based on AFFiNE with TrackWork-specific frontend, backend, GraphQL and shared packages.
+  Product direction: integrate knowledge/documents, task planning, SCM/development activity, automation, notifications and analytics in one workspace.
+  Current SCM provider focus: GitLab first, provider-neutral abstractions for future GitHub and other providers.
+  Supported UI languages for TrackWork-owned strings: English and Russian.
+  Deployment priority: self-hosted production Docker deployments with safe migrations and upgrades.
+
+rules:
+  specs:
+    - Write requirements as observable product contracts using SHALL/SHOULD language.
+    - Include concrete GIVEN/WHEN/THEN scenarios for important behavior and failure states.
+    - Distinguish system-owned translated labels from user-authored content.
+    - Include permission behavior when a capability changes or exposes workspace data.
+    - Include self-hosted behavior for backend, persistence, integration or administration capabilities.
+    - Prefer immutable internal identity over human-readable task keys in relationships.
+  design:
+    - Reuse AFFiNE workspace, identity, permission, document, storage and synchronization concepts instead of duplicating them.
+    - Keep provider-specific SCM behavior behind provider adapters and capability checks.
+    - Treat webhook/event handling as idempotent and retry-safe.
+    - Document migration, compatibility and rollback/forward-fix implications for persistent changes.
+    - Avoid placing durable cross-user domain behavior only in client-side metadata.
+    - Do not log secrets, access tokens or user document/task contents in structured operational logs.
+  tasks:
+    - Add migration and upgrade tests for new persistent entities or schema changes.
+    - Add server-side permission tests for privileged operations.
+    - Add English and Russian localization work for new user-facing TrackWork strings.
+    - Add production Docker smoke/e2e coverage for critical self-hosted workflows.
+    - Add duplicate/retry tests for webhook, provider-event and automation processing.
+    - Update OpenSpec requirements and documentation before marking a capability complete.
