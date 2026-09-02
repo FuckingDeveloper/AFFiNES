@@ -66,8 +66,10 @@ describe('task tracker default labels', () => {
 });
 
 import {
+  buildTaskActivityEntry,
   parseAttachments,
   parseHistoryEntries,
+  stringifyHistoryEntries,
   parseRelatedDocs,
   parseSubtasks,
   parseTaskRelations,
@@ -77,7 +79,10 @@ import {
   DEFAULT_BOARD_TITLE,
   DEFAULT_FLOW,
 } from '@affine/core/desktop/pages/workspace/task-tracker/config';
-import type { TaskTrackerPropertyAdditionalData } from '@affine/core/desktop/pages/workspace/task-tracker/config';
+import type {
+  TaskTrackerAutomationEventType,
+  TaskTrackerPropertyAdditionalData,
+} from '@affine/core/desktop/pages/workspace/task-tracker/config';
 
 describe('legacy JSON-string task properties remain readable', () => {
   it('parses legacy taskAttachments JSON strings', () => {
@@ -212,7 +217,7 @@ describe('resolves persisted workspace Task Tracker configuration', () => {
       },
       {
         id: 'rule-3',
-        eventType: 'totally.invalid',
+        eventType: 'totally.invalid' as TaskTrackerAutomationEventType,
         action: 'set-status',
         stageId: 'done',
         enabled: true,
@@ -322,5 +327,107 @@ describe('resolves persisted workspace Task Tracker configuration', () => {
     resolveTaskTrackerBoards(persistedConfig);
     sanitizeAutomationRules(persistedConfig.taskTrackerAutomationRules);
     expect(persistedConfig).toEqual(snapshot);
+  });
+});
+
+describe('structured task lifecycle activity', () => {
+  it('records actor, entity, structured operation and timestamp on new entries', () => {
+    const entry = buildTaskActivityEntry('edited', 'Renamed task to “X”', {
+      operation: 'task.renamed',
+      actorId: 'user-1',
+      actorName: 'Alice',
+      taskKey: 'TW-7',
+    });
+
+    expect(entry.operation).toBe('task.renamed');
+    expect(entry.actorId).toBe('user-1');
+    expect(entry.actorName).toBe('Alice');
+    expect(entry.taskKey).toBe('TW-7');
+    expect(typeof entry.createdAt).toBe('number');
+    expect(entry.source).toBe('user');
+  });
+
+  it('supports the automation source without an actor', () => {
+    const entry = buildTaskActivityEntry('edited', 'Automation moved task', {
+      operation: 'task.status_changed',
+      taskKey: 'TW-2',
+      source: 'automation',
+    });
+    expect(entry.source).toBe('automation');
+    expect(entry.actorId).toBeUndefined();
+  });
+
+  it('round-trips structured fields through stringify and parse', () => {
+    const entries = [
+      buildTaskActivityEntry('created', 'Created in To Do', {
+        operation: 'task.created',
+        actorId: 'user-1',
+        actorName: 'Alice',
+        taskKey: 'TW-1',
+      }),
+    ];
+    const parsed = parseHistoryEntries(stringifyHistoryEntries(entries));
+
+    expect(parsed[0]).toMatchObject({
+      operation: 'task.created',
+      actorId: 'user-1',
+      actorName: 'Alice',
+      taskKey: 'TW-1',
+    });
+  });
+
+  it('keeps legacy history entries readable with structured fields absent', () => {
+    const legacy = JSON.stringify([
+      {
+        id: 'h-1',
+        type: 'moved',
+        message: 'Moved to In Progress',
+        createdAt: 1700000000000,
+      },
+    ]);
+    const parsed = parseHistoryEntries(legacy);
+
+    expect(parsed).toEqual([
+      {
+        id: 'h-1',
+        type: 'moved',
+        message: 'Moved to In Progress',
+        createdAt: 1700000000000,
+        operation: undefined,
+        actorId: undefined,
+        actorName: undefined,
+        taskKey: undefined,
+        source: undefined,
+      },
+    ]);
+  });
+
+  it('degrades malformed structured fields safely', () => {
+    const malformed = JSON.stringify([
+      {
+        id: 'h-2',
+        type: 'edited',
+        message: 'Changed priority',
+        createdAt: 1700000000000,
+        operation: 123,
+        actorId: { evil: true },
+        source: 'robot',
+      },
+    ]);
+    const parsed = parseHistoryEntries(malformed);
+
+    expect(parsed[0].operation).toBeUndefined();
+    expect(parsed[0].actorId).toBeUndefined();
+    expect(parsed[0].source).toBeUndefined();
+  });
+
+  it('does not rewrite legacy history merely by reading it', () => {
+    const legacy =
+      '[{"id":"h-1","type":"created","message":"Created in To Do","createdAt":1700000000000}]';
+    const parsed = parseHistoryEntries(legacy);
+
+    expect(parsed.length).toBe(1);
+    expect(parsed[0].id).toBe('h-1');
+    expect(parsed[0].message).toBe('Created in To Do');
   });
 });
