@@ -315,7 +315,7 @@ export class DevelopmentInfoResolver {
     while (collected.length < size && hasMore && consumed < maxConsumed) {
       const page = await this.links.listActivity({
         workspaceId,
-        first: size,
+        first: size - collected.length,
         after: cursor,
       });
       lastCursor = page.nextCursor;

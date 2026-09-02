@@ -348,3 +348,220 @@ e2e(
     );
   }
 );
+
+e2e(
+  'readable activity rows are never skipped across page boundaries',
+  async t => {
+    const owner = await app.create(Mockers.User);
+    const workspace = await app.create(Mockers.Workspace, {
+      owner: { id: owner.id },
+    });
+    const member = await app.create(Mockers.User);
+    await app.create(Mockers.WorkspaceUser, {
+      userId: member.id,
+      workspaceId: workspace.id,
+      type: WorkspaceRole.Collaborator,
+    });
+    const db = app.get(PrismaClient);
+
+    await db.workspaceDoc.create({
+      data: {
+        workspaceId: workspace.id,
+        docId: 'hidden-doc',
+        defaultRole: DocRole.None,
+      },
+    });
+    await db.workspaceDoc.create({
+      data: {
+        workspaceId: workspace.id,
+        docId: 'visible-doc',
+        defaultRole: DocRole.Manager,
+      },
+    });
+    await db.trackWorkTask.createMany({
+      data: [
+        {
+          id: `pt-${randomUUID()}`,
+          workspaceId: workspace.id,
+          docId: 'hidden-doc',
+          taskKey: 'XH-1',
+          number: 1,
+          linksInitialized: true,
+        },
+        {
+          id: `pt-${randomUUID()}`,
+          workspaceId: workspace.id,
+          docId: 'visible-doc',
+          taskKey: 'XV-1',
+          number: 2,
+          linksInitialized: true,
+        },
+      ],
+    });
+    const conn = await db.developmentIntegrationConnection.create({
+      data: {
+        id: `pc-${randomUUID()}`,
+        workspaceId: workspace.id,
+        provider: 'gitlab',
+        name: 'x',
+        baseUrl: 'https://x',
+        tokenCipher: 'cipher:x',
+        enabled: true,
+        createdById: owner.id,
+      },
+    });
+
+    const rawOrder: Array<{ taskKey: string; offsetMin: number }> = [
+      { taskKey: 'XH-1', offsetMin: 6 },
+      { taskKey: 'XV-1', offsetMin: 5 },
+      { taskKey: 'XV-1', offsetMin: 4 },
+      { taskKey: 'XV-1', offsetMin: 3 },
+      { taskKey: 'XH-1', offsetMin: 2 },
+      { taskKey: 'XV-1', offsetMin: 1 },
+    ];
+    await db.developmentActivity.createMany({
+      data: rawOrder.map((row, index) => ({
+        id: `pa-${randomUUID()}`,
+        workspaceId: workspace.id,
+        connectionId: conn.id,
+        taskKey: row.taskKey,
+        eventType: 'commit.pushed',
+        title: `activity ${index}`,
+        url: `https://x/${index}`,
+        authorName: 'a',
+        repositoryName: 'r',
+        metadata: {},
+        createdAt: new Date(Date.now() + row.offsetMin * 60_000),
+      })),
+    });
+
+    await app.login(member);
+
+    const all: string[] = [];
+    const allIds: string[] = [];
+    let after: string | null | undefined;
+    let guard = 0;
+    let hasNextPage = true;
+    while (hasNextPage && guard < 10) {
+      const page = await app.gql({
+        query: trackWorkActivityQuery,
+        variables: {
+          workspaceId: workspace.id,
+          first: 2,
+          after: after ?? null,
+        },
+      });
+      all.push(
+        ...page.trackWorkActivity.items.map(
+          (item: { taskKey: string }) => item.taskKey
+        )
+      );
+      allIds.push(
+        ...page.trackWorkActivity.items.map((item: { id: string }) => item.id)
+      );
+      after = page.trackWorkActivity.nextCursor;
+      hasNextPage = page.trackWorkActivity.hasNextPage;
+      guard += 1;
+    }
+
+    t.deepEqual(all, ['XV-1', 'XV-1', 'XV-1', 'XV-1']);
+    t.is(allIds.length, 4);
+    t.is(new Set(allIds).size, allIds.length);
+
+    await app.login(owner);
+    const ownerPage = await app.gql({
+      query: trackWorkActivityQuery,
+      variables: { workspaceId: workspace.id, first: 2 },
+    });
+    t.deepEqual(
+      ownerPage.trackWorkActivity.items.map(
+        (item: { taskKey: string }) => item.taskKey
+      ),
+      ['XH-1', 'XV-1']
+    );
+  }
+);
+
+e2e('activity with only hidden rows terminates without leaking', async t => {
+  const owner = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: owner.id },
+  });
+  const member = await app.create(Mockers.User);
+  await app.create(Mockers.WorkspaceUser, {
+    userId: member.id,
+    workspaceId: workspace.id,
+    type: WorkspaceRole.Collaborator,
+  });
+  const db = app.get(PrismaClient);
+
+  await db.workspaceDoc.create({
+    data: {
+      workspaceId: workspace.id,
+      docId: 'hidden-only-doc',
+      defaultRole: DocRole.None,
+    },
+  });
+  await db.trackWorkTask.createMany({
+    data: [
+      {
+        id: `pt-${randomUUID()}`,
+        workspaceId: workspace.id,
+        docId: 'hidden-only-doc',
+        taskKey: 'XZ-1',
+        number: 1,
+        linksInitialized: true,
+      },
+    ],
+  });
+  const conn = await db.developmentIntegrationConnection.create({
+    data: {
+      id: `pc-${randomUUID()}`,
+      workspaceId: workspace.id,
+      provider: 'gitlab',
+      name: 'x',
+      baseUrl: 'https://x',
+      tokenCipher: 'cipher:x',
+      enabled: true,
+      createdById: owner.id,
+    },
+  });
+  await db.developmentActivity.createMany({
+    data: [
+      {
+        id: `pa-${randomUUID()}`,
+        workspaceId: workspace.id,
+        connectionId: conn.id,
+        taskKey: 'XZ-1',
+        eventType: 'commit.pushed',
+        title: 'hidden one',
+        url: 'u',
+        authorName: 'a',
+        repositoryName: 'r',
+        metadata: {},
+        createdAt: new Date(Date.now() + 60_000),
+      },
+      {
+        id: `pa-${randomUUID()}`,
+        workspaceId: workspace.id,
+        connectionId: conn.id,
+        taskKey: 'XZ-1',
+        eventType: 'commit.pushed',
+        title: 'hidden two',
+        url: 'u',
+        authorName: 'a',
+        repositoryName: 'r',
+        metadata: {},
+        createdAt: new Date(Date.now() + 120_000),
+      },
+    ],
+  });
+
+  await app.login(member);
+  const page = await app.gql({
+    query: trackWorkActivityQuery,
+    variables: { workspaceId: workspace.id, first: 2 },
+  });
+  t.deepEqual(page.trackWorkActivity.items, []);
+  t.is(page.trackWorkActivity.hasNextPage, false);
+});
