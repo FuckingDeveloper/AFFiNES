@@ -76,7 +76,7 @@ export class TrackWorkRegistryService {
 
   private async lockWorkspace(tx: Transaction, workspaceId: string) {
     await tx.$queryRaw`
-      SELECT pg_advisory_xact_lock(hashtextextended(${workspaceId}, 0))
+      SELECT pg_advisory_xact_lock(hashtextextended(${workspaceId}, 0))::text
     `;
   }
 
