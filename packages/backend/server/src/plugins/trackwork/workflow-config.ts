@@ -42,13 +42,23 @@ const MAX_TRANSITIONS_PER_STAGE = 50;
 const MAX_ID_LENGTH = 128;
 const MAX_TITLE_LENGTH = 200;
 const MAX_AUTOMATION_ID_LENGTH = 255;
+// Aggregate bound: complements the per-item limits so the persisted JSONB
+// payload cannot become an unbounded/abusive document.
+const MAX_WORKFLOW_CONFIG_BYTES = 1024 * 1024;
+// Identifiers that would act as prototype keys on normalized plain objects;
+// explicitly rejected rather than silently dropped.
+const RESERVED_IDENTIFIERS = new Set(['__proto__', 'prototype', 'constructor']);
 
 const boundedIdentifier = (value: unknown): string | null => {
   if (typeof value !== 'string') {
     return null;
   }
   const normalized = value.trim();
-  if (!normalized || normalized.length > MAX_ID_LENGTH) {
+  if (
+    !normalized ||
+    normalized.length > MAX_ID_LENGTH ||
+    RESERVED_IDENTIFIERS.has(normalized)
+  ) {
     return null;
   }
   return normalized;
@@ -109,6 +119,15 @@ export function validateWorkflowConfig(value: unknown): {
 
   const input = value as Record<string, unknown>;
   const errors: string[] = [];
+
+  if (
+    Buffer.byteLength(JSON.stringify(input), 'utf8') > MAX_WORKFLOW_CONFIG_BYTES
+  ) {
+    errors.push(
+      `workflow configuration exceeds the ${MAX_WORKFLOW_CONFIG_BYTES}-byte size limit`
+    );
+    return { config: { taskTrackerBoards: [] }, errors };
+  }
 
   const boardsValue = input.taskTrackerBoards;
   if (!Array.isArray(boardsValue) || boardsValue.length > MAX_BOARDS) {

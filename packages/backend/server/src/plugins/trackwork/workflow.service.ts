@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 import { AdminAuditService } from '../../core/audit';
 import { WorkflowConfigConflict } from '../../base/error/errors.gen';
@@ -71,28 +71,57 @@ export class TrackWorkWorkflowService {
     const config = validateWorkflowConfigOrThrow(value);
 
     const revision = await this.prisma.$transaction(async tx => {
-      const row = await tx.trackWorkWorkflowConfig.findUnique({
-        where: { workspaceId },
-      });
-      const currentRevision = row?.revision ?? 0;
-      if (currentRevision !== expectedRevision) {
-        throw new WorkflowConfigConflict();
+      let nextRevision: number;
+      let previousRevision: number;
+
+      if (expectedRevision === 0) {
+        // No row may exist yet: the atomic CREATE doubles as the revision
+        // check. If a concurrent transaction already created the row, the
+        // repository's unique-constraint error is converted to an explicit
+        // conflict - never exposed raw.
+        try {
+          await tx.trackWorkWorkflowConfig.create({
+            data: {
+              workspaceId,
+              revision: 1,
+              config: config as object,
+              updatedBy: actor.id,
+            },
+          });
+        } catch (error) {
+          if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === 'P2002'
+          ) {
+            throw new WorkflowConfigConflict();
+          }
+          throw error;
+        }
+        nextRevision = 1;
+        previousRevision = 0;
+      } else {
+        // Atomic conditional update: the SQL predicate includes both
+        // workspaceId and revision = expectedRevision. Exactly one affected
+        // row means this transaction won the revision race; zero means a
+        // concurrent write already moved the revision.
+        const updated = await tx.trackWorkWorkflowConfig.updateMany({
+          where: { workspaceId, revision: expectedRevision },
+          data: {
+            revision: { increment: 1 },
+            config: config as object,
+            updatedBy: actor.id,
+          },
+        });
+        if (updated.count !== 1) {
+          throw new WorkflowConfigConflict();
+        }
+        nextRevision = expectedRevision + 1;
+        previousRevision = expectedRevision;
       }
-      const nextRevision = currentRevision + 1;
-      await tx.trackWorkWorkflowConfig.upsert({
-        where: { workspaceId },
-        create: {
-          workspaceId,
-          revision: nextRevision,
-          config: config as object,
-          updatedBy: actor.id,
-        },
-        update: {
-          revision: nextRevision,
-          config: config as object,
-          updatedBy: actor.id,
-        },
-      });
+
+      // The audit executes only after the conditional write has proven this
+      // transaction won the revision race; it commits atomically with the
+      // config write in the same transaction.
       await this.audit.logInTx(tx, {
         actorId: actor.id,
         actorEmail: actor.email,
@@ -101,7 +130,7 @@ export class TrackWorkWorkflowService {
         targetType: 'trackwork-workflow',
         targetId: workspaceId,
         metadata: {
-          previousRevision: currentRevision,
+          previousRevision,
           newRevision: nextRevision,
           boardCount: config.taskTrackerBoards.length,
           stageCount: config.taskTrackerBoards.reduce(
@@ -111,6 +140,7 @@ export class TrackWorkWorkflowService {
           automationRuleCount: config.taskTrackerAutomationRules?.length ?? 0,
         },
       });
+
       return nextRevision;
     });
 

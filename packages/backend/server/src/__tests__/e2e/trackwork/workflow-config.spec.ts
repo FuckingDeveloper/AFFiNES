@@ -342,7 +342,7 @@ e2e('raw Yjs workflow writes never alter the authoritative config', async t => {
 e2e(
   'legacy workflow config is imported from the property document',
   async t => {
-    const { Doc, applyUpdate, encodeStateAsUpdate } = await import('yjs');
+    const { Doc, encodeStateAsUpdate } = await import('yjs');
     const owner = await app.create(Mockers.User);
     const workspace = await app.create(Mockers.Workspace, {
       owner: { id: owner.id },
@@ -395,7 +395,7 @@ e2e(
 
     const { TrackWorkWorkflowConfig1765000000000 } =
       await import('../../../data/migrations/1765000000000-trackwork-workflow-config');
-    await TrackWorkWorkflowConfig1765000000000.up(db, app.moduleRef);
+    await TrackWorkWorkflowConfig1765000000000.up(db, null as never);
 
     const row = await db.trackWorkWorkflowConfig.findUnique({
       where: { workspaceId: workspace.id },
@@ -410,7 +410,7 @@ e2e(
     t.is(config.taskTrackerBoards[0].title, 'Legacy Release Board');
     t.is(config.taskTrackerAutomationRules[0].id, 'legacy-rule');
 
-    await TrackWorkWorkflowConfig1765000000000.up(db, app.moduleRef);
+    await TrackWorkWorkflowConfig1765000000000.up(db, null as never);
     t.is(
       await db.trackWorkWorkflowConfig.count({
         where: { workspaceId: workspace.id },
@@ -452,7 +452,7 @@ e2e(
 
     const { TrackWorkWorkflowConfig1765000000000 } =
       await import('../../../data/migrations/1765000000000-trackwork-workflow-config');
-    await TrackWorkWorkflowConfig1765000000000.up(db, app.moduleRef);
+    await TrackWorkWorkflowConfig1765000000000.up(db, null as never);
 
     t.is(
       await db.trackWorkWorkflowConfig.count({
@@ -473,12 +473,15 @@ e2e(
     await app.login(owner);
     const db = app.get(PrismaClient);
 
-    let upsertCalled = false;
+    let casWon = false;
     const failingTx = {
       trackWorkWorkflowConfig: {
-        findUnique: async () => null,
-        upsert: async () => {
-          upsertCalled = true;
+        updateMany: async () => {
+          casWon = true;
+          return { count: 1 };
+        },
+        create: async () => {
+          casWon = true;
           return {};
         },
       },
@@ -516,7 +519,7 @@ e2e(
       ),
       { message: /audit pipeline unavailable/ }
     );
-    t.true(upsertCalled);
+    t.true(casWon);
 
     t.is(
       await db.trackWorkWorkflowConfig.count({
@@ -524,5 +527,287 @@ e2e(
       }),
       0
     );
+  }
+);
+
+e2e(
+  'true concurrent same-revision updates: exactly one wins, one conflict, one audit',
+  async t => {
+    const owner = await app.create(Mockers.User);
+    const workspace = await app.create(Mockers.Workspace, {
+      owner: { id: owner.id },
+    });
+    const adminA = await app.create(Mockers.User);
+    await app.create(Mockers.WorkspaceUser, {
+      userId: adminA.id,
+      workspaceId: workspace.id,
+      type: WorkspaceRole.Admin,
+    });
+    const adminB = await app.create(Mockers.User);
+    await app.create(Mockers.WorkspaceUser, {
+      userId: adminB.id,
+      workspaceId: workspace.id,
+      type: WorkspaceRole.Admin,
+    });
+
+    await app.login(adminA);
+    const seed = await gqlRaw(UPDATE_MUTATION, {
+      input: {
+        workspaceId: workspace.id,
+        expectedRevision: 0,
+        config: customConfig,
+      },
+    });
+    t.is(seed.updateTrackWorkWorkflowConfig.revision, 1);
+
+    const configA = {
+      taskTrackerBoards: [
+        { ...customConfig.taskTrackerBoards[0], title: 'Concurrent Winner A' },
+      ],
+    };
+    const configB = {
+      taskTrackerBoards: [
+        { ...customConfig.taskTrackerBoards[0], title: 'Concurrent Winner B' },
+      ],
+    };
+    const [r1, r2] = await Promise.allSettled([
+      gqlRaw(UPDATE_MUTATION, {
+        input: {
+          workspaceId: workspace.id,
+          expectedRevision: 1,
+          config: configA,
+        },
+      }),
+      gqlRaw(UPDATE_MUTATION, {
+        input: {
+          workspaceId: workspace.id,
+          expectedRevision: 1,
+          config: configB,
+        },
+      }),
+    ]);
+
+    const fulfilled = [r1, r2].filter(r => r.status === 'fulfilled');
+    const rejected = [r1, r2].filter(
+      r => r.status === 'rejected'
+    ) as PromiseRejectedResult[];
+    t.is(fulfilled.length, 1);
+    t.is(rejected.length, 1);
+    t.true(
+      rejected[0]!.reason instanceof Error &&
+        /TrackWork workflow configuration has changed/.test(
+          rejected[0]!.reason.message
+        )
+    );
+    t.is(
+      (
+        fulfilled[0] as PromiseFulfilledResult<{
+          updateTrackWorkWorkflowConfig: { revision: number };
+        }>
+      ).value.updateTrackWorkWorkflowConfig.revision,
+      2
+    );
+
+    const row = await app.get(PrismaClient).trackWorkWorkflowConfig.findUnique({
+      where: { workspaceId: workspace.id },
+    });
+    t.is(row?.revision, 2);
+    const winnerTitle = (
+      row?.config as { taskTrackerBoards: Array<{ title: string }> }
+    ).taskTrackerBoards[0].title;
+    t.true(
+      winnerTitle === 'Concurrent Winner A' ||
+        winnerTitle === 'Concurrent Winner B'
+    );
+
+    const audits = await app.get(PrismaClient).adminAuditLog.findMany({
+      where: { workspaceId: workspace.id, action: 'trackwork.workflow.update' },
+    });
+    t.is(audits.length, 2); // seed 0->1 plus the single winning race transition 1->2
+    const raceAudits = audits.filter(
+      audit => (audit.metadata as Record<string, unknown>).newRevision === 2
+    );
+    t.is(raceAudits.length, 1);
+  }
+);
+
+e2e(
+  'true concurrent revision=0 creation: exactly one creates, one conflict, one audit',
+  async t => {
+    const owner = await app.create(Mockers.User);
+    const workspace = await app.create(Mockers.Workspace, {
+      owner: { id: owner.id },
+    });
+    const adminA = await app.create(Mockers.User);
+    await app.create(Mockers.WorkspaceUser, {
+      userId: adminA.id,
+      workspaceId: workspace.id,
+      type: WorkspaceRole.Admin,
+    });
+    const adminB = await app.create(Mockers.User);
+    await app.create(Mockers.WorkspaceUser, {
+      userId: adminB.id,
+      workspaceId: workspace.id,
+      type: WorkspaceRole.Admin,
+    });
+
+    await app.login(adminA);
+    const configA = {
+      taskTrackerBoards: [{ id: 'fresh-a', title: 'Fresh A' }],
+    };
+    const configB = {
+      taskTrackerBoards: [{ id: 'fresh-b', title: 'Fresh B' }],
+    };
+    const [r1, r2] = await Promise.allSettled([
+      gqlRaw(UPDATE_MUTATION, {
+        input: {
+          workspaceId: workspace.id,
+          expectedRevision: 0,
+          config: configA,
+        },
+      }),
+      gqlRaw(UPDATE_MUTATION, {
+        input: {
+          workspaceId: workspace.id,
+          expectedRevision: 0,
+          config: configB,
+        },
+      }),
+    ]);
+
+    const fulfilled = [r1, r2].filter(r => r.status === 'fulfilled');
+    const rejected = [r1, r2].filter(
+      r => r.status === 'rejected'
+    ) as PromiseRejectedResult[];
+    t.is(fulfilled.length, 1);
+    t.is(rejected.length, 1);
+    t.is(
+      (
+        fulfilled[0] as PromiseFulfilledResult<{
+          updateTrackWorkWorkflowConfig: { revision: number };
+        }>
+      ).value.updateTrackWorkWorkflowConfig.revision,
+      1
+    );
+    t.true(
+      rejected[0]!.reason instanceof Error &&
+        /TrackWork workflow configuration has changed/.test(
+          rejected[0]!.reason.message
+        ) &&
+        !/P2002|PrismaClientKnownRequestError/.test(rejected[0]!.reason.message)
+    );
+
+    const row = await app.get(PrismaClient).trackWorkWorkflowConfig.findUnique({
+      where: { workspaceId: workspace.id },
+    });
+    t.is(row?.revision, 1);
+    t.is(
+      await app.get(PrismaClient).adminAuditLog.count({
+        where: {
+          workspaceId: workspace.id,
+          action: 'trackwork.workflow.update',
+        },
+      }),
+      1
+    );
+  }
+);
+
+e2e(
+  'oversized and prototype-sensitive workflow configs are rejected',
+  async t => {
+    const owner = await app.create(Mockers.User);
+    const workspace = await app.create(Mockers.Workspace, {
+      owner: { id: owner.id },
+    });
+    await app.login(owner);
+
+    // aggregate size bound through real GraphQL
+    const oversized = {
+      taskTrackerBoards: [
+        {
+          id: 'board-big',
+          title: 'x'.repeat(200),
+          flow: Array.from({ length: 30 }, (_, i) => ({
+            id: `stage-${i}`,
+            title: 'y'.repeat(200),
+          })),
+          transitions: Object.fromEntries(
+            Array.from({ length: 30 }, (_, i) => [
+              `stage-${i}`,
+              Array.from({ length: 50 }, (_, j) => `stage-${(i + j) % 30}`),
+            ])
+          ),
+        },
+        ...Array.from({ length: 19 }, (_, i) => ({
+          id: `board-${i}`,
+          title: 'z'.repeat(200),
+          flow: Array.from({ length: 30 }, (_, j) => ({
+            id: `b${i}-stage-${j}`,
+            title: 'w'.repeat(200),
+          })),
+        })),
+      ],
+    };
+    // Real GraphQL: the oversized payload is rejected at the HTTP boundary
+    // with a controlled client error (413 entity too large), never a 500/OOM.
+    const oversizedRes = await app
+      .POST('/graphql')
+      .set('x-operation-name', 'test')
+      .send({
+        query: UPDATE_MUTATION,
+        variables: {
+          input: {
+            workspaceId: workspace.id,
+            expectedRevision: 0,
+            config: oversized,
+          },
+        },
+      });
+    t.true(oversizedRes.status >= 400 && oversizedRes.status < 500);
+    t.not(oversizedRes.status, 500);
+
+    // The validator's own 1 MiB aggregate cap is asserted directly (it guards
+    // non-HTTP paths such as the legacy migration decode).
+    const { validateWorkflowConfig } =
+      await import('../../../plugins/trackwork/workflow-config');
+    // unique 128-char stage ids so the aggregate payload exceeds 1 MiB
+    const stageIds = Array.from({ length: 30 }, (_, j) =>
+      `s-${j}`.padEnd(128, 'x')
+    );
+    const bigConfig = {
+      taskTrackerBoards: Array.from({ length: 20 }, (_, i) => ({
+        id: `board-${i}`,
+        title: 'x'.repeat(200),
+        flow: stageIds.map(id => ({ id, title: 'y'.repeat(200) })),
+        transitions: Object.fromEntries(
+          stageIds.map(id => [id, Array.from({ length: 50 }, () => id)])
+        ),
+      })),
+    };
+    const validated = validateWorkflowConfig(bigConfig);
+    t.true(validated.errors.some(error => /size limit/.test(error)));
+
+    // reserved prototype-sensitive identifiers are rejected explicitly
+    for (const reserved of ['__proto__', 'prototype', 'constructor']) {
+      await t.throwsAsync(
+        gqlRaw(UPDATE_MUTATION, {
+          input: {
+            workspaceId: workspace.id,
+            expectedRevision: 0,
+            config: {
+              taskTrackerBoards: [
+                {
+                  id: 'board-p',
+                  title: 'Board',
+                  flow: [{ id: reserved, title: 'Stage' }],
+                },
+              ],
+            },
+          },
+        }),
+        { message: /Invalid TrackWork workflow configuration/ }
+      );
+    }
   }
 );
