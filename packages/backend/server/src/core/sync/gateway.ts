@@ -45,7 +45,11 @@ import {
   type DocAction,
   WorkspaceAction,
 } from '../permission';
-import { DocID } from '../utils/doc';
+import {
+  DocID,
+  isWorkspaceDbDoc,
+  WORKSPACE_CUSTOM_PROPERTY_TABLE,
+} from '../utils/doc';
 
 const SubscribeMessage = (event: string) =>
   applyDecorators(
@@ -912,6 +916,12 @@ class WorkspaceSyncAdapter extends SyncSocketAdapter {
     updates: Buffer[],
     editorId: string
   ) {
+    if (isWorkspaceDbDoc(docId, WORKSPACE_CUSTOM_PROPERTY_TABLE)) {
+      await this.ac
+        .user(editorId)
+        .workspace(spaceId)
+        .assert('Workspace.Properties.Update');
+    }
     const docMeta = await this.models.doc.getMeta(spaceId, docId, {
       select: {
         blocked: true,

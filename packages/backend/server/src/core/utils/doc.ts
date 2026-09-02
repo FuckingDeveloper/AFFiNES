@@ -155,3 +155,16 @@ export function generateDocPath(params: DocPathParams) {
   }
   return `/workspace/${params.workspaceId}/${params.docId}?${search.toString()}`;
 }
+
+/**
+ * Workspace database documents are synced per table under the
+ * `db$<tableName>` convention defined by the frontend workspace DB adapter
+ * (packages/frontend/core/src/modules/db/services/db.ts: storageDocId).
+ */
+export const WORKSPACE_DB_DOC_PREFIX = 'db$';
+
+export const WORKSPACE_CUSTOM_PROPERTY_TABLE = 'docCustomPropertyInfo';
+
+export function isWorkspaceDbDoc(docId: string, tableName: string) {
+  return docId === `${WORKSPACE_DB_DOC_PREFIX}${tableName}`;
+}
