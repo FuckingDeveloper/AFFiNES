@@ -25,6 +25,15 @@ export function getMeter(name = 'business') {
   return getMeterProvider().getMeter(name);
 }
 
+/**
+ * Drops all cached scoped instruments. Called when the OpenTelemetry SDK is
+ * (re)created so the next metric access binds instruments to the current
+ * meter provider instead of the previous SDK's shut-down provider.
+ */
+export function resetMetrics() {
+  scopes.clear();
+}
+
 type MetricType = 'counter' | 'gauge' | 'histogram';
 type Metric<T extends MetricType> = T extends 'counter'
   ? UpDownCounter

@@ -1,6 +1,7 @@
 import { ConfigModule } from '../../../base/config';
 import { createApp, e2e, Mockers } from '../test';
 
+const STRICT_TTL = 500;
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 e2e('rate limit reset is race-safe and deterministic', async t => {
@@ -9,7 +10,7 @@ e2e('rate limit reset is race-safe and deterministic', async t => {
       ConfigModule.override({
         throttle: {
           throttlers: {
-            strict: { ttl: 500, limit: 3 },
+            strict: { ttl: STRICT_TTL, limit: 3 },
           },
         },
       }),
@@ -45,10 +46,10 @@ e2e('rate limit reset is race-safe and deterministic', async t => {
   app.resetRateLimit();
   await assertAllowed(1);
 
-  // Wait out the ttl window so the post-reset timer fires while the process
-  // keeps serving: this is the window in which the previous implementation
-  // crashed after storage.clear() left its timers orphaned.
-  await sleep(600);
+  // Wait out the ttl window plus margin so the post-reset timer fires while
+  // the process keeps serving: this is the window in which the previous
+  // implementation crashed after storage.clear() left its timers orphaned.
+  await sleep(STRICT_TTL + 500);
 
   await assertAllowed(1);
   await assertAllowed(2);

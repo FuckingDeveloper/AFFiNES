@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
+import { metrics as otelMetrics } from '@opentelemetry/api';
 import {
   CompositePropagator,
   ExportResult,
@@ -33,7 +34,7 @@ import { PrismaInstrumentation } from '@prisma/instrumentation';
 
 import { Config } from '../config';
 import { OnEvent } from '../event/def';
-import { registerCustomMetrics } from './metrics';
+import { registerCustomMetrics, resetMetrics } from './metrics';
 import { PrismaMetricProducer } from './prisma';
 
 class NoopSpanExporter implements SpanExporter {
@@ -132,7 +133,6 @@ export class OpentelemetryProvider {
     }
     if (event.config.metrics.enabled) {
       await this.setup();
-      registerCustomMetrics();
     }
   }
 
@@ -162,10 +162,18 @@ export class OpentelemetryProvider {
         });
         this.#sdk = new NodeSDK(factory.create());
         this.#sdk.start();
+        // Bind instrument creation and host metrics to the new SDK's meter
+        // provider so a runtime re-enable exposes the full metric surface.
+        resetMetrics();
+        registerCustomMetrics();
         this.#logger.log('OpenTelemetry SDK started');
       }
     } else {
       await this.#sdk?.shutdown();
+      // Unregister the global meter provider: setGlobalMeterProvider ignores
+      // repeat registrations, so without this the next enable would keep
+      // recording into the shut-down provider.
+      otelMetrics.disable();
       this.#sdk = null;
       this.#logger.log('OpenTelemetry SDK stopped');
     }

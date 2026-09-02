@@ -66,17 +66,24 @@ curl http://127.0.0.1:9464/metrics
 Metrics follow the existing AFFiNE OpenTelemetry conventions (scoped metric
 names, low-cardinality labels). TrackWork-specific metrics:
 
-| Metric                                                          | Type                | Labels                                                                                                                                                                                    |
-| --------------------------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `trackwork_webhook_received_total`                              | counter             | `provider`                                                                                                                                                                                |
-| `trackwork_webhook_total`                                       | counter             | `provider`, `result` (`queued`, `invalid_signature`, `payload_too_large`, `not_found`, `disabled`, `error`)                                                                               |
-| `trackwork_webhook_event_total`                                 | counter             | `provider`, `eventType` (normalized, `unknown` fallback), `result` (`processed`, `duplicate`, `untracked_repository`, `error`)                                                            |
-| `trackwork_webhook_retry_total`                                 | counter             | `provider` — increments when a webhook job is processed with `attemptsMade > 0`                                                                                                           |
+| Metric                             | Type    | Labels                                                                                                                         |
+| ---------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `trackwork_webhook_received_total` | counter | `provider`                                                                                                                     |
+| `trackwork_webhook_total`          | counter | `provider`, `result` (`queued`, `invalid_signature`, `payload_too_large`, `not_found`, `disabled`, `error`)                    |
+| `trackwork_webhook_event_total`    | counter | `provider`, `eventType` (normalized, `unknown` fallback), `result` (`processed`, `duplicate`, `untracked_repository`, `error`) |
+| `trackwork_webhook_retry_total`    | counter | `provider` — increments when a webhook job is processed with `attemptsMade > 0`                                                |
+
+`trackwork_webhook_retry_total` counts executions of an `integration.scm-webhook`
+job where BullMQ reports `attemptsMade > 0` (a re-delivery/retry attempt). The
+current webhook enqueue path does **not** configure retries by default, so this
+metric normally remains zero until retry attempts are enabled for those jobs
+(for example via BullMQ `attempts` or the job-signal retry mechanism); it should
+not be interpreted as an active retry stream today.
 | `trackwork_function_calls_total` / `trackwork_function_timer_*` | counter / histogram | `name` (`scm_request`, `webhook_ingest`), `provider`, `operation` (`test_connection`, `list_repositories`, `list_pipelines`, `create_branch`, `create_merge_request` — SCM only), `error` |
-| `trackwork_task_allocation_total`                               | counter             | `result` (`allocated`, `existing`, `exhausted`, `invalid`)                                                                                                                                |
-| `trackwork_task_registry_total`                                 | counter             | `operation` (`sync`, `set_links`), `result` (`success`, `invalid`, `exhausted`)                                                                                                           |
-| `queue_job_depth`                                               | gauge               | `queue`, `state` (`waiting`, `active`, `delayed`, `failed`, `completed`)                                                                                                                  |
-| `queue_job_failed_total`                                        | counter             | `queue`, `job`                                                                                                                                                                            |
+| `trackwork_task_allocation_total` | counter | `result` (`allocated`, `existing`, `exhausted`, `invalid`) |
+| `trackwork_task_registry_total` | counter | `operation` (`sync`, `set_links`), `result` (`success`, `invalid`, `exhausted`) |
+| `queue_job_depth` | gauge | `queue`, `state` (`waiting`, `active`, `delayed`, `failed`, `completed`) |
+| `queue_job_failed_total` | counter | `queue`, `job` |
 
 Existing AFFiNE metrics also remain available: `gql_query_counter`,
 `gql_query_duration`, `gql_query_error_counter`, `controllers_error_total`,
