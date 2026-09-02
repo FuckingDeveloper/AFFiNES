@@ -52,6 +52,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          queries: security-extended
           source-root: ${{ matrix.project == 'affine' && '.' || 'blocksuite' }}
 
       - name: Delete blocksuite before codeql analysis

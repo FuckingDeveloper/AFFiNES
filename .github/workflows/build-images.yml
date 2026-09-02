@@ -263,7 +263,37 @@ jobs:
         with:
           app-version: ${{ inputs.app-version }}
 
-      - name: Build backend Dockerfile
+      - name: Build backend Dockerfile (scan platform, no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          pull: true
+          platforms: linux/amd64
+          provenance: false
+          file: .github/deployment/node/Dockerfile
+          tags: affine-server-scan:local
+
+      - name: Scan production image (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: affine-server-scan:local
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+          ignore-unfixed: false
+
+      - name: Upload Trivy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: trivy-results.sarif
+
+      - name: Build backend Dockerfile (multi-platform push)
         uses: docker/build-push-action@v6
         with:
           context: .
