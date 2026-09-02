@@ -6,9 +6,12 @@ Implementation agents such as Codex/DeepSeek SHALL read `proposal.md`, `design.m
 
 ## 1. Stability, security baseline, and operability
 
-- [ ] 1.1 Define supported self-hosted upgrade path and version compatibility policy.
-- [ ] 1.2 Add migration tests for existing Task Tracker workspaces and boards, including legacy JSON-string task properties.
-- [ ] 1.3 Add production Docker upgrade smoke test using persisted data from previous supported version.
+- [x] 1.1 Define supported self-hosted upgrade path and version compatibility policy.
+  - Policy: `docs/trackwork-upgrade.md`. No formal previous TrackWork release exists (no release tags); the first release under the policy becomes the baseline; upgrades are supported only from the immediately previous supported release (no skipping); PostgreSQL `pgvector/pg16` + Redis 7.4 per `.docker/selfhost/compose.yml`; migrations run pre-start via the `affine_migration` service (`prisma migrate deploy` + data migrations); rollback is restore-from-backup only; backup required before upgrade; pre-policy data remains covered by compatibility tests.
+- [x] 1.2 Add migration tests for existing Task Tracker workspaces and boards, including legacy JSON-string task properties.
+  - Server: `src/__tests__/e2e/trackwork/upgrade.spec.ts` seeds representative pre-policy persisted state (registry tasks/keys/numbers, task/document links, development integration associations) and proves the current migration/import path preserves it with no destructive reset, plus idempotency on clean data. Frontend: `task-tracker/config.spec.ts` proves legacy JSON-string task properties (`taskAttachments`, `taskSubtasks`, `taskHistory`, `taskRelatedDocs`, `taskRelations`) remain readable by current parsers. Board/stage configuration lives in client-synced workspace updates which server migrations never touch (documented in the test).
+- [x] 1.3 Add production Docker upgrade smoke test using persisted data from previous supported version.
+  - Extended `.github/workflows/trackwork-docker-smoke.yml` + new `scripts/smoke-upgrade.sh` + `scripts/docker-smoke/fixture-upgrade.sql`: clean-install smoke (build, migrate, readiness, admin/login, minimal TrackWork operation) followed by an upgrade phase that seeds the pre-policy fixture into the running database, re-runs the real production migration/startup path, and verifies readiness + persisted-data integrity (psql + GraphQL). Verified locally against the production image (`.github/deployment/node/Dockerfile`).
 - [ ] 1.4 Define TrackWork capability permissions and replace scattered administrator-only checks where appropriate.
 - [ ] 1.5 Add cross-workspace/object authorization tests for tasks, documents, integrations, planning entities, attachments and admin-only operations to detect IDOR regressions.
 - [ ] 1.6 Add archive semantics for tasks and workflow/planning entities that require history retention.
