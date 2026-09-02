@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
 
+import { metrics } from '../../base';
 import {
   formatTaskKey,
   normalizeTaskKey,
@@ -25,6 +26,8 @@ type TaskWithLinks = Prisma.TrackWorkTaskGetPayload<{
 
 @Injectable()
 export class TrackWorkRegistryService {
+  private readonly logger = new Logger(TrackWorkRegistryService.name);
+
   constructor(private readonly prisma: PrismaClient) {}
 
   private validateIdentifier(value: string, name: string) {
@@ -177,6 +180,9 @@ export class TrackWorkRegistryService {
     );
     const prefix = normalizeTaskKey(prefixValue);
     if (!TASK_PREFIX_RE.test(prefix)) {
+      metrics.trackwork
+        .counter('task_registry')
+        .add(1, { operation: 'sync', result: 'invalid' });
       throw new BadRequestException('Invalid task key prefix');
     }
     const requestedDocIds = [
@@ -214,6 +220,15 @@ export class TrackWorkRegistryService {
             continue;
           }
           if (nextNumber > MAX_TASK_NUMBER) {
+            metrics.trackwork
+              .counter('task_registry')
+              .add(1, { operation: 'sync', result: 'exhausted' });
+            this.logger.warn({
+              message: 'TrackWork task number range exhausted',
+              event: 'trackwork.task.allocation.exhausted',
+              result: 'exhausted',
+              workspaceId,
+            });
             throw new BadRequestException(
               'TrackWork task number range exhausted'
             );
@@ -245,6 +260,9 @@ export class TrackWorkRegistryService {
           include: { links: true },
           orderBy: { number: 'asc' },
         });
+        metrics.trackwork
+          .counter('task_registry')
+          .add(1, { operation: 'sync', result: 'success' });
         return records.map(task => this.mapTask(task));
       },
       { maxWait: 30000, timeout: 30000 }
@@ -259,6 +277,9 @@ export class TrackWorkRegistryService {
     const docId = this.validateIdentifier(input.docId, 'task document id');
     const prefix = normalizeTaskKey(input.prefix);
     if (!TASK_PREFIX_RE.test(prefix)) {
+      metrics.trackwork
+        .counter('task_allocation')
+        .add(1, { result: 'invalid' });
       throw new BadRequestException('Invalid task key prefix');
     }
     const relatedDocumentIds = this.normalizeRelatedDocumentIds(
@@ -289,6 +310,15 @@ export class TrackWorkRegistryService {
           });
           const number = (latest?.number ?? 0) + 1;
           if (number > MAX_TASK_NUMBER) {
+            metrics.trackwork
+              .counter('task_allocation')
+              .add(1, { result: 'exhausted' });
+            this.logger.warn({
+              message: 'TrackWork task number range exhausted',
+              event: 'trackwork.task.allocation.exhausted',
+              result: 'exhausted',
+              workspaceId,
+            });
             throw new BadRequestException(
               'TrackWork task number range exhausted'
             );
@@ -311,6 +341,13 @@ export class TrackWorkRegistryService {
             },
             include: { links: true },
           });
+          metrics.trackwork
+            .counter('task_allocation')
+            .add(1, { result: 'allocated' });
+        } else {
+          metrics.trackwork
+            .counter('task_allocation')
+            .add(1, { result: 'existing' });
         }
 
         return this.mapTask(task);
@@ -344,6 +381,9 @@ export class TrackWorkRegistryService {
         where: { workspaceId_docId: { workspaceId, docId: taskDocId } },
       });
       if (!task) {
+        metrics.trackwork
+          .counter('task_registry')
+          .add(1, { operation: 'set_links', result: 'invalid' });
         throw new BadRequestException('TrackWork task is not registered');
       }
 
@@ -364,6 +404,9 @@ export class TrackWorkRegistryService {
         data: { linksInitialized: true },
         include: { links: true },
       });
+      metrics.trackwork
+        .counter('task_registry')
+        .add(1, { operation: 'set_links', result: 'success' });
       return this.mapTask(updated);
     });
   }

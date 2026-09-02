@@ -24,19 +24,21 @@ Implementation agents such as Codex/DeepSeek SHALL read `proposal.md`, `design.m
 
 ## 2. Observability
 
-- [ ] 2.1 Identify the repository's existing metrics/logger abstractions and extend them rather than introducing a parallel stack.
-- [ ] 2.2 Expose Prometheus-compatible TrackWork/server metrics through a documented scrape endpoint.
-- [ ] 2.3 Add bounded HTTP/GraphQL request latency/error metrics using low-cardinality labels.
-- [ ] 2.4 Add webhook receive/process/failure/retry metrics.
-- [ ] 2.5 Add SCM provider request latency/failure metrics.
+- [x] 2.1 Identify the repository's existing metrics/logger abstractions and extend them rather than introducing a parallel stack.
+- [x] 2.2 Expose Prometheus-compatible TrackWork/server metrics through a documented scrape endpoint.
+- [x] 2.3 Add bounded HTTP/GraphQL request latency/error metrics using low-cardinality labels.
+  - GraphQL latency/error metrics pre-existed (`gql_query_duration`, `gql_query_error_counter`); the webhook ingress boundary now exposes bounded latency/error metrics via `trackwork_function_timer{name="webhook_ingest"}` and `trackwork_function_calls_total{name="webhook_ingest",error=...}` with `provider`-only labels. Generic REST HTTP middleware remains deferred.
+- [x] 2.4 Add webhook receive/process/failure/retry metrics.
+  - Retry attempts are observable via `trackwork_webhook_retry_total{provider}`, incremented when a webhook job is processed with `attemptsMade > 0`.
+- [x] 2.5 Add SCM provider request latency/failure metrics.
 - [ ] 2.6 Add automation execution/failure/retry metrics.
 - [ ] 2.7 Add notification/job/queue failure and queue-depth metrics where supported.
 - [ ] 2.8 Add encryption state/unlock result metrics without exposing administrator/key identity or secret material.
-- [ ] 2.9 Standardize structured server log fields: timestamp, level, component/service, event/operation, result, correlation ID and safe entity/provider context.
-- [ ] 2.10 Add automated tests that reject/redact passwords, access tokens, authorization headers, quorum shares, encryption keys and protected content from logs.
-- [ ] 2.11 Propagate correlation IDs across request -> webhook/job -> provider -> automation -> notification paths where practical.
-- [ ] 2.12 Add self-hosted documentation/examples for collecting container logs into Grafana Loki using Grafana Alloy/Promtail-compatible agents.
-- [ ] 2.13 Add self-hosted documentation/examples for collecting structured logs into Elasticsearch/OpenSearch using Vector, Fluent Bit, Logstash or Data Prepper-style pipelines.
+- [x] 2.9 Standardize structured server log fields: timestamp, level, component/service, event/operation, result, correlation ID and safe entity/provider context.
+- [x] 2.10 Add automated tests that reject/redact passwords, access tokens, authorization headers, quorum shares, encryption keys and protected content from logs.
+- [x] 2.11 Propagate correlation IDs across request -> webhook/job -> provider -> automation -> notification paths where practical.
+- [x] 2.12 Add self-hosted documentation/examples for collecting container logs into Grafana Loki using Grafana Alloy/Promtail-compatible agents.
+- [x] 2.13 Add self-hosted documentation/examples for collecting structured logs into Elasticsearch/OpenSearch using Vector, Fluent Bit, Logstash or Data Prepper-style pipelines.
 - [ ] 2.14 Evaluate optional OTLP logs/traces after the structured logging/correlation model is stable.
 
 ## 3. Security and quorum-controlled encryption

@@ -7,7 +7,13 @@ import {
   parseTaskKey,
 } from '@affine/trackwork';
 
-import { BadRequest, CryptoHelper, NotFound } from '../../base';
+import {
+  BadRequest,
+  CryptoHelper,
+  metrics,
+  NotFound,
+  wrapCallMetric,
+} from '../../base';
 import { JobQueue } from '../../base/job/queue';
 import type { ScmProviderType } from './types';
 import { CiProviderRegistry } from './providers/ci';
@@ -178,19 +184,31 @@ export class IntegrationConnectionService {
     if (this.ciProviders.has(connection.provider)) {
       const provider = this.ciProviders.get(connection.provider);
 
-      return provider.testConnection({
-        baseUrl: connection.baseUrl,
-        username: connection.username ?? undefined,
-        token: await this.decrypt(connection.tokenCipher),
-      });
+      return wrapCallMetric(
+        async () =>
+          provider.testConnection({
+            baseUrl: connection.baseUrl,
+            username: connection.username ?? undefined,
+            token: await this.decrypt(connection.tokenCipher),
+          }),
+        'trackwork',
+        'scm_request',
+        { provider: connection.provider, operation: 'test_connection' }
+      )();
     }
 
     const provider = this.providers.get(connection.provider as ScmProviderType);
 
-    return provider.testConnection({
-      baseUrl: connection.baseUrl,
-      token: await this.decrypt(connection.tokenCipher),
-    });
+    return wrapCallMetric(
+      async () =>
+        provider.testConnection({
+          baseUrl: connection.baseUrl,
+          token: await this.decrypt(connection.tokenCipher),
+        }),
+      'trackwork',
+      'scm_request',
+      { provider: connection.provider, operation: 'test_connection' }
+    )();
   }
 
   async refreshPipelines(connectionId: string) {
@@ -209,12 +227,18 @@ export class IntegrationConnectionService {
     const provider = this.ciProviders.get(connection.provider);
     const token = await this.decrypt(connection.tokenCipher);
 
-    const pipelines = await provider.listPipelines({
-      baseUrl: connection.baseUrl,
-      username: connection.username ?? undefined,
-      token,
-      limit: 200,
-    });
+    const pipelines = await wrapCallMetric(
+      () =>
+        provider.listPipelines({
+          baseUrl: connection.baseUrl,
+          username: connection.username ?? undefined,
+          token,
+          limit: 200,
+        }),
+      'trackwork',
+      'scm_request',
+      { provider: connection.provider, operation: 'list_pipelines' }
+    )();
 
     for (const pipeline of pipelines) {
       const existing = await this.prisma.developmentPipeline.findUnique({
@@ -343,10 +367,16 @@ export class IntegrationConnectionService {
 
     const provider = this.providers.get(connection.provider as ScmProviderType);
 
-    return provider.listRepositories({
-      baseUrl: connection.baseUrl,
-      token: await this.decrypt(connection.tokenCipher),
-    });
+    return wrapCallMetric(
+      async () =>
+        provider.listRepositories({
+          baseUrl: connection.baseUrl,
+          token: await this.decrypt(connection.tokenCipher),
+        }),
+      'trackwork',
+      'scm_request',
+      { provider: connection.provider, operation: 'list_repositories' }
+    )();
   }
 
   async importRepository(connectionId: string, info: RepositoryInfo) {
@@ -425,13 +455,19 @@ export class IntegrationConnectionService {
 
     const provider = this.providers.get(connection.provider as ScmProviderType);
 
-    const branch = await provider.createBranch({
-      baseUrl: connection.baseUrl,
-      token: await this.decrypt(connection.tokenCipher),
-      repositoryId,
-      baseBranch,
-      name,
-    });
+    const branch = await wrapCallMetric(
+      async () =>
+        provider.createBranch({
+          baseUrl: connection.baseUrl,
+          token: await this.decrypt(connection.tokenCipher),
+          repositoryId,
+          baseBranch,
+          name,
+        }),
+      'trackwork',
+      'scm_request',
+      { provider: connection.provider, operation: 'create_branch' }
+    )();
 
     await this.prisma.developmentTaskLink.upsert({
       where: {
@@ -486,15 +522,21 @@ export class IntegrationConnectionService {
 
     const provider = this.providers.get(connection.provider as ScmProviderType);
 
-    const mergeRequest = await provider.createMergeRequest({
-      baseUrl: connection.baseUrl,
-      token: await this.decrypt(connection.tokenCipher),
-      repositoryId,
-      sourceBranch,
-      targetBranch,
-      title,
-      description,
-    });
+    const mergeRequest = await wrapCallMetric(
+      async () =>
+        provider.createMergeRequest({
+          baseUrl: connection.baseUrl,
+          token: await this.decrypt(connection.tokenCipher),
+          repositoryId,
+          sourceBranch,
+          targetBranch,
+          title,
+          description,
+        }),
+      'trackwork',
+      'scm_request',
+      { provider: connection.provider, operation: 'create_merge_request' }
+    )();
 
     await this.prisma.developmentTaskLink.upsert({
       where: {
@@ -574,27 +616,65 @@ export class IntegrationConnectionService {
     headers: Record<string, unknown>;
     body: unknown;
   }): Promise<{ accepted: true }> {
+    return wrapCallMetric(
+      () => this.acceptScmWebhookInner(input),
+      'trackwork',
+      'webhook_ingest',
+      { provider: input.provider }
+    )();
+  }
+
+  private async acceptScmWebhookInner(input: {
+    connectionId: string;
+    provider: ScmProviderType;
+    headers: Record<string, unknown>;
+    body: unknown;
+  }): Promise<{ accepted: true }> {
+    const { connectionId, provider: providerType } = input;
+
+    metrics.trackwork
+      .counter('webhook_received')
+      .add(1, { provider: providerType });
+
+    const recordOutcome = (result: string) => {
+      metrics.trackwork
+        .counter('webhook_total')
+        .add(1, { provider: providerType, result });
+    };
+
     const serialized = JSON.stringify(input.body);
 
     if (serialized.length > 256 * 1024) {
+      recordOutcome('payload_too_large');
       throw new PayloadTooLargeException('Webhook payload too large');
     }
 
-    const connection = await this.getScmConnection(input.connectionId);
+    let connection: ScmConnection;
+    try {
+      connection = await this.getScmConnection(connectionId);
+    } catch (e) {
+      recordOutcome(e instanceof NotFound ? 'not_found' : 'error');
+      throw e;
+    }
 
-    if (connection.provider !== input.provider) {
+    if (connection.provider !== providerType) {
+      recordOutcome('not_found');
       throw new NotFound('Development integration connection not found');
     }
 
     if (!connection.enabled) {
+      recordOutcome('disabled');
       throw new NotFound('Development integration connection not found');
     }
 
-    const provider = this.providers.get(input.provider);
+    const provider = this.providers.get(providerType);
 
-    this.logger.log(
-      `Webhook received for connection ${input.connectionId} (${input.provider})`
-    );
+    this.logger.log({
+      message: 'SCM webhook received',
+      event: 'scm.webhook.received',
+      provider: providerType,
+      connectionId,
+    });
 
     const valid = await provider.verifyWebhook({
       headers: input.headers,
@@ -603,20 +683,26 @@ export class IntegrationConnectionService {
     });
 
     if (!valid) {
-      this.logger.warn(
-        `Webhook rejected for connection ${input.connectionId}: invalid secret`
-      );
+      recordOutcome('invalid_signature');
+      this.logger.warn({
+        message: 'SCM webhook rejected: invalid signature',
+        event: 'scm.webhook.rejected',
+        result: 'invalid_signature',
+        provider: providerType,
+        connectionId,
+      });
       // uniform 404: do not reveal whether the connection exists
       throw new NotFound('Development integration connection not found');
     }
 
     const payload: ScmWebhookJobData = {
-      connectionId: input.connectionId,
-      provider: input.provider,
+      connectionId,
+      provider: providerType,
       payload: input.body,
     };
 
     await this.queue.add('integration.scm-webhook', payload);
+    recordOutcome('queued');
 
     return { accepted: true };
   }
