@@ -186,6 +186,7 @@ model Workspace {
   docGrants                  DocGrant[]
   developmentIntegrations    DevelopmentIntegrationConnection[]
   trackWorkTasks             TrackWorkTask[]
+  trackWorkWorkflowConfigs TrackWorkWorkflowConfig[]
 
   @@index([lastCheckEmbeddings])
   @@index([createdAt])
@@ -212,6 +213,19 @@ model TrackWorkTask {
   @@unique([workspaceId, id])
   @@index([workspaceId, createdAt])
   @@map("trackwork_tasks")
+}
+
+model TrackWorkWorkflowConfig {
+  workspaceId String   @id @map("workspace_id") @db.VarChar
+  revision    Int      @default(1)
+  config      Json     @db.JsonB
+  updatedBy   String?  @map("updated_by") @db.VarChar
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("trackwork_workflow_configs")
 }
 
 model TrackWorkDocumentLink {

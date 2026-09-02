@@ -33,6 +33,12 @@ export class BadRequest extends UserFriendlyError {
     super('bad_request', 'bad_request', message);
   }
 }
+
+export class WorkflowConfigConflict extends UserFriendlyError {
+  constructor(message?: string) {
+    super('workflow_config_conflict', 'workflow_config_conflict', message);
+  }
+}
 @ObjectType()
 class GraphqlBadRequestDataType {
   @Field() code!: string

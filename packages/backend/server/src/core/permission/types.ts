@@ -37,6 +37,9 @@ export const Actions = {
     },
     TrackWork: {
       Write: '',
+      Workflow: {
+        Manage: '',
+      },
       Integrations: {
         Manage: '',
       },
@@ -112,6 +115,7 @@ export const RoleActionsMap = {
         Action.Workspace.Properties.Create,
         Action.Workspace.Properties.Update,
         Action.Workspace.Properties.Delete,
+        Action.Workspace.TrackWork.Workflow.Manage,
       ];
     },
     get [WorkspaceRole.Owner]() {
