@@ -87,7 +87,8 @@ export type TaskActivityOperation =
   | 'task.subtask_toggled'
   | 'task.attachments_changed'
   | 'task.relation_changed'
-  | 'task.related_documents_changed';
+  | 'task.related_documents_changed'
+  | 'task.board_changed';
 
 export type TaskActivitySource = 'user' | 'automation';
 
@@ -101,6 +102,9 @@ export type TaskHistoryEntry = {
   actorName?: string;
   taskKey?: string;
   source?: TaskActivitySource;
+  stageId?: string;
+  boardId?: string;
+  boardTitle?: string;
 };
 
 export const parseTaskArchived = (value: unknown): boolean =>
@@ -119,6 +123,9 @@ export const buildTaskActivityEntry = (
     actorName?: string;
     taskKey?: string;
     source?: TaskActivitySource;
+    stageId?: string;
+    boardId?: string;
+    boardTitle?: string;
   }
 ): TaskHistoryEntry => ({
   id: nanoid(),
@@ -130,6 +137,9 @@ export const buildTaskActivityEntry = (
   actorName: options.actorName,
   taskKey: options.taskKey,
   source: options.source ?? 'user',
+  stageId: options.stageId,
+  boardId: options.boardId,
+  boardTitle: options.boardTitle,
 });
 
 export const TASK_TRACKER_FLAG_PROPERTY = 'taskTrackerEnabled';
@@ -338,6 +348,10 @@ export const parseHistoryEntries = (value?: string): TaskHistoryEntry[] => {
             next.source === 'automation' || next.source === 'user'
               ? next.source
               : undefined,
+          stageId: typeof next.stageId === 'string' ? next.stageId : undefined,
+          boardId: typeof next.boardId === 'string' ? next.boardId : undefined,
+          boardTitle:
+            typeof next.boardTitle === 'string' ? next.boardTitle : undefined,
         } as TaskHistoryEntry;
       })
       .filter(item => item.id.length > 0 && item.message.length > 0)

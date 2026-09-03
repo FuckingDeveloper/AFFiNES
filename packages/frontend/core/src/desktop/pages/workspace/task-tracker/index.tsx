@@ -3806,7 +3806,8 @@ const TaskTrackerPage = () => {
       message: string,
       operation: TaskActivityOperation,
       taskKey?: string,
-      source: TaskActivitySource = 'user'
+      source: TaskActivitySource = 'user',
+      snapshots?: { stageId?: string; boardId?: string; boardTitle?: string }
     ): TaskHistoryEntry =>
       buildTaskActivityEntry(type, message, {
         operation,
@@ -3814,6 +3815,7 @@ const TaskTrackerPage = () => {
         actorName: source === 'user' ? account?.label : undefined,
         taskKey,
         source,
+        ...snapshots,
       }),
     [account]
   );
@@ -4763,10 +4765,34 @@ const TaskTrackerPage = () => {
           TASK_STATUS_PROPERTY,
           fallbackBoard.flow[0]?.id ?? DEFAULT_FLOW[0].id
         );
+        appendTaskHistory(
+          task.id,
+          makeHistoryEntry(
+            'edited',
+            `Board changed: ${selectedBoard.title} removed, moved to ${fallbackBoard.title}`,
+            'task.board_changed',
+            task.number,
+            'user',
+            {
+              boardId: fallbackBoard.id,
+              boardTitle: fallbackBoard.title,
+              stageId: fallbackBoard.flow[0]?.id ?? DEFAULT_FLOW[0].id,
+            }
+          ),
+          task.history
+        );
       });
 
     setSelectedBoardId(fallbackBoard.id);
-  }, [boards, docsService.list, saveBoardsConfig, selectedBoard, tasks]);
+  }, [
+    appendTaskHistory,
+    boards,
+    docsService.list,
+    makeHistoryEntry,
+    saveBoardsConfig,
+    selectedBoard,
+    tasks,
+  ]);
 
   const handleRenameBoard = useCallback(
     (boardId: string, title: string) => {

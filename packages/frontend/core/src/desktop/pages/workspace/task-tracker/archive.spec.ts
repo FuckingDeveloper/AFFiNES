@@ -57,6 +57,41 @@ describe('TrackWork archive semantics', () => {
     expect(parsed.every(e => e.actorId === 'u1')).toBe(true);
   });
 
+  it('workflow entity changes snapshot ids and titles into lifecycle history', () => {
+    const boardRemoved = buildTaskActivityEntry(
+      'edited',
+      'Board changed: Release removed, moved to Main board',
+      {
+        operation: 'task.board_changed',
+        actorId: 'u1',
+        actorName: 'A',
+        taskKey: 'TASK-10',
+        boardId: 'board-main',
+        boardTitle: 'Main board',
+        stageId: 'todo',
+      }
+    );
+    const stageMoved = buildTaskActivityEntry('moved', 'Moved from dev to qa', {
+      operation: 'task.status_changed',
+      actorId: 'u1',
+      actorName: 'A',
+      taskKey: 'TASK-10',
+      stageId: 'qa',
+    });
+    const parsed = parseHistoryEntries(
+      stringifyHistoryEntries([boardRemoved, stageMoved])
+    );
+    expect(
+      parsed.find(e => e.operation === 'task.board_changed')?.boardId
+    ).toBe('board-main');
+    expect(
+      parsed.find(e => e.operation === 'task.board_changed')?.boardTitle
+    ).toBe('Main board');
+    expect(
+      parsed.find(e => e.operation === 'task.status_changed')?.stageId
+    ).toBe('qa');
+  });
+
   it('archive does not alter task identity or number', () => {
     const task = {
       id: 'task-doc-0010',
