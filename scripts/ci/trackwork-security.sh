@@ -59,7 +59,8 @@ fi
 
 stage "OSV-Scanner: known-advisory fixture self-test"
 set +e
-"$OSV_SCANNER_BIN" --format json "$ROOT/.security/self-test/package-lock.json" >/tmp/trackwork-osv-fixture.json 2>&1
+"$OSV_SCANNER_BIN" --format json --output-file /tmp/trackwork-osv-fixture.json \
+  "$ROOT/.security/self-test/package-lock.json" >/tmp/trackwork-osv-fixture.log 2>&1
 FIXTURE_STATUS=$?
 set -e
 if [ "$FIXTURE_STATUS" -eq 1 ] && python3 -c \
