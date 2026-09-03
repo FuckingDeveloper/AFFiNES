@@ -27,56 +27,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   analyze:
-    name: Analyze
-    runs-on: ubuntu-latest
-    env:
-      NODE_OPTIONS: --max-old-space-size=14384
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
+    name: Security CodeQL
+    uses: ./.github/workflows/security-codeql.yml
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ['javascript', 'typescript']
-        project: ['affine', 'blocksuite']
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-          queries: security-extended
-          source-root: ${{ matrix.project == 'affine' && '.' || 'blocksuite' }}
-
-      - name: Delete blocksuite before codeql analysis
-        if: ${{ matrix.project == 'affine' }}
-        run: rm -rf blocksuite
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          output: sarif-results.sarif
-          upload: true
-
-      - name: CodeQL security-result gate
-        run: |
-          set -euo pipefail
-          python3 .security/check-codeql-sarif.py sarif-results.sarif .security/codeql-baseline.json
-
-      - name: CodeQL security-result gate self-test
-        run: |
-          set -euo pipefail
-          python3 .security/check-codeql-sarif.py --selftest
   lint:
     name: Lint
     runs-on: ubuntu-24.04-arm

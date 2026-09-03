@@ -1,14 +1,16 @@
 name: Security Scan
 
 # Source-level security gates for TrackWork (OpenSpec 1.11/1.12):
-# - dependency vulnerability scanning (OSV-Scanner against yarn.lock, baseline-aware)
-# - secret scanning (Gitleaks, tracked content)
+# - dependency vulnerability scanning (OSV-Scanner v2.5.1 against yarn.lock,
+#   identity-scoped baseline; the REAL scan runs the pinned official binary)
+# - secret scanning (Gitleaks v8.24.3, pinned binary, value-level allowlist)
 # Static analysis (CodeQL) runs in build-test.yml (analyze job) with an
 # explicit SARIF security-result gate.
 # Reusable via workflow_call so release.yml runs the EXACT-commit gates as a
 # required dependency of the deploy/promotion jobs.
-# Policy: docs/security-ci.md. Actions follow the repository major-tag
-# convention; pinned binary downloads below verify official SHA256SUMS.
+# Policy: docs/security-ci.md. All binary downloads verify official
+# SHA256SUMS; no curl|bash installers; no literal secrets in tracked source
+# (self-test secrets are generated at runtime in /tmp).
 
 on:
   workflow_call:
@@ -29,26 +31,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v3
-        with:
-          config_path: .gitleaks.toml
+      - name: Setup Gitleaks in runner temp (pinned + checksum-verified)
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl -fsSL -o gitleaks_8.24.3_linux_x64.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz
+          curl -fsSL -o gitleaks_8.24.3_checksums.txt \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_checksums.txt
+          grep 'gitleaks_8.24.3_linux_x64.tar.gz' gitleaks_8.24.3_checksums.txt | sha256sum -c -
+          tar -xzf gitleaks_8.24.3_linux_x64.tar.gz gitleaks
+          ./gitleaks version
 
-      - name: Gitleaks self-test (synthetic secret must be detected)
-        shell: bash
+      - name: Scan the exact checked-out tree (git archive)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/gitleaks-tree"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/gitleaks-tree"
+          "$RUNNER_TEMP/gitleaks" detect --source "$RUNNER_TEMP/gitleaks-tree" \
+            --config "$GITHUB_WORKSPACE/.gitleaks.toml" --exit-code 1 --no-banner --no-git
+
+      - name: Self-test (runtime synthetic secret must be detected)
         run: |
           set -euo pipefail
           mkdir -p /tmp/gitleaks-self-test
-          printf 'API_KEY=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0\n' > /tmp/gitleaks-self-test/secret.txt
-          cd /tmp/gitleaks-self-test
-          curl -fsSL -o gitleaks \
-            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_amd64
-          curl -fsSL -o SHA256SUMS \
-            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_SHA256SUMS
-          grep 'gitleaks_8.24.3_linux_amd64' SHA256SUMS | sha256sum -c -
-          chmod +x gitleaks
+          key="sk-live-$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+          printf 'API_KEY=%s\n' "$key" > /tmp/gitleaks-self-test/secret.txt
           set +e
-          ./gitleaks detect --source . --no-git --no-banner --exit-code 1
+          "$RUNNER_TEMP/gitleaks" detect --source /tmp/gitleaks-self-test --no-git --no-banner --exit-code 1
           status=$?
           set -e
           if [ "$status" -eq 1 ]; then
@@ -58,20 +68,10 @@ jobs:
           echo "self-test failed: synthetic secret was NOT detected"
           exit 1
 
-      - name: Gitleaks allowlist bypass regression
-        shell: bash
+      - name: Allowlist bypass regression
         run: |
           set -euo pipefail
-          mkdir -p /tmp/gitleaks-bypass
-          cd /tmp/gitleaks-bypass
-          curl -fsSL -o gitleaks \
-            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_amd64
-          curl -fsSL -o SHA256SUMS \
-            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_SHA256SUMS
-          grep 'gitleaks_8.24.3_linux_amd64' SHA256SUMS | sha256sum -c -
-          chmod +x gitleaks
-          python3 "$GITHUB_WORKSPACE/.security/gitleaks-bypass-selftest.py" \
-            ./gitleaks "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/.gitleaks.toml"
+          python3 .security/gitleaks-bypass-selftest.py "$RUNNER_TEMP/gitleaks" "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/.gitleaks.toml"
 
   dependency-scan:
     name: Dependency scan (OSV-Scanner)
@@ -79,13 +79,34 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Scan lockfile (full OSV report)
-        uses: google/osv-scanner-action@v1
-        with:
-          args: >-
-            --format json
-            --output osv-report.json
-            --lockfile yarn.lock
+      - name: Setup OSV-Scanner in runner temp (pinned + checksum-verified)
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl -fsSL -o osv-scanner_linux_amd64 \
+            https://github.com/google/osv-scanner/releases/download/v2.5.1/osv-scanner_linux_amd64
+          curl -fsSL -o osv-scanner_SHA256SUMS \
+            https://github.com/google/osv-scanner/releases/download/v2.5.1/osv-scanner_SHA256SUMS
+          grep 'osv-scanner_linux_amd64' osv-scanner_SHA256SUMS | sha256sum -c -
+          chmod +x osv-scanner_linux_amd64
+          "$RUNNER_TEMP/osv-scanner_linux_amd64" --version
+
+      - name: Scan lockfile (full OSV report, baseline-aware exit handling)
+        run: |
+          set -euo pipefail
+          set +e
+          "$RUNNER_TEMP/osv-scanner_linux_amd64" --format json --output osv-report.json --lockfile yarn.lock
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then
+            echo "osv-scanner failed with unexpected status $status (127/128/other = scanner error)"
+            exit 1
+          fi
+          if [ ! -s osv-report.json ]; then
+            echo "osv-scanner produced no report; treating as scanner failure"
+            exit 1
+          fi
+          python3 -c "import json; json.load(open('osv-report.json'))"
 
       - name: Fail on NEW Critical/High advisories vs baseline
         run: |
@@ -105,30 +126,28 @@ jobs:
           path: osv-report.json
 
       - name: OSV self-test (known advisory fixture must be reported)
-        shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/osv-self-test
-          curl -fsSL -o osv-scanner \
-            https://github.com/google/osv-scanner/releases/download/v2.5.1/osv-scanner_linux_amd64
-          curl -fsSL -o SHA256SUMS \
-            https://github.com/google/osv-scanner/releases/download/v2.5.1/osv-scanner_SHA256SUMS
-          grep 'osv-scanner_linux_amd64' SHA256SUMS | sha256sum -c -
-          chmod +x osv-scanner
           set +e
-          ./osv-scanner --format json .security/self-test/package-lock.json > /tmp/osv-self.json
+          "$RUNNER_TEMP/osv-scanner_linux_amd64" --format json \
+            .security/self-test/package-lock.json > /tmp/osv-self.json
           status=$?
           set -e
-          if [ "$status" -ne 0 ]; then
-            echo "self-test failed: osv-scanner errored on the fixture"
+          if [ "$status" -eq 1 ]; then
+            python3 -c "import json; json.load(open('/tmp/osv-self.json'))"
+            findings=$(python3 -c \
+              "import json; d=json.load(open('/tmp/osv-self.json')); \
+               print(sum(len(p.get('vulnerabilities', [])) for r in d.get('results', []) for p in r.get('packages', [])))")
+            if [ "$findings" -gt 0 ]; then
+              echo "self-test passed: fixture reported $findings known advisories"
+              exit 0
+            fi
+            echo "self-test failed: fixture scan found no advisories"
             exit 1
           fi
-          findings=$(python3 -c \
-            "import json; d=json.load(open('/tmp/osv-self.json')); \
-             print(sum(len(p.get('vulnerabilities', [])) for r in d.get('results', []) for p in r.get('packages', [])))")
-          if [ "$findings" -gt 0 ]; then
-            echo "self-test passed: fixture reported $findings known advisories"
-            exit 0
+          if [ "$status" -eq 0 ]; then
+            echo "self-test failed: detector did not detect the known-advisory fixture"
+            exit 1
           fi
-          echo "self-test failed: fixture with a known advisory was not reported"
+          echo "self-test failed: osv-scanner errored (status $status)"
           exit 1

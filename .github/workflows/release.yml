@@ -123,10 +123,17 @@ jobs:
             core.setOutput('SHOULD_RELEASE', shouldRelease ? 'true' : 'false')
 
   security-gates:
-    name: Security Gates (source)
+    name: Security Gates (OSV + Gitleaks)
     needs:
       - prepare
     uses: ./.github/workflows/security-scan.yml
+    secrets: inherit
+
+  security-codeql:
+    name: Security Gates (CodeQL)
+    needs:
+      - prepare
+    uses: ./.github/workflows/security-codeql.yml
     secrets: inherit
 
   cloud:
@@ -135,6 +142,7 @@ jobs:
     needs:
       - prepare
       - security-gates
+      - security-codeql
     uses: ./.github/workflows/release-cloud.yml
     secrets: inherit
     with:
@@ -151,6 +159,7 @@ jobs:
       - canary-gate
       - cloud
       - security-gates
+      - security-codeql
     steps:
       - uses: trstringer/manual-approval@v1
         if: ${{ needs.prepare.outputs.BUILD_TYPE == 'stable' }}
@@ -195,6 +204,8 @@ jobs:
     needs:
       - prepare
       - canary-gate
+      - security-gates
+      - security-codeql
     uses: ./.github/workflows/release-desktop.yml
     secrets: inherit
     with:
@@ -211,6 +222,8 @@ jobs:
     if: ${{ inputs.mobile }}
     needs:
       - prepare
+      - security-gates
+      - security-codeql
     uses: ./.github/workflows/release-mobile.yml
     secrets: inherit
     with:

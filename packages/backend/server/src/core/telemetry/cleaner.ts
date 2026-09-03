@@ -352,6 +352,9 @@ function flattenProps(
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
     const path = prefix ? `${prefix}.${key}` : key;
     if (isPlainObject(value)) {
       Object.assign(out, flattenProps(value, path));

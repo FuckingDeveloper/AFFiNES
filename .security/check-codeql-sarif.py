@@ -30,6 +30,11 @@ def rule_map(run):
 
 
 def finding_identity(result, artifact_map, rules):
+    fingerprint = (result.get('partialFingerprints') or {}).get(
+        'primaryLocationLineHash'
+    )
+    if fingerprint:
+        return (result.get('ruleId'), fingerprint)
     location = (result.get('locations') or [{}])[0].get('physicalLocation', {})
     uri = artifact_map.get(location.get('artifactLocation', {}).get('uri'))
     region = location.get('region', {})
@@ -60,7 +65,10 @@ def gate(sarif_path, baseline_path):
     baseline_ids = set()
     baseline = json.load(open(baseline_path))
     for entry in baseline:
-        baseline_ids.add(tuple(entry))
+        if entry.get('fingerprint'):
+            baseline_ids.add((entry['ruleId'], entry['fingerprint']))
+        else:
+            baseline_ids.add((entry['ruleId'], entry['uri'], entry['startLine']))
 
     blocking = []
     review = []
@@ -77,7 +85,12 @@ def gate(sarif_path, baseline_path):
             identity = finding_identity(result, artifact_map, rules)
             if identity in baseline_ids:
                 continue
-            entry = (result.get('ruleId'), identity[1], identity[2], sev, kind)
+            location = (result.get('locations') or [{}])[0].get(
+                'physicalLocation', {}
+            )
+            uri = location.get('artifactLocation', {}).get('uri')
+            line = (location.get('region') or {}).get('startLine')
+            entry = (result.get('ruleId'), uri, line, sev, kind)
             if kind == 'block':
                 blocking.append(entry)
             elif kind == 'review-required':
@@ -147,7 +160,14 @@ def selftest():
         cases.append(('error level blocks without severity', base, run(
             [result('js/errors', level='error')], [rule('js/errors', None, None)]), 1))
         baseline_with_entry = write(tmp, 'baseline2.json', [
-            ['js/path-injection', 'src/app.ts', 10],
+            {
+                'ruleId': 'js/path-injection',
+                'uri': 'src/app.ts',
+                'startLine': 10,
+                'justification': 'selftest',
+                'reviewOwner': 'selftest',
+                'expiry': '2099-01-01',
+            },
         ])
         cases.append(('baselined finding allowed', baseline_with_entry, run(
             [result('js/path-injection')],

@@ -1,1 +1,212 @@
-[]
+[
+  {
+    "ruleId": "js/insufficient-password-hash",
+    "uri": "packages/backend/server/src/plugins/copilot/byok/service.ts",
+    "startLine": 868,
+    "fingerprint": "a54f4ac27ea55c2:1",
+    "classification": "C-false-positive-with-evidence",
+    "justification": "C-false-positive: HMAC-SHA256 fingerprints high-entropy provider API keys for identification; not password hashing.",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/request-forgery",
+    "uri": "packages/backend/server/src/core/doc/reader.ts",
+    "startLine": 298,
+    "fingerprint": "9079e80cbe34cf4d:1",
+    "classification": "C-false-positive-with-evidence",
+    "justification": "C-false-positive: fetch targets the fixed internal RPC host with a signed internal access token; user controls only the path, no attacker-controlled host.",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/incomplete-url-substring-sanitization",
+    "uri": "blocksuite/affine/ext-loader/vitest.config.ts",
+    "startLine": 21,
+    "fingerprint": "73819b5cccfc3223:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/bad-tag-filter",
+    "uri": "packages/frontend/core/src/modules/code-block-preview-renderer/bridge.spec.ts",
+    "startLine": 13,
+    "fingerprint": "b26cde333571f150:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/bad-tag-filter",
+    "uri": "packages/frontend/core/src/modules/code-block-preview-renderer/bridge.spec.ts",
+    "startLine": 40,
+    "fingerprint": "ec961e86d134b36e:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/incomplete-multi-character-sanitization",
+    "uri": "packages/frontend/core/src/blocksuite/ai/components/ai-tools/doc-edit.ts",
+    "startLine": 53,
+    "fingerprint": "2427ccc1fddcca32:1",
+    "classification": "C-false-positive-with-evidence",
+    "justification": "C-false-positive: the sanitizer is defense-in-depth for AI-edited content; the rendering boundary is React DOM escaping.",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/incomplete-multi-character-sanitization",
+    "uri": "packages/frontend/core/src/modules/code-block-preview-renderer/bridge.spec.ts",
+    "startLine": 13,
+    "fingerprint": "b26cde333571f150:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/incomplete-multi-character-sanitization",
+    "uri": "packages/frontend/core/src/modules/code-block-preview-renderer/bridge.spec.ts",
+    "startLine": 40,
+    "fingerprint": "ec961e86d134b36e:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/clear-text-storage-of-sensitive-data",
+    "uri": "packages/backend/server/src/core/auth/service.ts",
+    "startLine": 395,
+    "fingerprint": "47312d27b00f0c9:1",
+    "classification": "C-false-positive-with-evidence",
+    "justification": "C-false-positive: flagged value is the user ID in a client-readable cookie per the in-code design comment; server validates via the signed session cookie; a UUID is not a credential.",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/polynomial-redos",
+    "uri": "blocksuite/affine/inlines/footnote/src/adapters/markdown/preprocessor.ts",
+    "startLine": 32,
+    "fingerprint": "c39116e06ff3b196:1",
+    "classification": "C-false-positive-with-evidence",
+    "justification": "C-false-positive: static footnote regex without nested quantifiers; bounded by markdown token sizes.",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/polynomial-redos",
+    "uri": "blocksuite/affine/shared/src/adapters/pdf/css-utils.ts",
+    "startLine": 15,
+    "fingerprint": "5386443c93fe31f8:1",
+    "classification": "C-false-positive-with-evidence",
+    "justification": "C-false-positive: static linear regex on computed style values.",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/polynomial-redos",
+    "uri": "blocksuite/affine/shared/src/utils/url.ts",
+    "startLine": 142,
+    "fingerprint": "f3b97832ce7e1e4c:1",
+    "classification": "C-false-positive-with-evidence",
+    "justification": "C-false-positive: static URL delimiter regexes without nested quantifiers.",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/polynomial-redos",
+    "uri": "packages/backend/server/src/core/auth/totp.ts",
+    "startLine": 6,
+    "fingerprint": "cd703b682a31d103:1",
+    "classification": "C-false-positive-with-evidence",
+    "justification": "C-false-positive: static linear regexes (/=+$/, /\\s+/) without nested quantifiers.",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/empty-password-in-configuration-file",
+    "uri": ".github/helm/affine/values.yaml",
+    "startLine": 23,
+    "fingerprint": "2a16c1fc0770afef:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/empty-password-in-configuration-file",
+    "uri": ".github/helm/affine/values.yaml",
+    "startLine": 28,
+    "fingerprint": "53edbaa6c7909aa8:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/empty-password-in-configuration-file",
+    "uri": ".github/helm/affine/values.yaml",
+    "startLine": 34,
+    "fingerprint": "69c229b02f509d:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/file-system-race",
+    "uri": "packages/backend/server/scripts/self-host-predeploy.js",
+    "startLine": 37,
+    "fingerprint": "e299221e724aa0d9:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/file-system-race",
+    "uri": "tools/cli/hooks.js",
+    "startLine": 120,
+    "fingerprint": "2e9ed401d87c615c:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/remote-property-injection",
+    "uri": "packages/backend/server/src/base/utils/request.ts",
+    "startLine": 97,
+    "fingerprint": "a135848b805dcd9d:1",
+    "classification": "C-false-positive-with-evidence",
+    "justification": "C-false-positive: cookie values are always strings; string assignment cannot activate prototype semantics.",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/remote-property-injection",
+    "uri": "packages/backend/server/src/core/telemetry/cleaner.ts",
+    "startLine": 362,
+    "fingerprint": "916decae95c2e12c:1",
+    "classification": "REVIEW-REQUIRED",
+    "justification": "Production path without a completed triage; do not ship as accepted risk.",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  },
+  {
+    "ruleId": "js/insecure-temporary-file",
+    "uri": "packages/frontend/apps/electron/test/helper/utils.spec.ts",
+    "startLine": 42,
+    "fingerprint": "90051c27a06d658f:1",
+    "classification": "C-test-dev-only",
+    "justification": "Test/development-only path: cannot ship in the production runtime (test spec/config or CI tooling).",
+    "reviewOwner": "trackwork-security-maintainers",
+    "expiry": "2026-12-01"
+  }
+]
