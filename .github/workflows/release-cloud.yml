@@ -74,9 +74,11 @@ jobs:
             echo "resolve-inputs failed: one or more candidate inputs are empty"
             exit 1
           fi
-          echo "BUILD_TYPE=$build_type" >> "$GITHUB_OUTPUT"
-          echo "APP_VERSION=$app_version" >> "$GITHUB_OUTPUT"
-          echo "GIT_SHORT_HASH=$git_short_hash" >> "$GITHUB_OUTPUT"
+          {
+            echo "BUILD_TYPE=$build_type"
+            echo "APP_VERSION=$app_version"
+            echo "GIT_SHORT_HASH=$git_short_hash"
+          } >> "$GITHUB_OUTPUT"
 
   build-images:
     name: Build Images

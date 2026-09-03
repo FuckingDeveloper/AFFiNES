@@ -54,7 +54,7 @@ jobs:
       - name: CodeQL security-result gate
         run: |
           set -euo pipefail
-          sarif_file=$(ls sarif-results/*.sarif | head -1)
+          sarif_file=$(find sarif-results -maxdepth 1 -name '*.sarif' | head -1)
           if [ -z "$sarif_file" ]; then
             echo "no SARIF produced by the analysis; treating as gate failure"
             exit 1
