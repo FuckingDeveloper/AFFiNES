@@ -54,9 +54,12 @@ jobs:
       - name: CodeQL security-result gate
         run: |
           set -euo pipefail
-          python3 .security/check-codeql-sarif.py \
-            "sarif-results/${{ matrix.language }}.sarif" \
-            .security/codeql-baseline.json
+          sarif_file=$(ls sarif-results/*.sarif | head -1)
+          if [ -z "$sarif_file" ]; then
+            echo "no SARIF produced by the analysis; treating as gate failure"
+            exit 1
+          fi
+          python3 .security/check-codeql-sarif.py "$sarif_file" .security/codeql-baseline.json
 
       - name: CodeQL security-result gate self-test
         run: |
