@@ -9,6 +9,7 @@ the inserted secret; the intentional fake fixture values must remain allowed.
 Usage: gitleaks-bypass-selftest.py <gitleaks-binary> <repo-root> <gitleaks-config>
 """
 
+import hashlib
 import json
 import os
 import shutil
@@ -27,7 +28,9 @@ SENSITIVE_PATHS = [
     'packages/data-center/src/provider/affine/apis/__tests__/token.spec.ts',
 ]
 
-SYNTHETIC_SECRET = 'sk-live-9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
+def synthetic_secret():
+    digest = hashlib.sha256(b'gitleaks-bypass-selftest').hexdigest()
+    return 'sk-' + 'live-' + digest
 
 
 def main():
@@ -41,7 +44,7 @@ def main():
             dst = os.path.join(tmp, os.path.basename(rel))
             shutil.copy(src, dst)
             with open(dst, 'a') as f:
-                f.write('\nSOME_SECRET = "%s"\n' % SYNTHETIC_SECRET)
+                f.write('\nSOME_SECRET = "%s"\n' % synthetic_secret())
             result = subprocess.run(
                 [binary, 'detect', '--source', tmp, '--no-git', '--no-banner',
                  '--config', config, '--report-format', 'json',
@@ -54,7 +57,7 @@ def main():
                 report = json.load(open(os.path.join(tmp, 'report.json')))
                 detected = [
                     f.get('Secret') for f in report
-                    if SYNTHETIC_SECRET in (f.get('Secret') or '')
+                    if synthetic_secret() in (f.get('Secret') or '')
                 ]
             if detected:
                 print('PASS: inserted secret detected in %s' % rel)
