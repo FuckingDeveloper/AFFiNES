@@ -109,6 +109,26 @@ else
   FAILED=1
 fi
 
+stage "TrackWork security integration suite (e2e)"
+if TEST_MODE=e2e yarn workspace @affine/server exec ava --serial \
+  "$ROOT/packages/backend/server/src/__tests__/e2e/trackwork/security.spec.ts" \
+  >/tmp/trackwork-security-e2e.log 2>&1; then
+  echo "   PASS security integration e2e (webhook/injection/SSRF/escalation/blob/pagination)"
+else
+  echo "   FAIL security integration e2e (see /tmp/trackwork-security-e2e.log)"
+  FAILED=1
+fi
+
+stage "TrackWork XSS surface check (frontend)"
+if yarn exec vitest run \
+  "$ROOT/packages/frontend/core/src/desktop/pages/workspace/task-tracker/security-xss.spec.ts" \
+  >/tmp/trackwork-security-xss.log 2>&1; then
+  echo "   PASS XSS surface assertions"
+else
+  echo "   FAIL XSS surface assertions (see /tmp/trackwork-security-xss.log)"
+  FAILED=1
+fi
+
 stage "CodeQL SARIF gate (optional)"
 if [ -n "${CODEQL_BIN:-}" ] && [ -f /tmp/trackwork-codeql.sarif ]; then
   if python3 "$ROOT/.security/check-codeql-sarif.py" \
