@@ -35,6 +35,7 @@
     "trackwork:check": "bash scripts/ci/trackwork-check.sh",
     "trackwork:security": "bash scripts/ci/trackwork-security.sh",
     "trackwork:security:codeql": "bash scripts/ci/trackwork-security-codeql.sh",
+    "trackwork:security:release": "bash scripts/ci/trackwork-release-security.sh",
     "trackwork:check:full": "bash scripts/ci/trackwork-check-full.sh",
     "lint:ox:fix": "yarn lint:ox --fix",
     "lint": "yarn lint:ox && yarn lint:eslint && yarn lint:prettier",
