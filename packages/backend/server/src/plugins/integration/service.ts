@@ -1,5 +1,7 @@
 import { PayloadTooLargeException } from '@nestjs/common';
 import { Injectable, Logger } from '@nestjs/common';
+
+import { Cache } from '../../base/cache';
 import { PrismaClient } from '@prisma/client';
 import {
   extractTrackWorkKeys,
@@ -62,7 +64,8 @@ export class IntegrationConnectionService {
     private readonly crypto: CryptoHelper,
     private readonly providers: ScmProviderRegistry,
     private readonly ciProviders: CiProviderRegistry,
-    private readonly queue: JobQueue
+    private readonly queue: JobQueue,
+    private readonly cache: Cache
   ) {}
 
   async create(input: CreateConnectionInput) {
@@ -693,6 +696,17 @@ export class IntegrationConnectionService {
       });
       // uniform 404: do not reveal whether the connection exists
       throw new NotFound('Development integration connection not found');
+    }
+
+    const eventUuid = input.headers['x-gitlab-event-uuid'];
+    if (typeof eventUuid === 'string' && eventUuid.length > 0) {
+      const dedupeKey = `trackwork:webhook:${connectionId}:${eventUuid}`;
+      const seen = await this.cache.get(dedupeKey);
+      if (seen) {
+        recordOutcome('replayed');
+        return { accepted: true };
+      }
+      await this.cache.set(dedupeKey, '1', { ttl: 60 * 60 * 1000 });
     }
 
     const payload: ScmWebhookJobData = {
