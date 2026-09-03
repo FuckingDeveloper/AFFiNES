@@ -60,7 +60,7 @@ def gate(sarif_path, baseline_path):
     baseline_ids = set()
     baseline = json.load(open(baseline_path))
     for entry in baseline:
-        baseline_ids.add(tuple(entry))
+        baseline_ids.add((entry['ruleId'], entry['uri'], entry['startLine']))
 
     blocking = []
     review = []
@@ -147,7 +147,14 @@ def selftest():
         cases.append(('error level blocks without severity', base, run(
             [result('js/errors', level='error')], [rule('js/errors', None, None)]), 1))
         baseline_with_entry = write(tmp, 'baseline2.json', [
-            ['js/path-injection', 'src/app.ts', 10],
+            {
+                'ruleId': 'js/path-injection',
+                'uri': 'src/app.ts',
+                'startLine': 10,
+                'justification': 'selftest',
+                'reviewOwner': 'selftest',
+                'expiry': '2099-01-01',
+            },
         ])
         cases.append(('baselined finding allowed', baseline_with_entry, run(
             [result('js/path-injection')],

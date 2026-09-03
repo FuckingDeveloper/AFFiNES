@@ -12,6 +12,13 @@ on:
       git-short-hash:
         required: true
         type: string
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Build and scan the candidate image only; do NOT deploy or promote'
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: 'write'
@@ -30,6 +37,7 @@ jobs:
 
   deploy:
     name: Deploy to cluster
+    if: ${{ inputs.dry-run != true }}
     environment: ${{ inputs.build-type }}
     needs:
       - build-images
