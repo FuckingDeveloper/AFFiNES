@@ -71,6 +71,8 @@ export type TaskActivityOperation =
   | 'task.created'
   | 'task.renamed'
   | 'task.trashed'
+  | 'task.archived'
+  | 'task.restored'
   | 'task.status_changed'
   | 'task.reordered'
   | 'task.priority_changed'
@@ -101,6 +103,9 @@ export type TaskHistoryEntry = {
   source?: TaskActivitySource;
 };
 
+export const parseTaskArchived = (value: unknown): boolean =>
+  value === true || value === 'true';
+
 export const shouldMaterializeTrackWorkSchema = (
   canManageProperties: boolean | undefined
 ) => canManageProperties === true;
@@ -130,6 +135,7 @@ export const buildTaskActivityEntry = (
 export const TASK_TRACKER_FLAG_PROPERTY = 'taskTrackerEnabled';
 export const TASK_BOARD_PROPERTY = 'taskBoardId';
 export const TASK_STATUS_PROPERTY = 'taskStatus';
+export const TASK_ARCHIVED_PROPERTY = 'taskArchived';
 export const TASK_PRIORITY_PROPERTY = 'taskPriority';
 export const TASK_TYPE_PROPERTY = 'taskType';
 export const TASK_ASSIGNEE_PROPERTY = 'taskAssignee';

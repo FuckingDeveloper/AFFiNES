@@ -65,6 +65,7 @@ import {
   parseHistoryEntries,
   parseRelatedDocs,
   parseSubtasks,
+  parseTaskArchived,
   parseTaskRelations,
   resolveTaskTrackerBoards,
   sanitizeAutomationRules,
@@ -73,6 +74,7 @@ import {
   stringifyRelatedDocs,
   stringifySubtasks,
   stringifyTaskRelations,
+  TASK_ARCHIVED_PROPERTY,
   TASK_ASSIGNEE_PROPERTY,
   TASK_ATTACHMENTS_PROPERTY,
   TASK_AUTOMATION_APPLIED_PROPERTY,
@@ -137,6 +139,7 @@ type TaskCard = {
   subtasks: TaskSubtask[];
   history: TaskHistoryEntry[];
   relatedDocs: string[];
+  archived: boolean;
   relations: TaskRelations;
 };
 
@@ -987,6 +990,7 @@ const TaskPreview = ({
   onClose,
   onOpenTaskDoc,
   onDownloadAttachment,
+  onToggleArchive,
 }: {
   task: TaskCard;
   workspace: WorkspaceService['workspace'] | null;
@@ -995,6 +999,7 @@ const TaskPreview = ({
   onClose: () => void;
   onOpenTaskDoc: (taskId: string) => void;
   onDownloadAttachment: (attachment: TaskAttachment) => void;
+  onToggleArchive: () => void;
 }) => {
   const { t, locale } = useTaskTrackerI18n();
   const complexity = complexityMeta(task.complexity);
@@ -1015,6 +1020,9 @@ const TaskPreview = ({
         <div className={styles.expandedCardHeaderActions}>
           <Button variant="plain" onClick={onEdit}>
             {t('openEditor')}
+          </Button>
+          <Button variant="plain" onClick={onToggleArchive}>
+            {task.archived ? t('restoreTask') : t('archiveTask')}
           </Button>
           <button
             type="button"
@@ -2984,6 +2992,22 @@ const TaskTrackerPage = () => {
     )
   );
 
+  const archivedValues = useLiveData(
+    useMemo(
+      () =>
+        docsService.list.docs$.map(
+          docs =>
+            new Map(
+              docs.map(doc => [
+                doc.id,
+                doc.customProperty$(TASK_ARCHIVED_PROPERTY).value,
+              ])
+            )
+        ),
+      [docsService.list]
+    )
+  );
+
   const historyValues = useLiveData(
     useMemo(
       () =>
@@ -3378,9 +3402,11 @@ const TaskTrackerPage = () => {
           complexity: sanitizeComplexity(complexityValues.get(docId)),
           subtasks: parseSubtasks(subtaskValues.get(docId)),
           history: parseHistoryEntries(historyValues.get(docId)),
+          archived: parseTaskArchived(archivedValues.get(docId)),
         };
       });
   }, [
+    archivedValues,
     assigneeValues,
     attachmentValues,
     boardValues,
@@ -3465,13 +3491,48 @@ const TaskTrackerPage = () => {
     workspaceTaskKey,
   ]);
 
+  const toggleTaskArchived = useCallback(
+    (task: TaskCard, archived: boolean) => {
+      const doc = docsService.list.doc$(task.id).value;
+      if (!doc) {
+        return;
+      }
+      doc.setCustomProperty(
+        TASK_ARCHIVED_PROPERTY,
+        archived ? 'true' : 'false'
+      );
+      const nextHistory = [
+        buildTaskActivityEntry(
+          'edited',
+          archived
+            ? `Task ${task.number} archived`
+            : `Task ${task.number} restored`,
+          {
+            operation: archived ? 'task.archived' : 'task.restored',
+            actorId: account?.id,
+            actorName: account?.label,
+            taskKey: task.number,
+          }
+        ),
+        ...(task.history ?? []),
+      ].slice(0, 30);
+      doc.setCustomProperty(
+        TASK_HISTORY_PROPERTY,
+        stringifyHistoryEntries(nextHistory)
+      );
+    },
+    [account?.id, account?.label, docsService.list]
+  );
+
   const selectedBoardTasks = useMemo(() => {
     const currentBoardId = selectedBoard?.id;
     if (!currentBoardId) {
       return [];
     }
 
-    return tasks.filter(task => task.boardId === currentBoardId);
+    return tasks.filter(
+      task => task.boardId === currentBoardId && !task.archived
+    );
   }, [selectedBoard?.id, tasks]);
 
   const assigneeOptions = useMemo(() => {
@@ -5049,6 +5110,9 @@ const TaskTrackerPage = () => {
                 onOpenTaskDoc={handleOpenTaskDoc}
                 onDownloadAttachment={attachment => {
                   handleDownloadAttachment(attachment).catch(() => {});
+                }}
+                onToggleArchive={() => {
+                  toggleTaskArchived(selectedTask, !selectedTask.archived);
                 }}
               />
             </TaskModal>
