@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
-
 import { parseTaskArchived } from '@affine/core/desktop/pages/workspace/task-tracker/config';
+import { describe, expect, it } from 'vitest';
 
 type PermissionState = boolean | undefined;
 type SurfaceState =
