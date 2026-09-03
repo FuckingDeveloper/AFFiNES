@@ -34,50 +34,66 @@ permissions:
   packages: 'write'
 
 jobs:
-  prepare-dispatch:
-    name: Prepare dispatch inputs
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+  resolve-inputs:
+    name: Resolve candidate inputs
     runs-on: ubuntu-latest
     outputs:
-      BUILD_TYPE: ${{ steps.derive.outputs.BUILD_TYPE }}
-      APP_VERSION: ${{ steps.derive.outputs.APP_VERSION }}
-      GIT_SHORT_HASH: ${{ steps.derive.outputs.GIT_SHORT_HASH }}
+      BUILD_TYPE: ${{ steps.resolve.outputs.BUILD_TYPE }}
+      APP_VERSION: ${{ steps.resolve.outputs.APP_VERSION }}
+      GIT_SHORT_HASH: ${{ steps.resolve.outputs.GIT_SHORT_HASH }}
     steps:
-      - name: Derive candidate values from the exact checked-out SHA
-        id: derive
+      - name: Resolve build-type / app-version / git-short-hash
+        id: resolve
+        env:
+          CALL_BUILD_TYPE: ${{ inputs.build-type }}
+          CALL_APP_VERSION: ${{ inputs.app-version }}
+          CALL_GIT_SHORT_HASH: ${{ inputs.git-short-hash }}
+          DISPATCH_BUILD_TYPE: ${{ inputs.build-type }}
+          GITHUB_SHA_FULL: ${{ github.sha }}
         run: |
           set -euo pipefail
-          sha12="${{ github.sha }}"
-          sha12="${sha12:0:12}"
-          echo "BUILD_TYPE=${{ inputs.build-type }}" >> "$GITHUB_OUTPUT"
-          echo "APP_VERSION=0.0.0-dryrun.$sha12" >> "$GITHUB_OUTPUT"
-          echo "GIT_SHORT_HASH=$sha12" >> "$GITHUB_OUTPUT"
-          cat >> "$GITHUB_STEP_SUMMARY" << EOF
-          ## Security CI dry run
-          Derived from the exact checked-out SHA:
-          - candidate tag: \`ghcr.io/toeverything/affine:${{ inputs.build-type }}-$sha12\`
-          - app version (dry-run, never promoted): \`0.0.0-dryrun.$sha12\`
-          - deploy job: SKIPPED (dry-run=true)
-          EOF
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            sha12="${GITHUB_SHA_FULL:0:12}"
+            build_type="$DISPATCH_BUILD_TYPE"
+            app_version="0.0.0-dryrun.$sha12"
+            git_short_hash="$sha12"
+            cat >> "$GITHUB_STEP_SUMMARY" << EOF
+            ## Security CI image dry run
+            - candidate tag: \`ghcr.io/toeverything/affine:$build_type-$sha12\`
+            - app version (dry-run, never promoted): \`0.0.0-dryrun.$sha12\`
+            - deploy: IMPOSSIBLE on workflow_dispatch
+            EOF
+          else
+            build_type="$CALL_BUILD_TYPE"
+            app_version="$CALL_APP_VERSION"
+            git_short_hash="$CALL_GIT_SHORT_HASH"
+          fi
+          if [ -z "$build_type" ] || [ -z "$app_version" ] || [ -z "$git_short_hash" ]; then
+            echo "resolve-inputs failed: one or more candidate inputs are empty"
+            exit 1
+          fi
+          echo "BUILD_TYPE=$build_type" >> "$GITHUB_OUTPUT"
+          echo "APP_VERSION=$app_version" >> "$GITHUB_OUTPUT"
+          echo "GIT_SHORT_HASH=$git_short_hash" >> "$GITHUB_OUTPUT"
 
   build-images:
     name: Build Images
     needs:
-      - prepare-dispatch
+      - resolve-inputs
     uses: ./.github/workflows/build-images.yml
     secrets: inherit
     with:
-      build-type: ${{ github.event_name == 'workflow_dispatch' && needs.prepare-dispatch.outputs.BUILD_TYPE || inputs.build-type }}
-      app-version: ${{ github.event_name == 'workflow_dispatch' && needs.prepare-dispatch.outputs.APP_VERSION || inputs.app-version }}
-      git-short-hash: ${{ github.event_name == 'workflow_dispatch' && needs.prepare-dispatch.outputs.GIT_SHORT_HASH || inputs.git-short-hash }}
+      build-type: ${{ needs.resolve-inputs.outputs.BUILD_TYPE }}
+      app-version: ${{ needs.resolve-inputs.outputs.APP_VERSION }}
+      git-short-hash: ${{ needs.resolve-inputs.outputs.GIT_SHORT_HASH }}
 
   deploy:
     name: Deploy to cluster
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry-run != true }}
-    environment: ${{ github.event_name == 'workflow_dispatch' && needs.prepare-dispatch.outputs.BUILD_TYPE || inputs.build-type }}
+    if: ${{ github.event_name != 'workflow_dispatch' }}
+    environment: ${{ needs.resolve-inputs.outputs.BUILD_TYPE }}
     needs:
       - build-images
-      - prepare-dispatch
+      - resolve-inputs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
