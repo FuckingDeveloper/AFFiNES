@@ -1,11 +1,10 @@
-import { describe, expect, it } from 'vitest';
-
 import {
   buildTaskActivityEntry,
   parseHistoryEntries,
   parseTaskArchived,
   stringifyHistoryEntries,
 } from '@affine/core/desktop/pages/workspace/task-tracker/config';
+import { describe, expect, it } from 'vitest';
 
 describe('TrackWork archive semantics', () => {
   it('legacy tasks without archive state default to ACTIVE', () => {
