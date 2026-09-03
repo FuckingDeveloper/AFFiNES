@@ -57,12 +57,12 @@ jobs:
             build_type="$DISPATCH_BUILD_TYPE"
             app_version="0.0.0-dryrun.$sha12"
             git_short_hash="$sha12"
-            cat >> "$GITHUB_STEP_SUMMARY" << EOF
-            ## Security CI image dry run
-            - candidate tag: \`ghcr.io/toeverything/affine:$build_type-$sha12\`
-            - app version (dry-run, never promoted): \`0.0.0-dryrun.$sha12\`
-            - deploy: IMPOSSIBLE on workflow_dispatch
-            EOF
+            printf '%s\n' \
+              '## Security CI image dry run' \
+              "- candidate tag: \`ghcr.io/toeverything/affine:$build_type-$sha12\`" \
+              "- app version (dry-run, never promoted): \`0.0.0-dryrun.$sha12\`" \
+              '- deploy: IMPOSSIBLE on workflow_dispatch' \
+              >> "$GITHUB_STEP_SUMMARY"
           else
             build_type="$CALL_BUILD_TYPE"
             app_version="$CALL_APP_VERSION"
