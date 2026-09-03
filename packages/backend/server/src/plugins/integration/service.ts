@@ -698,22 +698,35 @@ export class IntegrationConnectionService {
       throw new NotFound('Development integration connection not found');
     }
 
-    const eventUuid = input.headers['x-gitlab-event-uuid'];
-    if (typeof eventUuid === 'string' && eventUuid.length > 0) {
-      const dedupeKey = `trackwork:webhook:${connectionId}:${eventUuid}`;
-      const seen = await this.cache.get(dedupeKey);
-      if (seen) {
-        recordOutcome('replayed');
-        return { accepted: true };
-      }
-      await this.cache.set(dedupeKey, '1', { ttl: 60 * 60 * 1000 });
-    }
-
     const payload: ScmWebhookJobData = {
       connectionId,
       provider: providerType,
       payload: input.body,
     };
+
+    const eventUuid = input.headers['x-gitlab-event-uuid'];
+    if (typeof eventUuid === 'string' && eventUuid.length > 0) {
+      if (eventUuid.length > 64) {
+        recordOutcome('invalid_uuid');
+        throw new BadRequest('Invalid webhook event uuid');
+      }
+      const dedupeKey = `trackwork:webhook:${connectionId}:${eventUuid}`;
+      const acquired = await this.cache.setnx(dedupeKey, '1', {
+        ttl: 60 * 60 * 1000,
+      });
+      if (!acquired) {
+        recordOutcome('replayed');
+        return { accepted: true };
+      }
+      try {
+        await this.queue.add('integration.scm-webhook', payload);
+      } catch (error) {
+        await this.cache.delete(dedupeKey);
+        throw error;
+      }
+      recordOutcome('queued');
+      return { accepted: true };
+    }
 
     await this.queue.add('integration.scm-webhook', payload);
     recordOutcome('queued');

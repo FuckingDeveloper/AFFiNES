@@ -1,6 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 
+import { Cache } from '../../../base/cache/instances';
 import { CryptoHelper } from '../../../base/helpers/crypto';
+import { ScmProviderRegistry } from '../../../plugins/integration/providers/index';
+import { CiProviderRegistry } from '../../../plugins/integration/providers/ci';
+import { IntegrationConnectionService } from '../../../plugins/integration/service';
 import { WorkspaceRole } from '../../../models';
 import { app, e2e, Mockers } from '../test';
 
@@ -44,6 +48,14 @@ async function postWebhook(
     .POST(`/api/integrations/gitlab/webhook/${connectionId}`)
     .set(headers)
     .send(body as never);
+}
+
+class CountingQueue {
+  public enqueued: string[] = [];
+  async add(name: string, payload: unknown) {
+    this.enqueued.push(`${name}:${JSON.stringify(payload).length}`);
+    return { id: `job-${this.enqueued.length}` };
+  }
 }
 
 const pipelinePayload = (eventUuid: string) => ({
@@ -300,6 +312,143 @@ e2e('blob authorization: cross-workspace access denied', async t => {
   );
 });
 
+
+
+e2e('webhook replay dedupe is atomic under concurrency', async t => {
+  const owner = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: owner.id },
+  });
+  await app.login(owner);
+  const db = app.get(PrismaClient);
+  const crypto = app.get(CryptoHelper);
+  const cache = app.get(Cache);
+  const scmProviders = app.get(ScmProviderRegistry);
+  const ciProviders = app.get(CiProviderRegistry);
+  const countingQueue = new CountingQueue();
+  const service = new IntegrationConnectionService(
+    db,
+    crypto,
+    scmProviders,
+    ciProviders,
+    countingQueue as never,
+    cache
+  );
+
+  const connection = await db.developmentIntegrationConnection.create({
+    data: {
+      workspaceId: workspace.id,
+      provider: 'gitlab',
+      name: 'atomic-test',
+      baseUrl: 'https://gitlab.example.test',
+      tokenCipher: crypto.encrypt('fixture-token'),
+      webhookSecretCipher: crypto.encrypt('secret-webhook-token'),
+      createdById: owner.id,
+    },
+  });
+
+  for (let round = 0; round < 5; round += 1) {
+    countingQueue.enqueued = [];
+    const uuid = `uuid-concurrent-${round}`;
+    const headers = {
+      'x-gitlab-token': 'secret-webhook-token',
+      'x-gitlab-event-uuid': uuid,
+    };
+    const [r1, r2] = await Promise.all([
+      service.acceptScmWebhook({
+        connectionId: connection.id,
+        provider: 'gitlab',
+        headers,
+        body: pipelinePayload(uuid),
+      }),
+      service.acceptScmWebhook({
+        connectionId: connection.id,
+        provider: 'gitlab',
+        headers,
+        body: pipelinePayload(uuid),
+      }),
+    ]);
+    t.is(r1.accepted, true);
+    t.is(r2.accepted, true);
+    t.is(countingQueue.enqueued.length, 1, `round ${round}: exactly one enqueue`);
+  }
+
+  countingQueue.enqueued = [];
+  await Promise.all([
+    service.acceptScmWebhook({
+      connectionId: connection.id,
+      provider: 'gitlab',
+      headers: {
+        'x-gitlab-token': 'secret-webhook-token',
+        'x-gitlab-event-uuid': 'uuid-a',
+      },
+      body: pipelinePayload('uuid-a'),
+    }),
+    service.acceptScmWebhook({
+      connectionId: connection.id,
+      provider: 'gitlab',
+      headers: {
+        'x-gitlab-token': 'secret-webhook-token',
+        'x-gitlab-event-uuid': 'uuid-b',
+      },
+      body: pipelinePayload('uuid-b'),
+    }),
+  ]);
+  t.is(countingQueue.enqueued.length, 2, 'different uuids both processed');
+});
+
+e2e('webhook signature check always precedes the replay cache', async t => {
+  const owner = await app.create(Mockers.User);
+  const workspace = await app.create(Mockers.Workspace, {
+    owner: { id: owner.id },
+  });
+  await app.login(owner);
+  const db = app.get(PrismaClient);
+  const crypto = app.get(CryptoHelper);
+  const connection = await db.developmentIntegrationConnection.create({
+    data: {
+      workspaceId: workspace.id,
+      provider: 'gitlab',
+      name: 'sig-order-test',
+      baseUrl: 'https://gitlab.example.test',
+      tokenCipher: crypto.encrypt('fixture-token'),
+      webhookSecretCipher: crypto.encrypt('secret-webhook-token'),
+      createdById: owner.id,
+    },
+  });
+
+  const uuid = 'uuid-known';
+  await postWebhook(
+    connection.id,
+    { 'x-gitlab-token': 'secret-webhook-token', 'x-gitlab-event-uuid': uuid },
+    pipelinePayload(uuid)
+  );
+
+  const changedBody = await postWebhook(
+    connection.id,
+    { 'x-gitlab-token': 'secret-webhook-token', 'x-gitlab-event-uuid': uuid },
+    { ...pipelinePayload(uuid), commits: [{ id: 'mutated' }] }
+  );
+  // The GitLab token webhook model authenticates the SENDER, not the body;
+  // body integrity is transport-level (HTTPS). Modified-body + valid token is
+  // accepted by the ingress contract by design - documented, not claimed as
+  // body-signature protection.
+  t.is(changedBody.status, 200, 'token model: sender-authenticated body accepted');
+
+  const wrongSecret = await postWebhook(
+    connection.id,
+    { 'x-gitlab-token': 'wrong-secret', 'x-gitlab-event-uuid': uuid },
+    pipelinePayload(uuid)
+  );
+  t.is(wrongSecret.status, 404, 'wrong secret rejected even with known uuid');
+
+  const missing = await postWebhook(
+    connection.id,
+    { 'x-gitlab-event-uuid': uuid },
+    pipelinePayload(uuid)
+  );
+  t.is(missing.status, 404, 'missing signature rejected even with known uuid');
+});
 e2e('abusive pagination: bounds and cross-workspace cursors', async t => {
   const owner = await app.create(Mockers.User);
   const workspace = await app.create(Mockers.Workspace, {
