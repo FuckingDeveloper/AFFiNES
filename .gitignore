@@ -96,3 +96,4 @@ storageState.json
 .playwright-mcp/
 .sisyphus/
 .cache/
+__pycache__/
