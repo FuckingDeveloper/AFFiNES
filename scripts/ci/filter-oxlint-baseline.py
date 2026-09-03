@@ -32,7 +32,7 @@ new_findings = []
 for i, line in enumerate(lines):
     if '\u256d\u2500[' not in line:  # oxlint location marker
         continue
-    m = re.search(r'packages/[^]]+\.(?:ts|tsx)', line)
+    m = re.search(r'packages/[^]:]+', line)
     if not m:
         continue
     file = m.group(0)

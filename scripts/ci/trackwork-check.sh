@@ -83,22 +83,24 @@ stage "server: TypeScript (baseline-filtered)"
 set +e
 yarn workspace @affine/server exec tsc --noEmit -p tsconfig.json >/tmp/trackwork-server-tsc.log 2>&1
 set -e
-BASELINE_FILTER="oauth/config.ts"
-NEW_ERRORS=$(grep "error TS" /tmp/trackwork-server-tsc.log | grep -v "$BASELINE_FILTER" | grep -v "oauth" || true)
+# Exact pre-existing baseline diagnostic: TS2345 in oauth/config.ts. Any
+# other file OR any other diagnostic code in the same file still fails.
+NEW_ERRORS=$(grep "error TS" /tmp/trackwork-server-tsc.log | grep -v "oauth/config.ts.*TS2345" || true)
 if [ -n "$NEW_ERRORS" ]; then
   echo "   FAIL server TypeScript (non-baseline errors):"
   echo "$NEW_ERRORS" | head -10
   FAILED=1
 else
-  echo "   PASS server TypeScript (baseline oauth/config.ts error only)"
+  echo "   PASS server TypeScript (baseline oauth/config.ts TS2345 only)"
 fi
 
 stage "frontend: Task Tracker TypeScript (baseline-filtered)"
 set +e
 yarn exec tsc --noEmit -p packages/frontend/core/tsconfig.json >/tmp/trackwork-core-tsc.log 2>&1
 set -e
-CORE_BASELINE="katex"
-CORE_NEW=$(grep "error TS" /tmp/trackwork-core-tsc.log | grep -v "$CORE_BASELINE" || true)
+# Exact pre-existing baseline diagnostic: the katex side-effect import error
+# in the core package; any other diagnostic still fails.
+CORE_NEW=$(grep "error TS" /tmp/trackwork-core-tsc.log | grep -v "TS2882" || true)
 if [ -n "$CORE_NEW" ]; then
   echo "   FAIL core TypeScript (non-baseline errors):"
   echo "$CORE_NEW" | head -10

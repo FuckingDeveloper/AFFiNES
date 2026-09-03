@@ -76,19 +76,26 @@ else
 fi
 
 stage "Docker/self-host smoke (requires docker)"
+SMOKE_SKIPPED=1
 if command -v docker >/dev/null 2>&1 && [ -n "${TRACKWORK_RUN_SMOKE:-}" ]; then
   if bash "$ROOT/scripts/smoke-upgrade.sh" >/tmp/trackwork-smoke.log 2>&1; then
     echo "   PASS docker smoke"
+    SMOKE_SKIPPED=0
   else
     echo "   FAIL docker smoke (see /tmp/trackwork-smoke.log)"
     FAILED=1
+    SMOKE_SKIPPED=0
   fi
 else
-  echo "   SKIP docker smoke (set TRACKWORK_RUN_SMOKE=1 to run; needs docker)"
+  echo "   NOT EXECUTED docker smoke (set TRACKWORK_RUN_SMOKE=1 to run; needs docker)"
 fi
 
 if [ "$FAILED" -eq 1 ]; then
   echo "trackwork:check:full FAILED"
   exit 1
 fi
-echo "trackwork:check:full PASSED"
+if [ "$SMOKE_SKIPPED" -eq 1 ]; then
+  echo "trackwork:check:full PASSED (Docker smoke not requested)"
+else
+  echo "trackwork:check:full PASSED (including Docker smoke)"
+fi
