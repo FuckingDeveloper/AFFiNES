@@ -89,7 +89,11 @@ e2e('webhook ingress: signature, size and replay semantics', async t => {
   t.is(accepted.status, 200);
   t.is(accepted.body.accepted, true);
 
-  const missing = await postWebhook(connection.id, {}, pipelinePayload('uuid-2'));
+  const missing = await postWebhook(
+    connection.id,
+    {},
+    pipelinePayload('uuid-2')
+  );
   t.is(missing.status, 404, 'missing token rejected with uniform 404');
 
   const wrong = await postWebhook(
@@ -106,11 +110,9 @@ e2e('webhook ingress: signature, size and replay semantics', async t => {
   );
   t.is(malformed.status, 404);
 
-  const oversized = await postWebhook(
-    connection.id,
-    validHeaders,
-    { padding: 'x'.repeat(300 * 1024) }
-  );
+  const oversized = await postWebhook(connection.id, validHeaders, {
+    padding: 'x'.repeat(300 * 1024),
+  });
   t.true(oversized.status >= 400 && oversized.status < 500);
 
   const replayed = await postWebhook(
@@ -134,33 +136,46 @@ e2e('webhook ingress: signature, size and replay semantics', async t => {
   }
 });
 
-e2e('injection: identifiers with metacharacters are rejected without leakage', async t => {
-  const owner = await app.create(Mockers.User);
-  const workspace = await app.create(Mockers.Workspace, {
-    owner: { id: owner.id },
-  });
-  await app.login(owner);
+e2e(
+  'injection: identifiers with metacharacters are rejected without leakage',
+  async t => {
+    const owner = await app.create(Mockers.User);
+    const workspace = await app.create(Mockers.Workspace, {
+      owner: { id: owner.id },
+    });
+    await app.login(owner);
 
-  const evilKey = "TASK-1' OR '1'='1' --";
-  const lookup = await gqlRaw(
-    `query($workspaceId: String!, $taskKey: String!) {
+    const evilKey = "TASK-1' OR '1'='1' --";
+    const lookup = await gqlRaw(
+      `query($workspaceId: String!, $taskKey: String!) {
       trackWorkTask(workspaceId: $workspaceId, taskKey: $taskKey) { taskKey }
     }`,
-    { workspaceId: workspace.id, taskKey: evilKey }
-  );
-  t.is(lookup.status, 200);
-  t.is(lookup.body.data.trackWorkTask, null, 'no SQL metacharacter leakage');
+      { workspaceId: workspace.id, taskKey: evilKey }
+    );
+    t.is(lookup.status, 200);
+    t.is(lookup.body.data.trackWorkTask, null, 'no SQL metacharacter leakage');
 
-  const evilWs = "workspace-id'; DROP TABLE trackwork_tasks; --";
-  const wf = await gqlRaw(WORKFLOW_MUTATION, {
-    input: { workspaceId: evilWs, expectedRevision: 0, config: { taskTrackerBoards: [] } },
-  });
-  t.true(wf.body.errors && wf.body.errors.length > 0, 'invalid workspace rejected');
-  t.false(JSON.stringify(wf.body).includes('Prisma'), 'no Prisma internals leaked');
+    const evilWs = "workspace-id'; DROP TABLE trackwork_tasks; --";
+    const wf = await gqlRaw(WORKFLOW_MUTATION, {
+      input: {
+        workspaceId: evilWs,
+        expectedRevision: 0,
+        config: { taskTrackerBoards: [] },
+      },
+    });
+    t.true(
+      wf.body.errors && wf.body.errors.length > 0,
+      'invalid workspace rejected'
+    );
+    t.false(
+      JSON.stringify(wf.body).includes('Prisma'),
+      'no Prisma internals leaked'
+    );
 
-  const payload = JSON.stringify({ taskTrackerBoards: [] });
-  t.false(payload.includes("' OR "));
-});
+    const payload = JSON.stringify({ taskTrackerBoards: [] });
+    t.false(payload.includes("' OR "));
+  }
+);
 
 e2e('SSRF: only owners can configure provider base URLs', async t => {
   const owner = await app.create(Mockers.User);
@@ -189,7 +204,10 @@ e2e('SSRF: only owners can configure provider base URLs', async t => {
       },
     }
   );
-  t.true(attempt.body.errors && attempt.body.errors.length > 0, 'collaborator cannot configure provider base URLs');
+  t.true(
+    attempt.body.errors && attempt.body.errors.length > 0,
+    'collaborator cannot configure provider base URLs'
+  );
 
   await app.login(owner);
   const ownerAttempt = await gqlRaw(
@@ -209,43 +227,55 @@ e2e('SSRF: only owners can configure provider base URLs', async t => {
   t.is(ownerAttempt.status, 200);
 });
 
-e2e('privilege escalation: horizontal and vertical workflow escalation denied', async t => {
-  const ownerA = await app.create(Mockers.User);
-  const wsA = await app.create(Mockers.Workspace, { owner: { id: ownerA.id } });
-  const ownerB = await app.create(Mockers.User);
-  const wsB = await app.create(Mockers.Workspace, { owner: { id: ownerB.id } });
+e2e(
+  'privilege escalation: horizontal and vertical workflow escalation denied',
+  async t => {
+    const ownerA = await app.create(Mockers.User);
+    const wsA = await app.create(Mockers.Workspace, {
+      owner: { id: ownerA.id },
+    });
+    const ownerB = await app.create(Mockers.User);
+    const wsB = await app.create(Mockers.Workspace, {
+      owner: { id: ownerB.id },
+    });
 
-  const collaborator = await app.create(Mockers.User);
-  await app.create(Mockers.WorkspaceUser, {
-    userId: collaborator.id,
-    workspaceId: wsA.id,
-    type: WorkspaceRole.Collaborator,
-  });
+    const collaborator = await app.create(Mockers.User);
+    await app.create(Mockers.WorkspaceUser, {
+      userId: collaborator.id,
+      workspaceId: wsA.id,
+      type: WorkspaceRole.Collaborator,
+    });
 
-  const config = { taskTrackerBoards: [{ id: 'b', title: 'Board' }] };
+    const config = { taskTrackerBoards: [{ id: 'b', title: 'Board' }] };
 
-  await app.login(collaborator);
-  const vertical = await gqlRaw(WORKFLOW_MUTATION, {
-    input: { workspaceId: wsA.id, expectedRevision: 0, config },
-  });
-  t.true(vertical.body.errors && vertical.body.errors.length > 0, 'collaborator vertical escalation denied');
+    await app.login(collaborator);
+    const vertical = await gqlRaw(WORKFLOW_MUTATION, {
+      input: { workspaceId: wsA.id, expectedRevision: 0, config },
+    });
+    t.true(
+      vertical.body.errors && vertical.body.errors.length > 0,
+      'collaborator vertical escalation denied'
+    );
 
-  const horizontal = await gqlRaw(WORKFLOW_MUTATION, {
-    input: { workspaceId: wsB.id, expectedRevision: 0, config },
-  });
-  t.true(horizontal.body.errors && horizontal.body.errors.length > 0, 'cross-workspace horizontal escalation denied');
+    const horizontal = await gqlRaw(WORKFLOW_MUTATION, {
+      input: { workspaceId: wsB.id, expectedRevision: 0, config },
+    });
+    t.true(
+      horizontal.body.errors && horizontal.body.errors.length > 0,
+      'cross-workspace horizontal escalation denied'
+    );
 
-  const state = await app.get(PrismaClient).trackWorkWorkflowConfig.count({
-    where: { workspaceId: { in: [wsA.id, wsB.id] } },
-  });
-  t.is(state, 0, 'no workflow config created by the denied attempts');
-});
+    const state = await app.get(PrismaClient).trackWorkWorkflowConfig.count({
+      where: { workspaceId: { in: [wsA.id, wsB.id] } },
+    });
+    t.is(state, 0, 'no workflow config created by the denied attempts');
+  }
+);
 
 e2e('blob authorization: cross-workspace access denied', async t => {
   const ownerA = await app.create(Mockers.User);
   const wsA = await app.create(Mockers.Workspace, { owner: { id: ownerA.id } });
   const ownerB = await app.create(Mockers.User);
-  const wsB = await app.create(Mockers.Workspace, { owner: { id: ownerB.id } });
 
   await app.login(ownerA);
   const listA = await gqlRaw(
@@ -264,7 +294,10 @@ e2e('blob authorization: cross-workspace access denied', async t => {
     }`,
     { workspaceId: wsA.id }
   );
-  t.true(listBOfA.body.errors && listBOfA.body.errors.length > 0, 'owner B cannot list workspace A blobs');
+  t.true(
+    listBOfA.body.errors && listBOfA.body.errors.length > 0,
+    'owner B cannot list workspace A blobs'
+  );
 });
 
 e2e('abusive pagination: bounds and cross-workspace cursors', async t => {
@@ -298,15 +331,27 @@ e2e('abusive pagination: bounds and cross-workspace cursors', async t => {
     })),
   });
 
-  const zero = await gqlRaw(ACTIVITY_QUERY, { workspaceId: workspace.id, first: 0 });
+  const zero = await gqlRaw(ACTIVITY_QUERY, {
+    workspaceId: workspace.id,
+    first: 0,
+  });
   t.is(zero.status, 200);
 
-  const negative = await gqlRaw(ACTIVITY_QUERY, { workspaceId: workspace.id, first: -1 });
+  const negative = await gqlRaw(ACTIVITY_QUERY, {
+    workspaceId: workspace.id,
+    first: -1,
+  });
   t.is(negative.status, 200);
 
-  const huge = await gqlRaw(ACTIVITY_QUERY, { workspaceId: workspace.id, first: 10_000 });
+  const huge = await gqlRaw(ACTIVITY_QUERY, {
+    workspaceId: workspace.id,
+    first: 10_000,
+  });
   t.is(huge.status, 200);
-  t.true(huge.body.data.trackWorkActivity.items.length <= 50, 'page size capped');
+  t.true(
+    huge.body.data.trackWorkActivity.items.length <= 50,
+    'page size capped'
+  );
 
   const malformed = await gqlRaw(ACTIVITY_QUERY, {
     workspaceId: workspace.id,
@@ -316,8 +361,26 @@ e2e('abusive pagination: bounds and cross-workspace cursors', async t => {
   t.is(malformed.status, 200);
 
   const foreign = await app.create(Mockers.User);
-  const foreignWs = await app.create(Mockers.Workspace, { owner: { id: foreign.id } });
+  const foreignWs = await app.create(Mockers.Workspace, {
+    owner: { id: foreign.id },
+  });
   await app.login(foreign);
-  const cross = await gqlRaw(ACTIVITY_QUERY, { workspaceId: workspace.id, first: 50 });
-  t.true(cross.body.errors && cross.body.errors.length > 0, 'foreign user cannot paginate the workspace activity');
+  const cross = await gqlRaw(ACTIVITY_QUERY, {
+    workspaceId: workspace.id,
+    first: 50,
+  });
+  t.is(
+    cross.body.errors !== undefined,
+    true,
+    'foreign user cannot paginate the workspace activity'
+  );
+  const own = await gqlRaw(ACTIVITY_QUERY, {
+    workspaceId: foreignWs.id,
+    first: 50,
+  });
+  t.is(own.status, 200, 'foreign user can paginate their own workspace');
+  t.true(
+    cross.body.errors && cross.body.errors.length > 0,
+    'foreign user cannot paginate the workspace activity'
+  );
 });

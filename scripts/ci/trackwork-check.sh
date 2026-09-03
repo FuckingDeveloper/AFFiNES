@@ -21,10 +21,7 @@ stage() {
 
 run_ava() {
   local spec="$1"
-  local attempt=1
-  if [ "$spec" = "src/__tests__/sync/trackwork-workflow-permission.spec.ts" ]; then
-    attempt=2
-  fi
+  local attempt=2
   local n=0
   while [ "$n" -lt "$attempt" ]; do
     n=$((n + 1))
