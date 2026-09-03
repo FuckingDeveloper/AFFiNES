@@ -31,6 +31,7 @@ const resources = {
       'Open Task Tracker board once to initialize workflow properties.',
     archiveTask: 'Archive',
     restoreTask: 'Restore',
+    workflowSettingsLoading: 'Loading workflow settings…',
     noWorkflowManagePermission:
       'Workflow administration requires an administrator role; edits made by other members are not saved.',
     defaultBoard: 'Main board',
@@ -256,6 +257,7 @@ const resources = {
       'Откройте доску трекера задач один раз, чтобы инициализировать свойства процесса.',
     noWorkflowManagePermission:
       'Управление рабочим процессом требует роли администратора; изменения других участников не сохраняются.',
+    workflowSettingsLoading: 'Загрузка настроек рабочего процесса…',
     archiveTask: 'Архивировать',
     restoreTask: 'Восстановить',
     defaultBoard: 'Основная доска',

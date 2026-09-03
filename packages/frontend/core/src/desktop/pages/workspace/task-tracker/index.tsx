@@ -4566,11 +4566,14 @@ const TaskTrackerPage = () => {
     []
   );
 
+  const [workflowSavePending, setWorkflowSavePending] = useState(false);
+
   const saveBoardsConfig = useCallback(
     (nextBoards: TaskTrackerBoard[]) => {
-      if (nextBoards.length === 0) {
+      if (nextBoards.length === 0 || workflowSavePending) {
         return;
       }
+      setWorkflowSavePending(true);
 
       // Workflow management goes through the authoritative semantic mutation;
       // only the already-validated returned config is mirrored into the
@@ -4608,11 +4611,15 @@ const TaskTrackerPage = () => {
           notify.error({
             title: error instanceof Error ? error.message : String(error),
           });
+        })
+        .finally(() => {
+          setWorkflowSavePending(false);
         });
     },
     [
       graphql,
       notify,
+      workflowSavePending,
       trackerAdditionalData,
       workflowConfig.data,
       workspace.id,
@@ -4873,6 +4880,7 @@ const TaskTrackerPage = () => {
             {canManageWorkflow === true && selectedBoard ? (
               <input
                 className={styles.boardNameInput}
+                disabled={workflowSavePending}
                 defaultValue={localizeTaskTrackerBoardTitle(selectedBoard, t)}
                 key={`${selectedBoard.id}:${locale}`}
                 onBlur={event => {
@@ -4882,7 +4890,11 @@ const TaskTrackerPage = () => {
             ) : null}
 
             {canManageWorkflow === true ? (
-              <Button variant="plain" onClick={handleCreateBoard}>
+              <Button
+                variant="plain"
+                onClick={handleCreateBoard}
+                disabled={workflowSavePending}
+              >
                 <PlusIcon />
                 {t('newBoard')}
               </Button>
@@ -4891,7 +4903,7 @@ const TaskTrackerPage = () => {
             {canManageWorkflow === true ? (
               <Button
                 variant="plain"
-                disabled={boards.length <= 1}
+                disabled={boards.length <= 1 || workflowSavePending}
                 onClick={handleDeleteBoard}
               >
                 <DeleteIcon />

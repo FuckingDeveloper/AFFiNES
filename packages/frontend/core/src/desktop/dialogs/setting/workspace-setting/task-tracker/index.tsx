@@ -64,6 +64,7 @@ export const WorkspaceTaskTrackerSetting = () => {
   const [workflowSaveError, setWorkflowSaveError] = useState<string | null>(
     null
   );
+  const [workflowSavePending, setWorkflowSavePending] = useState(false);
 
   const statusPropertyInfo = useLiveData(
     workspacePropertyService.propertyInfo$(TASK_STATUS_PROPERTY)
@@ -143,7 +144,11 @@ export const WorkspaceTaskTrackerSetting = () => {
 
   const saveWorkflowConfig = useCallback(
     (nextConfig: TaskTrackerPropertyAdditionalData) => {
+      if (workflowSavePending) {
+        return;
+      }
       setWorkflowSaveError(null);
+      setWorkflowSavePending(true);
       updateTrackWorkWorkflowConfig(graphql, {
         workspaceId: workspace.id,
         expectedRevision: workflowConfig.data?.revision ?? 0,
@@ -172,12 +177,16 @@ export const WorkspaceTaskTrackerSetting = () => {
           setWorkflowSaveError(
             error instanceof Error ? error.message : String(error)
           );
+        })
+        .finally(() => {
+          setWorkflowSavePending(false);
         });
     },
     [
       additionalData,
       graphql,
       workflowConfig.data,
+      workflowSavePending,
       workspace.id,
       workspacePropertyService,
     ]
@@ -443,13 +452,15 @@ export const WorkspaceTaskTrackerSetting = () => {
 
   const hasProperty = !!statusPropertyInfo;
 
-  if (canManageWorkflow === false) {
+  if (canManageWorkflow !== true) {
     return (
       <>
         <SettingHeader title={t('flowTitle')} subtitle={t('flowSubtitle')} />
         <SettingWrapper title={t('boards')}>
           <span className={styles.helperText}>
-            {t('noWorkflowManagePermission')}
+            {canManageWorkflow === false
+              ? t('noWorkflowManagePermission')
+              : t('workflowSettingsLoading')}
           </span>
         </SettingWrapper>
       </>
@@ -500,17 +511,26 @@ export const WorkspaceTaskTrackerSetting = () => {
               onBlur={event => {
                 onRenameBoard(selectedBoard.id, event.target.value);
               }}
-              disabled={!hasProperty}
+              disabled={!hasProperty || workflowSavePending}
             />
           ) : null}
 
-          <Button variant="plain" onClick={onAddBoard} disabled={!hasProperty}>
+          <Button
+            variant="plain"
+            onClick={onAddBoard}
+            disabled={!hasProperty || workflowSavePending}
+          >
             <PlusIcon />
             {t('newBoard')}
           </Button>
           <Button
             variant="plain"
-            disabled={!hasProperty || boards.length <= 1 || !selectedBoard}
+            disabled={
+              !hasProperty ||
+              boards.length <= 1 ||
+              !selectedBoard ||
+              workflowSavePending
+            }
             onClick={() => {
               if (selectedBoard) {
                 onDeleteBoard(selectedBoard.id);
