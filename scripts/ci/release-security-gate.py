@@ -125,6 +125,13 @@ def trivy_findings(report):
     return findings
 
 
+def identity_match(record_identity, finding_identity):
+    for field, value in finding_identity.items():
+        if (record_identity.get(field) or '') != value:
+            return False
+    return True
+
+
 def identity_key(finding):
     source = finding['source']
     fields = SOURCE_FIELDS[source]
@@ -175,6 +182,8 @@ def validate_acceptance(record, finding, gate_scope, now):
     approval_date = parse_date(approver.get('date'))
     if approval_date is None:
         errors.append('invalid approval date')
+    elif approval_date > now:
+        errors.append('approval date is in the future')
     expiry = parse_date(record.get('expiry'))
     if expiry is None:
         errors.append('invalid expiry')
@@ -211,28 +220,44 @@ def run_gate(args, now):
 
     accepted = []
     unaccepted = []
+    ambiguous = []
     for finding in findings:
-        matched = None
-        for record in load_acceptances(args.acceptances):
-            errors = validate_acceptance(record, finding, gate_scope, now)
-            if not errors:
-                matched = record
-                break
-        (accepted if matched else unaccepted).append(finding)
+        matching = [r for r in load_acceptances(args.acceptances)
+                    if (r.get('finding', {}).get('source') == finding['source']
+                        and identity_match(r.get('finding', {}).get('identity') or {},
+                                           finding['identity']))]
+        if not matching:
+            unaccepted.append(finding)
+            continue
+        if len(matching) > 1:
+            ambiguous.append(finding)
+            continue
+        errors = validate_acceptance(matching[0], finding, gate_scope, now)
+        (accepted if not errors else unaccepted).append(finding)
 
     print('TrackWork Release Security Review')
+    print('Scanner evidence: OSV=%s CodeQL=%s Trivy=%s' % (
+        'executed' if args.osv_report else 'NOT PROVIDED',
+        'executed' if args.codeql_sarif else 'NOT PROVIDED',
+        'executed' if args.trivy_report else 'NOT PROVIDED',
+    ))
     print('Critical findings: %d  High findings: %d' % (
         sum(1 for f in findings if f['severity'] == 'CRITICAL'),
         sum(1 for f in findings if f['severity'] == 'HIGH'),
     ))
-    print('Accepted risks: %d  Unaccepted: %d' % (len(accepted), len(unaccepted)))
+    print('Accepted risks: %d  Unaccepted: %d  Ambiguous acceptances: %d' % (
+        len(accepted), len(unaccepted), len(ambiguous)))
     for finding in unaccepted:
         ident = json.dumps(finding['identity'])
         print('  UNACCEPTED %s %s %s' % (finding['severity'], finding['source'], ident))
-    if unaccepted:
+    for finding in ambiguous:
+        ident = json.dumps(finding['identity'])
+        print('  AMBIGUOUS %s %s %s (multiple acceptance records; reject)' % (
+            finding['severity'], finding['source'], ident))
+    if unaccepted or ambiguous:
         print('VERDICT: BLOCKED')
         return 1
-    print('VERDICT: PASS')
+    print('VERDICT: PASS (risk-acceptance layer; scanner coverage as stated above)')
     return 0
 
 
@@ -348,6 +373,47 @@ def selftest():
         cases.append(('K moderate only -> PASS without acceptance',
                       ['--osv-report', moderate_path, '--acceptances', no_accept_dir],
                       None, None, 0))
+
+        same_dir = os.path.join(tmp, 'same-finding')
+        os.makedirs(same_dir, exist_ok=True)
+        write(same_dir, 'one.json', acceptance(
+            {'ecosystem': 'npm', 'name': 'pkg-a', 'version': '1.0.0',
+             'advisory': 'GHSA-AAA'}, approver='reviewer-one'))
+        write(same_dir, 'two.json', acceptance(
+            {'ecosystem': 'npm', 'name': 'pkg-a', 'version': '1.0.0',
+             'advisory': 'GHSA-AAA'}, approver='reviewer-two'))
+        cases.append(('L duplicate acceptances for one finding -> FAIL',
+                      ['--acceptances', same_dir], None, None, 1))
+
+        one_valid_one_expired = os.path.join(tmp, 'valid-and-expired')
+        os.makedirs(one_valid_one_expired, exist_ok=True)
+        write(one_valid_one_expired, 'v.json', acceptance(
+            {'ecosystem': 'npm', 'name': 'pkg-a', 'version': '1.0.0',
+             'advisory': 'GHSA-AAA'}, approver='reviewer-one'))
+        write(one_valid_one_expired, 'e.json', acceptance(
+            {'ecosystem': 'npm', 'name': 'pkg-a', 'version': '1.0.0',
+             'advisory': 'GHSA-AAA'}, approver='reviewer-two', expiry='2026-01-01'))
+        cases.append(('M valid+expired duplicate -> FAIL (ambiguous)',
+                      ['--acceptances', one_valid_one_expired], None, None, 1))
+
+        today_dir = os.path.join(tmp, 'expiry-today')
+        os.makedirs(today_dir, exist_ok=True)
+        write(today_dir, 't.json', acceptance(
+            {'ecosystem': 'npm', 'name': 'pkg-a', 'version': '1.0.0',
+             'advisory': 'GHSA-AAA'}, expiry='2026-09-03'))
+        cases.append(('N expiry equals current date -> PASS (valid through end of day)',
+                      ['--acceptances', today_dir], None, None, 0))
+
+        future_approval_dir = os.path.join(tmp, 'future-approval')
+        os.makedirs(future_approval_dir, exist_ok=True)
+        write(future_approval_dir, 'f.json', acceptance(
+            {'ecosystem': 'npm', 'name': 'pkg-a', 'version': '1.0.0',
+             'advisory': 'GHSA-AAA'}, approver='reviewer'))
+        rec = json.load(open(os.path.join(future_approval_dir, 'f.json')))
+        rec['approver']['date'] = '2026-12-01'
+        json.dump(rec, open(os.path.join(future_approval_dir, 'f.json'), 'w'))
+        cases.append(('O future approval date -> FAIL',
+                      ['--acceptances', future_approval_dir], None, None, 1))
 
         failures = 0
         for label, extra_args, alt_report, alt_data, expected in cases:

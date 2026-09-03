@@ -16,9 +16,28 @@ export DATABASE_URL="${DATABASE_URL:-postgresql://affine:affine@localhost:5432/a
 # shellcheck disable=SC1091
 source "$ROOT/scripts/ci/trackwork-security-tools.sh"
 ensure_osv_scanner
+ensure_gitleaks
 
 TMPDIR_RELEASE="${TMPDIR_RELEASE:-/tmp/trackwork-release-security}"
 mkdir -p "$TMPDIR_RELEASE"
+
+echo "== trackwork:security:release [real-secret scan]"
+rm -rf /tmp/trackwork-release-gitleaks-tree
+mkdir -p /tmp/trackwork-release-gitleaks-tree
+git archive HEAD | tar -x -C /tmp/trackwork-release-gitleaks-tree
+if "$GITLEAKS_BIN" detect --source /tmp/trackwork-release-gitleaks-tree \
+  --config "$ROOT/.gitleaks.toml" --exit-code 1 --no-banner --no-git \
+  >/tmp/trackwork-release-gitleaks.log 2>&1; then
+  echo "   PASS no unallowed secrets in the tracked tree"
+else
+  echo "BLOCKED: real secret detected (see /tmp/trackwork-release-gitleaks.log); rotate/remove before release"
+  exit 1
+fi
+
+echo "== trackwork:security:release [dependency scan]"
+rm -f "$TMPDIR_RELEASE/osv-report.json"
+"$OSV_SCANNER_BIN" --format json --output-file "$TMPDIR_RELEASE/osv-report.json" \
+  --lockfile yarn.lock >/tmp/trackwork-release-osv.log 2>&1 || true
 
 ACCEPTANCES_DIR="${ACCEPTANCES_DIR:-$ROOT/.security/risk-acceptances}"
 mkdir -p "$ACCEPTANCES_DIR"

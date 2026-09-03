@@ -94,15 +94,19 @@ Required fields:
 Rules:
 
 - approval date and expiry are explicit; the gate compares expiry to the
-  current date (deterministic, date-only); expired acceptances FAIL;
+  current date (deterministic, date-only); expired acceptances FAIL; expiry
+  equal to the current date is VALID (valid through end of day); approval
+  dates in the future are rejected;
 - scope is release-bound; a scope that does not match the release
   version/artifact/platform FAILS;
 - identity must match exactly (OSV: ecosystem/name/version/advisory; CodeQL:
   ruleId + fingerprint; Trivy: type/package/version/CVE);
 - blank approver, malformed dates, missing impact/whyNotFixed FAIL;
-- real active secrets are NOT risk-acceptable: release BLOCKED until the
-  secret is rotated/removed (synthetic test secrets and fixture placeholders
-  are not findings and stay under the Gitleaks allowlist system).
+- real active secrets are NOT risk-acceptable: the release gate runs the
+  Gitleaks tracked-tree scan and BLOCKS on any finding until the secret is
+  rotated/removed (synthetic test secrets and fixture placeholders are not
+  findings and stay under the Gitleaks allowlist system); there is no path
+  for a real secret into the generic acceptance mechanism.
 
 ## Approval authority
 
@@ -116,5 +120,16 @@ claimed). Each acceptance is time-bounded and release-scoped.
 
 `yarn trackwork:security:release -- --scope-version vX.Y.Z`
 (+ optional `--scope-artifact`, `--scope-platform`, `CODEQL_SARIF`,
-`TRIVY_REPORT` env). Exits 0 (PASS), 1 (BLOCKED), 2 (usage). Scanner failure
-BLOCKs. Self-tests: `python3 scripts/ci/release-security-gate.py --selftest`.
+`TRIVY_REPORT` env). Exits 0 (PASS), 1 (BLOCKED), 2 (usage). The report
+distinguishes scanner evidence as EXECUTED vs NOT PROVIDED; absence of
+CodeQL/Trivy evidence is never reported as a successful scan. Scanner
+failure BLOCKs (stale reports are removed before each run; an unexpected
+exception exits non-zero). Duplicate/conflicting acceptance records for one
+finding are ambiguous and BLOCK. Self-tests A-O (15/15):
+`python3 scripts/ci/release-security-gate.py --selftest`.
+
+The future Jenkins release pipeline MUST combine this gate with mandatory
+execution of the 1.11 (OSV), 1.12 (Gitleaks + CodeQL) and 1.13 (Trivy)
+scanners and pass the produced reports to the gate before publish/deploy; a
+failed gate prevents the release. Until Jenkins exists, production releases
+are not automatically protected.
