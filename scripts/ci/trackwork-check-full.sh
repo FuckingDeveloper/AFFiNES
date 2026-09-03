@@ -75,16 +75,24 @@ else
   FAILED=1
 fi
 
-stage "Docker/self-host smoke (requires docker)"
+stage "Docker/self-host smoke (requires docker + provisioning env)"
 SMOKE_SKIPPED=1
-if command -v docker >/dev/null 2>&1 && [ -n "${TRACKWORK_RUN_SMOKE:-}" ]; then
-  if bash "$ROOT/scripts/smoke-upgrade.sh" >/tmp/trackwork-smoke.log 2>&1; then
-    echo "   PASS docker smoke"
-    SMOKE_SKIPPED=0
+if [ -n "${TRACKWORK_RUN_SMOKE:-}" ]; then
+  if [ -z "${SMOKE_WORKSPACE_ID:-}" ] || [ -z "${SMOKE_CREATED_BY_ID:-}" ]; then
+    echo "   NOT EXECUTED docker smoke: TRACKWORK_RUN_SMOKE=1 but SMOKE_WORKSPACE_ID/"
+    echo "             SMOKE_CREATED_BY_ID are missing (scripts/smoke-upgrade.sh"
+    echo "             requires them; provision via the smoke-upgrade flow)"
+  elif command -v docker >/dev/null 2>&1; then
+    if bash "$ROOT/scripts/smoke-upgrade.sh" >/tmp/trackwork-smoke.log 2>&1; then
+      echo "   PASS docker smoke"
+      SMOKE_SKIPPED=0
+    else
+      echo "   FAIL docker smoke (see /tmp/trackwork-smoke.log)"
+      FAILED=1
+      SMOKE_SKIPPED=0
+    fi
   else
-    echo "   FAIL docker smoke (see /tmp/trackwork-smoke.log)"
-    FAILED=1
-    SMOKE_SKIPPED=0
+    echo "   NOT EXECUTED docker smoke: docker not available"
   fi
 else
   echo "   NOT EXECUTED docker smoke (set TRACKWORK_RUN_SMOKE=1 to run; needs docker)"
