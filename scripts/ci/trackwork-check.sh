@@ -62,7 +62,8 @@ for spec in \
   "src/__tests__/e2e/trackwork/idor.spec.ts" \
   "src/__tests__/e2e/trackwork/task-doc-read.spec.ts" \
   "src/__tests__/e2e/trackwork/audit.spec.ts" \
-  "src/__tests__/e2e/trackwork/upgrade.spec.ts"; do
+  "src/__tests__/e2e/trackwork/upgrade.spec.ts" \
+  "src/__tests__/e2e/trackwork/quorum-export.spec.ts"; do
   run_ava "$spec"
 done
 
@@ -78,6 +79,18 @@ run_vitest "packages/common/trackwork/src/quorum-shares.spec.ts"
 stage "frontend: Task Tracker config + large-workspace data handling"
 run_vitest "packages/frontend/core/src/desktop/pages/workspace/task-tracker/config.spec.ts"
 run_vitest "packages/frontend/core/src/desktop/pages/workspace/task-tracker/large-workspace.spec.ts"
+
+stage "admin: quorum share export UI"
+run_vitest "packages/frontend/admin/src/modules/quorum/quorum.spec.tsx"
+
+stage "shared: build @affine/trackwork (dist for server project references)"
+yarn workspace @affine/trackwork exec tsc -p tsconfig.json >/tmp/trackwork-build.log 2>&1
+if [ $? -ne 0 ]; then
+  echo "   FAIL @affine/trackwork build (see /tmp/trackwork-build.log)"
+  FAILED=1
+else
+  echo "   PASS build"
+fi
 
 stage "server: TypeScript (baseline-filtered)"
 # Verified pre-existing baseline errors on the develop base are filtered with
