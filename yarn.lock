@@ -1076,6 +1076,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@affine/trackwork@workspace:packages/common/trackwork"
   dependencies:
+    shamirs-secret-sharing: "npm:2.0.1"
     vitest: "npm:^4.0.18"
   languageName: unknown
   linkType: soft
@@ -33624,6 +33625,13 @@ __metadata:
   bin:
     sha.js: bin.js
   checksum: 10/39c0993592c2ab34eb2daae2199a2a1d502713765aecb611fd97c0c4ab7cd53e902d628e1962aaf384bafd28f55951fef46dcc78799069ce41d74b03aa13b5a7
+  languageName: node
+  linkType: hard
+
+"shamirs-secret-sharing@npm:2.0.1":
+  version: 2.0.1
+  resolution: "shamirs-secret-sharing@npm:2.0.1"
+  checksum: 10/cbbb75dbb55ecf32dadfdbd9041c2f3cf5445835242acfdd70c02bdcdf239401d96fb8bea964a656cdb2fcb03111ad8cf229276c39afee628109fa2168f8cf23
   languageName: node
   linkType: hard
 

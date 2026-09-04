@@ -18,7 +18,9 @@ const DATA_KEY_ID_PREFIX = 'dk_';
 const KEY_SET_ID_PREFIX = 'ks_';
 const LOOKUP_KEY_ID_PREFIX = 'lk_';
 
-const ID_PREFIX_RE = /^(?:dk|ks|lk)_[0-9a-f]{32}$/;
+const SHARE_SET_ID_PREFIX = 'ss_';
+
+const ID_PREFIX_RE = /^(?:dk|ks|lk|ss)_[0-9a-f]{32}$/;
 
 /**
  * Identifies the DEK generation that encrypted a value.
@@ -50,6 +52,15 @@ export type LookupKeyId = string & {
   readonly __trackworkLookupKeyId: unique symbol;
 };
 
+/**
+ * Identifies one Shamir split/share generation. Changes on EVERY new split
+ * (initial split, reshare of the same KEK, KEK rotation); DEK rotation
+ * changes neither ShareSetId nor KeySetId.
+ */
+export type ShareSetId = string & {
+  readonly __trackworkShareSetId: unique symbol;
+};
+
 const brand = <T extends string>(value: string): T => value as T;
 
 export const isDataKeyId = (value: string): value is DataKeyId =>
@@ -64,6 +75,10 @@ export const isLookupKeyId = (value: string): value is LookupKeyId =>
   value.startsWith(LOOKUP_KEY_ID_PREFIX) &&
   TRACKWORK_ID_BODY_RE.test(value.slice(LOOKUP_KEY_ID_PREFIX.length));
 
+export const isShareSetId = (value: string): value is ShareSetId =>
+  value.startsWith(SHARE_SET_ID_PREFIX) &&
+  TRACKWORK_ID_BODY_RE.test(value.slice(SHARE_SET_ID_PREFIX.length));
+
 export const isTrackWorkKeyId = (value: string): boolean =>
   ID_PREFIX_RE.test(value);
 
@@ -76,6 +91,9 @@ export const parseKeySetId = (value: string): KeySetId | null =>
 
 export const parseLookupKeyId = (value: string): LookupKeyId | null =>
   isLookupKeyId(value) ? brand<LookupKeyId>(value) : null;
+
+export const parseShareSetId = (value: string): ShareSetId | null =>
+  isShareSetId(value) ? brand<ShareSetId>(value) : null;
 
 /** Programmer-facing assertion; throws on any non-canonical identifier. */
 export const assertDataKeyId = (value: string): DataKeyId => {
@@ -92,6 +110,16 @@ export const assertKeySetId = (value: string): KeySetId => {
   const parsed = parseKeySetId(value);
   if (!parsed) {
     throw new TypeError(`Invalid TrackWork KeySetId: ${JSON.stringify(value)}`);
+  }
+  return parsed;
+};
+
+export const assertShareSetId = (value: string): ShareSetId => {
+  const parsed = parseShareSetId(value);
+  if (!parsed) {
+    throw new TypeError(
+      `Invalid TrackWork ShareSetId: ${JSON.stringify(value)}`
+    );
   }
   return parsed;
 };
@@ -116,4 +144,6 @@ export const assertLookupKeyId = (value: string): LookupKeyId => {
  *   DataKeyId, not KeySetId).
  * - LookupKey rotation: LookupKeyId L1 -> L2; requires rebuilding lookup
  *   indexes and does NOT imply DEK rotation.
+ * - Share generation: ShareSetId changes on every new split; reshare keeps
+ *   KeySetId (same KEK); KEK rotation changes both.
  */

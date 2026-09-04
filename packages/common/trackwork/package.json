@@ -9,5 +9,8 @@
   },
   "devDependencies": {
     "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "shamirs-secret-sharing": "2.0.1"
   }
 }
