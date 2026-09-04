@@ -366,3 +366,17 @@ reshare/compromise semantics corrected (no claim of cryptographic revocation;
 
 > = threshold leak requires KEK rotation); boundary table and implementation
 > slice limited to the pure primitive scope.
+
+## 30. Implemented primitive record (3.6)
+
+Implemented in @affine/trackwork/crypto (packages/common/trackwork/src/
+quorum-shares.ts; dependency shamirs-secret-sharing@2.0.1 exact-pinned):
+generateTrackWorkShares(keySetId, kek, {shares=3, threshold=2, random?}),
+reconstructTrackWorkKek(shares|serialized), serializeTrackWorkShare,
+parseTrackWorkShare, TrackWorkShareRecord. ShareSetId added to identifiers
+(ss\_ + 32 hex). Strict pre-combine validation (format, >=2 shares, same
+KeySetId, same ShareSetId, distinct indices, outer==inner index, CRC).
+Production RNG = injected node:crypto.randomBytes; deterministic TEST-ONLY
+RNG injectable. No persistence, no unlock state, no ceremony runtime.
+Reconstruction bytes are NOT cryptographically authenticated at 3.6 level -
+the 3.8 keyset verification artifact is the authority (documented).
