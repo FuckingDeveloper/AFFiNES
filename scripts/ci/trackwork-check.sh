@@ -69,6 +69,9 @@ done
 stage "server: permission units"
 run_ava "src/core/permission/__tests__/actions.spec.ts" 
 
+stage "shared: TrackWork envelope/identifier/AAD model"
+run_vitest "packages/common/trackwork/src/envelope.spec.ts"
+
 stage "frontend: Task Tracker config + large-workspace data handling"
 run_vitest "packages/frontend/core/src/desktop/pages/workspace/task-tracker/config.spec.ts"
 run_vitest "packages/frontend/core/src/desktop/pages/workspace/task-tracker/large-workspace.spec.ts"
@@ -108,7 +111,7 @@ fi
 
 stage "lint: TrackWork-scoped oxlint (pre-existing import-sort baseline)"
 set +e
-yarn exec oxlint packages/backend/server/src/plugins/trackwork packages/frontend/core/src/desktop/pages/workspace/task-tracker >/tmp/trackwork-oxlint.log 2>&1
+yarn exec oxlint packages/backend/server/src/plugins/trackwork packages/common/trackwork/src packages/frontend/core/src/desktop/pages/workspace/task-tracker >/tmp/trackwork-oxlint.log 2>&1
 set -e
 if python3 "$ROOT/scripts/ci/filter-oxlint-baseline.py" >/tmp/trackwork-oxlint-filter.log 2>&1; then
   echo "   PASS oxlint (pre-existing import-sort baseline findings only)"
@@ -119,6 +122,7 @@ else
 fi
 if yarn exec prettier --check \
   packages/backend/server/src/plugins/trackwork \
+  packages/common/trackwork/src \
   packages/frontend/core/src/desktop/pages/workspace/task-tracker \
   >/tmp/trackwork-prettier.log 2>&1; then
   echo "   PASS prettier"

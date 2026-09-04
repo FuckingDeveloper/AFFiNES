@@ -479,7 +479,8 @@ Internal audit records the precise code.
 
 ## 23. Size overhead (PROJECTED - exact widths deferred to 3.3)
 
-The exact 3.3 byte layout is NOT decided here. The figures below use the
+The exact 3.3 byte layout was NOT decided in the 3.2 pass; it is now fixed
+in section 32 (3.3 implementation record). The figures below use the
 candidate COMPACT layout (version 1 B + algorithmId 1 B + keyId 8 B +
 nonce 12 B + tag 16 B = 38 B + plaintext; base64url expansion x4/3) and are
 ILLUSTRATIVE: 3.3 MUST fix the physical widths, and any change to them
@@ -626,3 +627,80 @@ threshold; shamirs-secret-sharing@2.0.1 verified from source.
   bit-count char + x id (fixed hex length) + y data; combine.js parses id via
   regex and silently skips duplicate ids; no threshold validation at combine
   time; zero runtime dependencies; ESM (type: module).
+
+## 32. 3.3 implementation record (V1 envelope, format/model only)
+
+Implemented in @affine/trackwork (packages/common/trackwork/src): envelope.ts,
+identifiers.ts, aad.ts. No crypto execution anywhere.
+
+### Identifier concepts
+
+- DataKeyId (`dk_<32 lowercase hex>`, 35 chars): the DEK generation stored in
+  the value envelope. KEK/share-set rotation (KeySetId change) MUST NOT change
+  DataKeyId and MUST NOT rewrite values; true DEK rotation creates a new
+  DataKeyId.
+- KeySetId (`ks_<32 lowercase hex>`): quorum/KEK/share generation; used by
+  wrapped-DEK metadata, wrapped-LookupKey metadata and share transport; NEVER
+  in the value envelope.
+- LookupKeyId (`lk_<32 lowercase hex>`): lookup-key generation; changes only
+  on lookup-key rotation (index rebuild), independent of DEK rotation.
+- Identifiers are non-secret; generation intentionally deferred to 3.4+
+  key management (CSPRNG); validated via branded types + strict parsers
+  (parseDataKeyId/parseKeySetId/parseLookupKeyId; wrong-prefix interchange
+  rejected).
+
+### V1 serialized grammar (normative)
+
+```text
+twenc1.<algorithm>.<dataKeyId>.<nonceB64url>.<ciphertextB64url>.<tagB64url>
+```
+
+- version magic `twenc1.` unmistakable before decryption; algorithm fixed to
+  `trackwork-aead-v1`; exactly 6 dot-separated fields; canonical base64url
+  (URL-safe alphabet, unpadded, decode->re-encode equality, length mod 4 != 1);
+  nonce decodes to exactly 12 bytes; tag to exactly 16 bytes; ciphertext
+  non-empty; serialized length <= 65536 chars; ciphertext <= 32768 bytes.
+
+### Actual V1 overhead
+
+Fixed decoded crypto overhead: nonce 12 B + tag 16 B = 28 B. Serialized
+overhead: 103 chars fixed (prefix 7 + algorithm 19 + DataKeyId 35 + 4 dots +
+nonce 16 + tag 22) + ciphertext base64url length (ceil(pt\*4/3); GCM has no
+padding - format calculation only).
+
+| plaintext | ciphertext b64url | total serialized |
+| --------- | ----------------- | ---------------- |
+| 32 B      | 43 chars          | 146 chars        |
+| 256 B     | 342 chars         | 445 chars        |
+| 4096 B    | 5462 chars        | 5565 chars       |
+
+### Parser / downgrade semantics
+
+- classifyTrackWorkValue: `new-envelope-v1` | `malformed-new-envelope` |
+  `not-new-envelope`. A value claiming the `twenc` magic but invalid is
+  malformed-new-envelope and MUST NOT fall back to legacy/plaintext;
+  not-new-envelope delegates to the per-field legacy contract (3.1), never
+  inferred from a failed parse.
+- parseTrackWorkEnvelopeV1: discriminated errors - not-new-envelope,
+  malformed-envelope, unsupported-version, unsupported-algorithm,
+  invalid-data-key-id, invalid-base64url, wrong-nonce-length, wrong-tag-length,
+  oversized-envelope. No authentication failure yet (3.4 owns AEAD).
+- Envelope carries NO AAD fields (no self-authorization); AAD context
+  (domain/fieldPurpose/stableRecordId) is caller-derived via
+  serializeTrackWorkAad (aad.ts) and wrap AAD via serializeTrackWorkWrapAad.
+
+### Rotation model (documented, not implemented)
+
+KEK rotation: KeySetId K1->K2, DataKeyId D1 unchanged, values byte-identical.
+DEK rotation: DataKeyId D1->D2; migration window may need both DEKs.
+LookupKey rotation: LookupKeyId L1->L2; index rebuild; no DEK change.
+
+### Storage compatibility (checked, no schema change)
+
+All candidate columns are @db.Text (PG TEXT): ConnectedAccount
+accessToken/refreshToken (l.86-87), DevelopmentRepository.syncToken (l.1368),
+DevelopmentIntegrationConnection tokenCipher/webhookSecretCipher (l.1480-1481),
+UserTwoFactorAuth.secretEncrypted (l.1236), AiWorkspaceByokConfig.
+encryptedApiKey (l.942, verified already encrypted via CryptoHelper -
+plugins/copilot/byok/service.ts l.204). Max serialized envelope at 4 KiB
+plaintext ~5.6 KB - fits TEXT; the 64 KiB serialized bound prevents bloat.

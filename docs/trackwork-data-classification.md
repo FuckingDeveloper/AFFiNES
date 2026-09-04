@@ -131,11 +131,11 @@ with versioned ciphertext format (missing today).
 ## Counts (meaningful security/data assets)
 
 - S0 ~10, S1 ~15, S2 ~6, S3 ~8, S4 ~14, S5 ~6.
-- A PLAINTEXT_REVERSIBLE_CANDIDATE ~4: ConnectedAccount accessToken,
-  ConnectedAccount refreshToken, DevelopmentRepository.syncToken,
-  CopilotProvider API key (counted per field).
-- B ALREADY_ENCRYPTED_REKEY_CANDIDATE ~3: tokenCipher, webhookSecretCipher,
-  UserTwoFactorAuth.secretEncrypted.
+- A PLAINTEXT_REVERSIBLE_CANDIDATE ~3: ConnectedAccount accessToken,
+  ConnectedAccount refreshToken, DevelopmentRepository.syncToken
+  (counted per field; the AI provider key moved to B - see correction).
+- B ALREADY_ENCRYPTED_REKEY_CANDIDATE ~4: tokenCipher, webhookSecretCipher,
+  UserTwoFactorAuth.secretEncrypted, AiWorkspaceByokConfig.encryptedApiKey.
 - C HASH_VERIFIER ~3: users.password, AccessToken.token, invitation tokenHash.
 - D KEYED_LOOKUP_DESIGN ~1: VerificationToken.token (REQUIRES_3_3_LOOKUP_DESIGN).
 - E BOOTSTRAP_EXTERNAL ~3: PostgreSQL, Redis, license AES key.
@@ -151,7 +151,14 @@ with versioned ciphertext format (missing today).
 Prisma schema search + write/read path tracing (models/access-token.ts,
 models/verification-token.ts, core/auth config/session, plugins/oauth
 controller, core/mail config, base/helpers/crypto.ts, base/cache/instances.ts,
-plugins/gcloud). Generated types used only as supporting evidence.
+plugins/gcloud, plugins/copilot/byok/service.ts). Generated types used only
+as supporting evidence.
+
+Correction recorded during OpenSpec 3.3 storage inspection: the AI provider
+API key asset is AiWorkspaceByokConfig.encryptedApiKey (schema.prisma l.942),
+already AES-256-GCM encrypted via CryptoHelper (category B) - the earlier
+"CopilotProvider.providerConfig (JSONB) plaintext" row (category A) was
+speculative and is superseded.
 
 ## Security finding (separate from 3.1 completion)
 
