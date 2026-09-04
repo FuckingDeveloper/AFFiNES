@@ -731,3 +731,76 @@ UserTwoFactorAuth.secretEncrypted (l.1236), AiWorkspaceByokConfig.
 encryptedApiKey (l.942, verified already encrypted via CryptoHelper -
 plugins/copilot/byok/service.ts l.204). Max serialized envelope at 4 KiB
 plaintext ~5.6 KB - fits TEXT; the 64 KiB serialized bound prevents bloat.
+
+## 33. 3.5 implementation record (KEK wrapping / key hierarchy)
+
+Implemented in @affine/trackwork/crypto (packages/common/trackwork/src/
+kek-wrap.ts; crypto.ts barrel; package export ./crypto now points to the
+barrel). Lower-level behavior only - the global locked-mode state machine is
+3.9+ and is NOT implemented.
+
+### KEK source (external bootstrap secret)
+
+- Contract: env `TRACKWORK_KEK_HEX` - exactly 64 hex chars -> 32 bytes;
+  parseTrackWorkKekInput validates strictly.
+- Missing/empty -> 'missing-kek'; malformed -> 'malformed-kek'. NO random
+  fallback, NO plaintext DB storage, NO logging, NO committed default;
+  deterministic across restart.
+- The legacy CryptoHelper RSA-derived env key is NOT reused as KEK (3.2
+  constraint).
+
+### Wrapped-DEK format (normative)
+
+```text
+twkwrap1.trackwork-wrap-v1.<keySetId>.<dataKeyId>.<nonceB64url>.<ciphertextB64url>.<tagB64url>
+```
+
+- version magic twkwrap1.; algorithm fixed trackwork-wrap-v1; nonce 12 B;
+  tag 16 B; ciphertext EXACTLY 32 B (DEK size - fail before crypto);
+  canonical base64url (same rules as the value envelope); serialized
+  <= 512 chars; strict parser, no downgrade, unknown version/algorithm fail
+  closed; prototype/reserved IDs rejected.
+
+### Wrapping AAD (normative)
+
+```text
+trackwork:kek-wrap:v1 || 0x00 || <keySetId> || 0x00 || <dataKeyId>
+```
+
+- purpose/domain identifier trackwork:kek-wrap:v1 separates wrapping from
+  value encryption (trackwork:aead:v1:...); NUL framing is injective (all
+  alphabets exclude NUL, proven by exact byte-vector and collision tests);
+  KeySetId/DataKeyId substitution fails through AEAD authentication.
+
+### Hierarchy and lifecycle
+
+- KEK (32 B env) wraps DEKs; DEK (32 B) encrypts TrackWork values (3.4).
+- KeySetId: wrapping/key generation set; DataKeyId: individual DEK;
+  LookupKeyId: separate, NOT collapsed.
+- generateTrackWorkDataKey(keySetId, kek) -> new DataKeyId (dk\_ + 32 hex
+  from CSPRNG) + plaintext DEK (returned once; caller-owned) + wrapped DEK.
+- unwrapTrackWorkDataKey(wrapped, kek) -> DEK only on authenticated success.
+- rewrapTrackWorkDataKey(wrapped, oldKek, newKek, newKeySetId): pure
+  rotation primitive - same DEK + same DataKeyId under a new KeySet/KEK;
+  value ciphertext does NOT need re-encryption when the DEK is preserved.
+
+### Restart / rotation / backup semantics
+
+- Same external KEK after restart -> previously wrapped DEKs unwrap.
+- Wrong KEK -> authentication-failure; missing KEK -> deterministic
+  'missing-kek'; replacing KEK without rewrap -> old wrapped DEKs fail
+  authentication (NOT silently accepted).
+- DEK rotation: new DataKeyId + new DEK under the current KeySet/KEK; no
+  value rewriting in 3.5.
+- KEK/KeySet rotation: explicit rewrap primitive; old wrapped DEKs fail
+  with the new KEK.
+- Backup: wrapped DEKs without the KEK are unusable; KEK without wrapped
+  DEKs is insufficient; old backup + new KEK generation -> auth failure
+  (no silent mismatch).
+
+### What remains
+
+- 3.6: administrator shares (Shamir) for the KEK.
+- 3.7-3.8: ceremony/transport.
+- 3.9+: encryption state / locked mode consuming these primitives.
+- No KMS/HSM guarantees; no secure memory erasure claims (JS/GC limits).
