@@ -155,7 +155,15 @@ Implementation agents such as Codex/DeepSeek SHALL read `proposal.md`, `design.m
   - Mutation proofs (restored after each): removing ShareSetId/KeySetId equality, duplicate-index check, RNG injection, and inner-index validation each broke the relevant tests (3/1/2/1/1 failures respectively).
   - No 3.7 (export UX), 3.8 (metadata/key-check artifact), 3.9 (state machine) behavior; no DB/Redis/API/AdminGuard changes; no migration.
   - 3.7 remains [ ].
-- [ ] 3.7 Ensure plaintext administrator shares are exported to administrators and are never persisted in PostgreSQL, Redis, config files, images, logs or localStorage.
+- [x] 3.7 Ensure plaintext administrator shares are exported to administrators and are never persisted in PostgreSQL, Redis, config files, images, logs or localStorage.
+  - Server: POST /api/admin/trackwork/quorum/shares/export (plugins/trackwork/quorum.controller.ts + quorum.service.ts, TrackWorkModule wiring) - @Admin() (installation admin via FeatureService.isAdmin), @Throttle('strict'), Cache-Control: no-store, private + Pragma: no-cache; generates one 2-of-3 twshare-v1 set from the current TRACKWORK_KEK_HEX via the 3.6 primitive with injected randomBytes; provisional KeySetId/ShareSetId (provisioning metadata - NO persistent activation; 3.8 owns activation); shares returned ONCE, no re-fetch endpoint; KEK copy best-effort fill(0); missing/malformed KEK fails closed with generic errors (no share material).
+  - Audit: AdminAuditService single event quorum-share-export-generated with safe metadata only (keySetId, shareSetId, shareCount, threshold) - never share bytes.
+  - No DB writes (only the audit row), no Redis, no filesystem, no config writes, no images/QR (text-only client downloads).
+  - Admin UI: packages/frontend/admin/src/modules/quorum (route /admin/quorum, nav item, i18n en/ru): masked shares until deliberate reveal, per-share text-file download (trackwork-share-N.txt, Blob + object URL + immediate revoke), warning texts, close drops references; no localStorage/sessionStorage/IndexedDB/URL/analytics/aria/data attributes.
+  - Tests: server e2e 8/8 (admin success + shape + reconstruction of the fake KEK, repeat -> new ShareSetId, unauth/normal denied, missing/malformed KEK fail closed, no share material in errors, audit-only DB write + safe metadata, cache headers); admin frontend 11/11 (ephemeral state, remount clean, storage untouched, URL clean, per-share downloads, object URL revoked, no image blobs, close drops refs, i18n, no DOM/console leakage).
+  - Mutation proofs: localStorage write, console.log of share, removed object-URL revoke, reused ShareSetId across requests, removed @Admin() - each broke the relevant tests (restored).
+  - PROVISIONING ONLY: no persistent keyset/share metadata, no key-check artifact, no activation state (3.8), no state machine (3.9), no TRACKWORK_KEK_HEX migration.
+  - 3.8 remains [ ].
 - [ ] 3.8 Add persistent encryption metadata containing only safe key/version/share identifiers and quorum policy metadata.
 - [ ] 3.9 Implement `disabled | locked | unlocked` encryption-state service.
 - [ ] 3.10 Implement a short-lived startup unlock ceremony with ceremony IDs, replay resistance and distinct-administrator/share enforcement.

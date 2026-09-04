@@ -380,3 +380,16 @@ Production RNG = injected node:crypto.randomBytes; deterministic TEST-ONLY
 RNG injectable. No persistence, no unlock state, no ceremony runtime.
 Reconstruction bytes are NOT cryptographically authenticated at 3.6 level -
 the 3.8 keyset verification artifact is the authority (documented).
+
+## 31. 3.7 implemented provisioning record
+
+- Export path: POST /api/admin/trackwork/quorum/shares/export (AdminGuard,
+  throttled, non-cacheable); generates one 2-of-3 share set from
+  TRACKWORK_KEK_HEX via the 3.6 primitive; returns plaintext twshare-v1
+  values ONCE; no re-fetch endpoint; server persists nothing (audit row with
+  safe metadata only).
+- KeySetId/ShareSetId in the export are PROVISIONING metadata; persistent
+  keyset activation and the canonical key-check artifact belong to 3.8.
+- Admin UI: masked per-share reveal + per-share text-file downloads
+  (client-side Blob, object URL revoked); no browser persistence, no images.
+- Repeated generation produces a NEW ShareSetId; nothing is re-downloadable.
