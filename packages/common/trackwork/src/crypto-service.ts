@@ -13,7 +13,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
 import type { TrackWorkAadContext } from './aad';
-
 import { serializeTrackWorkAad } from './aad';
 import type { TrackWorkEncryptedValueEnvelopeV1 } from './envelope';
 import {
@@ -26,7 +25,6 @@ import {
   TRACKWORK_ENVELOPE_VERSION_V1,
 } from './envelope';
 import type { DataKeyId } from './identifiers';
-
 import { isDataKeyId } from './identifiers';
 
 export const TRACKWORK_DEK_BYTES = 32;
