@@ -1,26 +1,21 @@
 /**
- * TrackWork quorum share export (OpenSpec 3.7).
+ * TrackWork quorum share export (OpenSpec 3.7 + canonical metadata 3.8).
  *
- * PROVISIONING-ONLY: generates one 2-of-3 share set from the current
- * bootstrap KEK (TRACKWORK_KEK_HEX), returns the three plaintext twshare-v1
- * values ONCE, persists nothing. KeySetId/ShareSetId are provisioning
- * metadata; persistent keyset activation belongs to 3.8. No DB, no Redis,
- * no filesystem, no logging of share material.
+ * PROVISIONING-CANONICAL: the export is bound to the persisted canonical
+ * keyset metadata. Absent metadata -> atomic enrollment (first canonical
+ * KeySetId). Existing metadata -> the current env KEK MUST verify against
+ * the persisted key-check before reshare (a changed TRACKWORK_KEK_HEX never
+ * binds a new ShareSetId to an old KeySetId). Shares returned ONCE; nothing
+ * persisted except safe metadata + key-check artifact.
  */
 
 import { randomBytes } from 'node:crypto';
 
-import { assertKeySetId } from '@affine/trackwork';
-import {
-  generateTrackWorkShares,
-  parseTrackWorkKekInput,
-  TRACKWORK_QUORUM_SHARES,
-  TRACKWORK_QUORUM_THRESHOLD,
-} from '@affine/trackwork/crypto';
+import { parseTrackWorkKekInput } from '@affine/trackwork/crypto';
 import { Injectable } from '@nestjs/common';
 
 import { BadRequest } from '../../base';
-import { AdminAuditService } from '../../core/audit';
+import { TrackWorkQuorumMetadataService } from './quorum-metadata.service';
 
 export interface QuorumShareExportResponse {
   keySetId: string;
@@ -32,7 +27,7 @@ export interface QuorumShareExportResponse {
 
 @Injectable()
 export class QuorumShareExportService {
-  constructor(private readonly audit: AdminAuditService) {}
+  constructor(private readonly metadata: TrackWorkQuorumMetadataService) {}
 
   async exportShares(actor: {
     id: string;
@@ -48,36 +43,45 @@ export class QuorumShareExportService {
     }
     const kek = kekResult.kek;
     try {
-      const keySetId = assertKeySetId('ks_' + randomBytes(16).toString('hex'));
-      const result = generateTrackWorkShares(keySetId, kek, {
-        random: randomBytes,
-      });
-      if (!result.ok) {
-        throw new BadRequest('TrackWork share generation failed.');
+      const read = await this.metadata.readCurrent();
+      if (!read.ok && read.error !== 'metadata-absent') {
+        throw new BadRequest('TrackWork quorum metadata is invalid.');
       }
-      const response: QuorumShareExportResponse = {
-        keySetId,
-        shareSetId: result.shareSetId,
-        threshold: TRACKWORK_QUORUM_THRESHOLD,
-        totalShares: TRACKWORK_QUORUM_SHARES,
-        shares: result.shares.map(share => ({
-          index: share.index,
-          value: share.serialized,
-        })),
+      if (!read.ok) {
+        const enrolled = await this.metadata.enroll(kek, actor, randomBytes);
+        if (!enrolled.ok) {
+          throw new BadRequest('TrackWork quorum enrollment failed.');
+        }
+        return {
+          keySetId: enrolled.row.keySetId,
+          shareSetId: enrolled.shareSetId,
+          threshold: enrolled.row.threshold,
+          totalShares: enrolled.row.totalShares,
+          shares: enrolled.shares,
+        };
+      }
+      const reshared = await this.metadata.reshare(
+        kek,
+        read.row.revision,
+        actor,
+        randomBytes
+      );
+      if (!reshared.ok) {
+        throw new BadRequest(
+          reshared.error === 'key-check-authentication-failure'
+            ? 'TrackWork quorum KEK does not match the persisted keyset metadata.'
+            : reshared.error === 'metadata-revision-conflict'
+              ? 'TrackWork quorum metadata changed concurrently. Retry the export.'
+              : 'TrackWork quorum metadata is invalid.'
+        );
+      }
+      return {
+        keySetId: reshared.row.keySetId,
+        shareSetId: reshared.shareSetId,
+        threshold: reshared.row.threshold,
+        totalShares: reshared.row.totalShares,
+        shares: reshared.shares,
       };
-      await this.audit.log({
-        actorId: actor.id,
-        actorEmail: actor.email,
-        action: 'quorum-share-export-generated',
-        targetType: 'trackwork-quorum',
-        metadata: {
-          keySetId,
-          shareSetId: result.shareSetId,
-          shareCount: TRACKWORK_QUORUM_SHARES,
-          threshold: TRACKWORK_QUORUM_THRESHOLD,
-        },
-      });
-      return response;
     } finally {
       kek.fill(0);
     }

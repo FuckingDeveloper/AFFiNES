@@ -253,7 +253,7 @@
   },
   "quorum": {
     "title": "Quorum share export (provisioning)",
-    "warning": "Each share is a bearer secret. Any 2 of 3 shares reconstruct the KEK. Distribute shares to separate trusted custodians. Losing 2 shares can make encrypted data unrecoverable. Do not store all shares together. This provisioning flow does not activate persistent quorum metadata yet.",
+    "warning": "Each share is a bearer secret. Any 2 of 3 shares reconstruct the KEK. Distribute shares to separate trusted custodians. Losing 2 shares can make encrypted data unrecoverable. Do not store all shares together. Key/share metadata is persisted safely on the server; plaintext shares are only shown and exported once. Quorum runtime lock/unlock is not enabled until a later phase.",
     "generate": "Generate and export shares",
     "generated": "Share set generated. Export each share separately and store it offline.",
     "share": "Share",

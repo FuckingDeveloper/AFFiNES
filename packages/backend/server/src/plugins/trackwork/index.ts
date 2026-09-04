@@ -5,6 +5,7 @@ import { AuthModule } from '../../core/auth';
 import { PermissionModule } from '../../core/permission';
 import { QuorumShareExportController } from './quorum.controller';
 import { QuorumShareExportService } from './quorum.service';
+import { TrackWorkQuorumMetadataService } from './quorum-metadata.service';
 import { TrackWorkResolver } from './resolver';
 import { TrackWorkRegistryService } from './service';
 import { TrackWorkWorkflowResolver } from './workflow.resolver';
@@ -18,6 +19,7 @@ import { TrackWorkWorkflowService } from './workflow.service';
     TrackWorkWorkflowService,
     TrackWorkWorkflowResolver,
     QuorumShareExportService,
+    TrackWorkQuorumMetadataService,
   ],
   controllers: [QuorumShareExportController],
   exports: [TrackWorkRegistryService, TrackWorkWorkflowService],
