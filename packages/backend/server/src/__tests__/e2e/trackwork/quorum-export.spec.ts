@@ -10,6 +10,16 @@ const KEK_HEX = 'ab'.repeat(32);
 const exportShares = () =>
   app.POST('/api/admin/trackwork/quorum/shares/export');
 
+const db = () => app.get(PrismaClient) as PrismaClient;
+
+const clearMetadata = async () => {
+  await db().trackWorkQuorumMetadata.deleteMany({});
+};
+
+const resetKek = (hex: string) => {
+  process.env.TRACKWORK_KEK_HEX = hex;
+};
+
 const assertShareShape = (t: any, body: any) => {
   t.true(body.shares.length === 3, 'exactly three shares');
   t.is(body.threshold, 2);
@@ -29,7 +39,8 @@ const assertShareShape = (t: any, body: any) => {
 };
 
 e2e('A/B/C/D/E/F/G: installation admin exports three valid shares', async t => {
-  process.env.TRACKWORK_KEK_HEX = KEK_HEX;
+  resetKek(KEK_HEX);
+  await clearMetadata();
   const admin = await app.create(Mockers.User, { feature: 'administrator' });
   await app.login(admin);
   const res = await exportShares();
@@ -66,15 +77,21 @@ e2e('A/B/C/D/E/F/G: installation admin exports three valid shares', async t => {
 });
 
 e2e(
-  'I: repeated generation produces a new ShareSetId and new share material',
+  'I: repeated generation keeps KeySetId, produces a new ShareSetId and share material',
   async t => {
-    process.env.TRACKWORK_KEK_HEX = KEK_HEX;
+    resetKek(KEK_HEX);
+    await clearMetadata();
     const admin = await app.create(Mockers.User, { feature: 'administrator' });
     await app.login(admin);
     const first = await exportShares();
     const second = await exportShares();
     t.true(first.status >= 200 && first.status < 300);
     t.true(second.status >= 200 && second.status < 300);
+    t.is(
+      first.body.keySetId,
+      second.body.keySetId,
+      'canonical KeySetId stable'
+    );
     t.not(first.body.shareSetId, second.body.shareSetId);
     t.not(first.body.shares[0].value, second.body.shares[0].value);
   }
@@ -131,7 +148,9 @@ e2e('N/O/P: no DB, Redis or filesystem writes occur during export', async t => {
   const after = await db.adminAuditLog.count();
   t.true(after >= before + 1, 'an audit event is written; no share rows');
   const audits = await db.adminAuditLog.findMany({
-    where: { action: 'quorum-share-export-generated' },
+    where: {
+      action: { in: ['quorum-metadata-created', 'quorum-metadata-updated'] },
+    },
     orderBy: { createdAt: 'desc' },
     take: 1,
   });

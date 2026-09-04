@@ -63,7 +63,8 @@ for spec in \
   "src/__tests__/e2e/trackwork/task-doc-read.spec.ts" \
   "src/__tests__/e2e/trackwork/audit.spec.ts" \
   "src/__tests__/e2e/trackwork/upgrade.spec.ts" \
-  "src/__tests__/e2e/trackwork/quorum-export.spec.ts"; do
+  "src/__tests__/e2e/trackwork/quorum-export.spec.ts" \
+  "src/__tests__/e2e/trackwork/quorum-metadata.spec.ts"; do
   run_ava "$spec"
 done
 
