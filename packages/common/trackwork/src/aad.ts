@@ -9,6 +9,9 @@
  * context; it performs no crypto.
  */
 
+import type { KeySetId } from './identifiers';
+import { parseKeySetId } from './identifiers';
+
 export const TRACKWORK_AAD_DOMAINS = [
   'integration',
   'connected-oauth',
@@ -18,41 +21,6 @@ export const TRACKWORK_AAD_DOMAINS = [
 
 export type TrackWorkAadDomain = (typeof TRACKWORK_AAD_DOMAINS)[number];
 
-export const TRACKWORK_AAD_FIELD_PURPOSES: Record<
-  TrackWorkAadDomain,
-  readonly string[]
-> = {
-  integration: ['token', 'webhook-secret', 'sync-token'],
-  'connected-oauth': ['access-token', 'refresh-token'],
-  totp: ['seed'],
-  copilot: ['api-key'],
-};
-
-export type TrackWorkAadFieldPurpose =
-  | 'token'
-  | 'webhook-secret'
-  | 'sync-token'
-  | 'access-token'
-  | 'refresh-token'
-  | 'seed'
-  | 'api-key';
-
-export const isTrackWorkAadDomain = (
-  value: string
-): value is TrackWorkAadDomain =>
-  (TRACKWORK_AAD_DOMAINS as readonly string[]).includes(value);
-
-export const isTrackWorkAadFieldPurpose = (
-  domain: TrackWorkAadDomain,
-  purpose: string
-): purpose is TrackWorkAadFieldPurpose =>
-  TRACKWORK_AAD_FIELD_PURPOSES[domain].includes(purpose);
-
-/**
- * Closed semantic aliases for stable record identity (NOT arbitrary SQL table
- * text supplied by callers and NOT mutable display/class names). Maps to the
- * Prisma models owning the 3.1 encryption/re-key candidates.
- */
 export const TRACKWORK_STABLE_RECORD_ALIASES = [
   'connected-account',
   'development-integration-connection',
@@ -64,12 +32,117 @@ export const TRACKWORK_STABLE_RECORD_ALIASES = [
 export type TrackWorkStableRecordAlias =
   (typeof TRACKWORK_STABLE_RECORD_ALIASES)[number];
 
-export const TRACKWORK_STABLE_RECORD_ID_MAX_LENGTH = 64;
+export const isTrackWorkAadDomain = (
+  value: string
+): value is TrackWorkAadDomain =>
+  (TRACKWORK_AAD_DOMAINS as readonly string[]).includes(value);
 
 export const isTrackWorkStableRecordAlias = (
   value: string
 ): value is TrackWorkStableRecordAlias =>
   (TRACKWORK_STABLE_RECORD_ALIASES as readonly string[]).includes(value);
+
+/**
+ * Single source of truth for the domain/fieldPurpose -> record-alias matrix
+ * (verified against schema.prisma: ConnectedAccount l.80,
+ * DevelopmentIntegrationConnection l.1474, DevelopmentRepository l.1499,
+ * UserTwoFactorAuth l.1234, AiWorkspaceByokConfig l.936).
+ */
+export const TRACKWORK_AAD_RECORD_MATRIX = {
+  'connected-oauth': {
+    'access-token': 'connected-account',
+    'refresh-token': 'connected-account',
+  },
+  integration: {
+    token: 'development-integration-connection',
+    'webhook-secret': 'development-integration-connection',
+    'sync-token': 'development-repository',
+  },
+  totp: {
+    seed: 'user-two-factor-auth',
+  },
+  copilot: {
+    'api-key': 'ai-workspace-byok-config',
+  },
+} as const satisfies Record<
+  TrackWorkAadDomain,
+  Record<string, TrackWorkStableRecordAlias>
+>;
+
+export const TRACKWORK_AAD_FIELD_PURPOSES: Record<
+  TrackWorkAadDomain,
+  readonly string[]
+> = {
+  'connected-oauth': Object.keys(
+    TRACKWORK_AAD_RECORD_MATRIX['connected-oauth']
+  ),
+  integration: Object.keys(TRACKWORK_AAD_RECORD_MATRIX['integration']),
+  totp: Object.keys(TRACKWORK_AAD_RECORD_MATRIX['totp']),
+  copilot: Object.keys(TRACKWORK_AAD_RECORD_MATRIX['copilot']),
+};
+
+export type TrackWorkAadFieldPurpose =
+  | 'token'
+  | 'webhook-secret'
+  | 'sync-token'
+  | 'access-token'
+  | 'refresh-token'
+  | 'seed'
+  | 'api-key';
+
+export const isTrackWorkAadFieldPurpose = (
+  domain: TrackWorkAadDomain,
+  purpose: string
+): purpose is TrackWorkAadFieldPurpose =>
+  purpose in TRACKWORK_AAD_RECORD_MATRIX[domain];
+
+export const trackWorkAadRecordAlias = (
+  domain: TrackWorkAadDomain,
+  purpose: string
+): TrackWorkStableRecordAlias | undefined =>
+  TRACKWORK_AAD_RECORD_MATRIX[domain][
+    purpose as keyof (typeof TRACKWORK_AAD_RECORD_MATRIX)[TrackWorkAadDomain]
+  ] as TrackWorkStableRecordAlias | undefined;
+
+/**
+ * Compile-time discriminated union: obviously invalid domain/fieldPurpose/
+ * alias combinations are rejected by TypeScript; runtime validation is still
+ * mandatory (persisted/input strings are untrusted).
+ */
+export type TrackWorkAadContext =
+  | {
+      domain: 'connected-oauth';
+      fieldPurpose: 'access-token' | 'refresh-token';
+      stableRecordId: `connected-account:${string}`;
+    }
+  | {
+      domain: 'integration';
+      fieldPurpose: 'token' | 'webhook-secret';
+      stableRecordId: `development-integration-connection:${string}`;
+    }
+  | {
+      domain: 'integration';
+      fieldPurpose: 'sync-token';
+      stableRecordId: `development-repository:${string}`;
+    }
+  | {
+      domain: 'totp';
+      fieldPurpose: 'seed';
+      stableRecordId: `user-two-factor-auth:${string}`;
+    }
+  | {
+      domain: 'copilot';
+      fieldPurpose: 'api-key';
+      stableRecordId: `ai-workspace-byok-config:${string}`;
+    };
+
+/** Row-id portion limit: 64 characters (the complete `<alias>:<rowId>` may be longer). */
+export const TRACKWORK_STABLE_RECORD_ROW_ID_MAX_LENGTH = 64;
+
+export const TRACKWORK_STABLE_RECORD_ID_MAX_LENGTH =
+  TRACKWORK_STABLE_RECORD_ROW_ID_MAX_LENGTH +
+  1 +
+  Math.max(...TRACKWORK_STABLE_RECORD_ALIASES.map(alias => alias.length));
 
 const ROW_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
@@ -106,28 +179,28 @@ export const isCanonicalTrackWorkStableRecordId = (
   );
 };
 
-export interface TrackWorkAadContext {
-  domain: TrackWorkAadDomain;
-  fieldPurpose: TrackWorkAadFieldPurpose;
-  /** Canonical `<alias>:<rowId>` form (see canonicalizeTrackWorkStableRecordId). */
-  stableRecordId: string;
-}
-
 /**
  * Canonical AAD serialization:
  * `trackwork:aead:v1:<domain>:<fieldPurpose>:<stableRecordId>`
  *
- * Returns `null` when the context is not canonical (unknown domain, field
- * purpose not valid for the domain, or non-canonical stable record id).
+ * Returns `null` unless the domain, the field purpose AND the record alias
+ * all agree with the authoritative matrix (cross-domain/cross-model
+ * combinations are rejected).
  */
 export const serializeTrackWorkAad = (
   context: TrackWorkAadContext
 ): string | null => {
-  if (
-    !isTrackWorkAadDomain(context.domain) ||
-    !isTrackWorkAadFieldPurpose(context.domain, context.fieldPurpose) ||
-    !isCanonicalTrackWorkStableRecordId(context.stableRecordId)
-  ) {
+  const expectedAlias = trackWorkAadRecordAlias(
+    context.domain,
+    context.fieldPurpose
+  );
+  if (!expectedAlias) {
+    return null;
+  }
+  if (!isCanonicalTrackWorkStableRecordId(context.stableRecordId)) {
+    return null;
+  }
+  if (!context.stableRecordId.startsWith(`${expectedAlias}:`)) {
     return null;
   }
   return [
@@ -140,12 +213,15 @@ export const serializeTrackWorkAad = (
 
 /**
  * AAD context for the future key-wrapping contract (separate identity
- * semantics: binds to key-set + role, not to a record).
+ * semantics: binds to key-set + role, not to a record). The KeySetId is
+ * validated with the canonical identifier parser - no duplicated grammar.
  */
 export const serializeTrackWorkWrapAad = (
   wrapPurpose: 'dek' | 'lookup-key',
-  keySetId: string
-): string | null =>
-  /^ks_[0-9a-f]{32}$/.test(keySetId)
-    ? `trackwork:wrap:v1:${wrapPurpose}:${keySetId}`
-    : null;
+  keySetId: KeySetId
+): string | null => {
+  if (!parseKeySetId(keySetId)) {
+    return null;
+  }
+  return `trackwork:wrap:v1:${wrapPurpose}:${keySetId}`;
+};

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canonicalizeTrackWorkStableRecordId,
   serializeTrackWorkAad,
+  serializeTrackWorkWrapAad,
 } from './aad';
 import type { TrackWorkEncryptedValueEnvelopeV1 } from './envelope';
 import {
@@ -10,6 +11,8 @@ import {
   parseTrackWorkEnvelopeV1,
   serializeTrackWorkEnvelopeV1,
   TRACKWORK_ENVELOPE_ALGORITHM_AEAD_V1,
+  TRACKWORK_ENVELOPE_MAX_CIPHERTEXT_BYTES,
+  TRACKWORK_ENVELOPE_MAX_SERIALIZED_LENGTH,
   TRACKWORK_ENVELOPE_NONCE_BYTES,
   TRACKWORK_ENVELOPE_TAG_BYTES,
 } from './envelope';
@@ -231,6 +234,70 @@ describe('TrackWork envelope V1 parsing', () => {
       'not-new-envelope'
     );
   });
+
+  it('accepts the maximum ciphertext size end-to-end (serialize -> parse)', () => {
+    const maxEnv = {
+      ...fakeEnvelope(),
+      ciphertext: new Uint8Array(TRACKWORK_ENVELOPE_MAX_CIPHERTEXT_BYTES),
+    };
+    const serialized = serializeTrackWorkEnvelopeV1(maxEnv);
+    expect(serialized.length).toBeLessThanOrEqual(
+      TRACKWORK_ENVELOPE_MAX_SERIALIZED_LENGTH
+    );
+    const parsed = parseTrackWorkEnvelopeV1(serialized);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.envelope.ciphertext.length).toBe(
+        TRACKWORK_ENVELOPE_MAX_CIPHERTEXT_BYTES
+      );
+    }
+    expect(classifyTrackWorkValue(serialized)).toBe('new-envelope-v1');
+  });
+
+  it('rejects ciphertext larger than the limit at serialization', () => {
+    expect(() =>
+      serializeTrackWorkEnvelopeV1({
+        ...fakeEnvelope(),
+        ciphertext: new Uint8Array(TRACKWORK_ENVELOPE_MAX_CIPHERTEXT_BYTES + 1),
+      })
+    ).toThrow(TypeError);
+  });
+
+  it('every serializer-produced boundary value parses successfully', () => {
+    for (const size of [
+      1,
+      12,
+      32,
+      256,
+      4096,
+      TRACKWORK_ENVELOPE_MAX_CIPHERTEXT_BYTES,
+    ]) {
+      const serialized = serializeTrackWorkEnvelopeV1({
+        ...fakeEnvelope(),
+        ciphertext: new Uint8Array(size),
+      });
+      expect(parseTrackWorkEnvelopeV1(serialized).ok).toBe(true);
+    }
+  });
+
+  it('derives the exact canonical serialized length for plaintext sizes', () => {
+    const fixed =
+      'twenc1'.length +
+      5 +
+      TRACKWORK_ENVELOPE_ALGORITHM_AEAD_V1.length +
+      ('dk_' + 'a'.repeat(32)).length +
+      Math.ceil((TRACKWORK_ENVELOPE_NONCE_BYTES * 4) / 3) +
+      Math.ceil((TRACKWORK_ENVELOPE_TAG_BYTES * 4) / 3);
+    expect(fixed).toBe(101);
+    for (const size of [32, 256, 4096]) {
+      const serialized = serializeTrackWorkEnvelopeV1({
+        ...fakeEnvelope(),
+        ciphertext: new Uint8Array(size),
+      });
+      const expected = fixed + Math.ceil((size * 4) / 3);
+      expect(serialized.length).toBe(expected);
+    }
+  });
 });
 
 describe('TrackWork AAD context', () => {
@@ -262,17 +329,26 @@ describe('TrackWork AAD context', () => {
   it('differs for token vs webhook-secret on the same integration record', () => {
     expect(recordA).not.toBeNull();
     if (!recordA) return;
+    const connRecord = canonicalizeTrackWorkStableRecordId(
+      'development-integration-connection',
+      'row-123'
+    );
+    expect(connRecord).not.toBeNull();
+    if (!connRecord) return;
     const token = serializeTrackWorkAad({
       domain: 'integration',
       fieldPurpose: 'token',
-      stableRecordId: recordA,
+      stableRecordId: connRecord,
     });
     const secret = serializeTrackWorkAad({
       domain: 'integration',
       fieldPurpose: 'webhook-secret',
-      stableRecordId: recordA,
+      stableRecordId: connRecord,
     });
     expect(token).not.toBe(secret);
+    expect(token).toBe(
+      'trackwork:aead:v1:integration:token:development-integration-connection:row-123'
+    );
   });
 
   it('differs between record ids', () => {
@@ -295,14 +371,20 @@ describe('TrackWork AAD context', () => {
   it('serializes deterministically', () => {
     expect(recordA).not.toBeNull();
     if (!recordA) return;
+    const repoRecord = canonicalizeTrackWorkStableRecordId(
+      'development-repository',
+      'row-123'
+    );
+    expect(repoRecord).not.toBeNull();
+    if (!repoRecord) return;
     const context = {
       domain: 'integration' as const,
       fieldPurpose: 'sync-token' as const,
-      stableRecordId: recordA,
+      stableRecordId: repoRecord,
     };
     expect(serializeTrackWorkAad(context)).toBe(serializeTrackWorkAad(context));
     expect(serializeTrackWorkAad(context)).toBe(
-      'trackwork:aead:v1:integration:sync-token:connected-account:row-123'
+      'trackwork:aead:v1:integration:sync-token:development-repository:row-123'
     );
   });
 
@@ -316,6 +398,80 @@ describe('TrackWork AAD context', () => {
         stableRecordId: recordA,
       })
     ).toBeNull();
+  });
+
+  it('rejects cross-model record aliases (runtime, untrusted input)', () => {
+    expect(recordA).not.toBeNull();
+    if (!recordA) return;
+    const asUntrusted = (
+      context: Parameters<typeof serializeTrackWorkAad>[0]
+    ) => serializeTrackWorkAad(context as never);
+    expect(
+      asUntrusted({
+        domain: 'integration',
+        fieldPurpose: 'token',
+        stableRecordId: recordA,
+      })
+    ).toBeNull();
+    expect(
+      asUntrusted({
+        domain: 'connected-oauth',
+        fieldPurpose: 'access-token',
+        stableRecordId: canonicalizeTrackWorkStableRecordId(
+          'development-repository',
+          'row-456'
+        ),
+      })
+    ).toBeNull();
+    expect(
+      asUntrusted({
+        domain: 'totp',
+        fieldPurpose: 'seed',
+        stableRecordId: recordA,
+      })
+    ).toBeNull();
+    expect(
+      asUntrusted({
+        domain: 'copilot',
+        fieldPurpose: 'api-key',
+        stableRecordId: recordA,
+      })
+    ).toBeNull();
+  });
+
+  it('every fieldPurpose maps to exactly its intended record alias', () => {
+    expect(
+      serializeTrackWorkAad({
+        domain: 'connected-oauth',
+        fieldPurpose: 'refresh-token',
+        stableRecordId: 'connected-account:row-1',
+      })
+    ).toBe(
+      'trackwork:aead:v1:connected-oauth:refresh-token:connected-account:row-1'
+    );
+    expect(
+      serializeTrackWorkAad({
+        domain: 'integration',
+        fieldPurpose: 'webhook-secret',
+        stableRecordId: 'development-integration-connection:row-1',
+      })
+    ).toBe(
+      'trackwork:aead:v1:integration:webhook-secret:development-integration-connection:row-1'
+    );
+    expect(
+      serializeTrackWorkAad({
+        domain: 'totp',
+        fieldPurpose: 'seed',
+        stableRecordId: 'user-two-factor-auth:row-1',
+      })
+    ).toBe('trackwork:aead:v1:totp:seed:user-two-factor-auth:row-1');
+    expect(
+      serializeTrackWorkAad({
+        domain: 'copilot',
+        fieldPurpose: 'api-key',
+        stableRecordId: 'ai-workspace-byok-config:row-1',
+      })
+    ).toBe('trackwork:aead:v1:copilot:api-key:ai-workspace-byok-config:row-1');
   });
 
   it('rejects non-canonical stable record ids', () => {
@@ -333,6 +489,24 @@ describe('TrackWork AAD context', () => {
     ).toBeNull();
     expect(
       canonicalizeTrackWorkStableRecordId('connected-account', 'row with space')
+    ).toBeNull();
+  });
+
+  it('wrap AAD accepts only canonical KeySetId (no DataKeyId/LookupKeyId)', () => {
+    const ks = parseKeySetId('ks_' + 'c'.repeat(32));
+    expect(ks).not.toBeNull();
+    if (!ks) return;
+    expect(serializeTrackWorkWrapAad('dek', ks)).toBe(
+      'trackwork:wrap:v1:dek:ks_' + 'c'.repeat(32)
+    );
+    expect(serializeTrackWorkWrapAad('lookup-key', ks)).toBe(
+      'trackwork:wrap:v1:lookup-key:ks_' + 'c'.repeat(32)
+    );
+    expect(
+      serializeTrackWorkWrapAad('dek', ('dk_' + 'a'.repeat(32)) as never)
+    ).toBeNull();
+    expect(
+      serializeTrackWorkWrapAad('dek', ('lk_' + 'a'.repeat(32)) as never)
     ).toBeNull();
   });
 

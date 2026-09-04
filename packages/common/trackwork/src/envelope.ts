@@ -107,7 +107,10 @@ export const serializeTrackWorkEnvelopeV1 = (
   if (!isNonEmptyBytes(envelope.ciphertext)) {
     throw new TypeError('Invalid TrackWork envelope ciphertext');
   }
-  return [
+  if (envelope.ciphertext.length > TRACKWORK_ENVELOPE_MAX_CIPHERTEXT_BYTES) {
+    throw new TypeError('TrackWork envelope ciphertext exceeds the size limit');
+  }
+  const serialized = [
     TRACKWORK_ENVELOPE_PREFIX_V1.slice(0, -1),
     envelope.algorithm,
     envelope.keyId,
@@ -115,6 +118,10 @@ export const serializeTrackWorkEnvelopeV1 = (
     encodeBase64Url(envelope.ciphertext),
     encodeBase64Url(envelope.tag),
   ].join('.');
+  if (serialized.length > TRACKWORK_ENVELOPE_MAX_SERIALIZED_LENGTH) {
+    throw new TypeError('TrackWork envelope exceeds the serialized size limit');
+  }
+  return serialized;
 };
 
 export const parseTrackWorkEnvelopeV1 = (

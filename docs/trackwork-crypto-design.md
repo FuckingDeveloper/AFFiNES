@@ -495,6 +495,12 @@ recomputes these numbers.
 Legacy CryptoHelper format overhead was 24 bytes (iv12+tag12) - the candidate
 envelope adds ~14 bytes of versioning/keyId metadata.
 
+Effective maximum envelope size: the ciphertext cap (32768 B) is binding -
+max serialized = 101 + ceil(32768\*4/3) = 101 + 43691 = 43792 chars. The
+65536 serialized cap is a defensive upper bound that cannot be reached while
+the ciphertext cap holds; the serializer enforces BOTH caps symmetrically
+with the parser (serialize -> parse invariant, tested).
+
 ## 24. Performance (measured, non-production spike)
 
 Node v24.14.0, OpenSSL 3 backend, 2026-09-04, local mac; 20000-iteration
@@ -663,16 +669,17 @@ twenc1.<algorithm>.<dataKeyId>.<nonceB64url>.<ciphertextB64url>.<tagB64url>
 
 ### Actual V1 overhead
 
-Fixed decoded crypto overhead: nonce 12 B + tag 16 B = 28 B. Serialized
-overhead: 103 chars fixed (prefix 7 + algorithm 19 + DataKeyId 35 + 4 dots +
-nonce 16 + tag 22) + ciphertext base64url length (ceil(pt\*4/3); GCM has no
-padding - format calculation only).
+Fixed decoded crypto overhead: nonce 12 B + tag 16 B = 28 B. Fixed
+SERIALIZED overhead = 101 chars:
+`twenc1` (6) + 5 separators + `trackwork-aead-v1` (17) + DataKeyId (35) +
+nonce base64url (16) + tag base64url (22). Derived and asserted in
+envelope.spec.ts (no drift).
 
 | plaintext | ciphertext b64url | total serialized |
 | --------- | ----------------- | ---------------- |
-| 32 B      | 43 chars          | 146 chars        |
-| 256 B     | 342 chars         | 445 chars        |
-| 4096 B    | 5462 chars        | 5565 chars       |
+| 32 B      | 43 chars          | 144 chars        |
+| 256 B     | 342 chars         | 443 chars        |
+| 4096 B    | 5462 chars        | 5563 chars       |
 
 ### Parser / downgrade semantics
 
