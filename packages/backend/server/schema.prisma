@@ -1592,3 +1592,18 @@ model DevelopmentActivity {
   @@index([workspaceId, createdAt])
   @@map("development_activity")
 }
+
+model TrackWorkQuorumMetadata {
+  id              String   @id @db.VarChar
+  keySetId        String   @map("key_set_id") @db.VarChar
+  shareSetId      String   @map("share_set_id") @db.VarChar
+  threshold       Int
+  totalShares     Int      @map("total_shares")
+  keyCheck        String   @map("key_check") @db.Text
+  metadataVersion Int      @default(1) @map("metadata_version")
+  revision        Int      @default(1)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("trackwork_quorum_metadata")
+}
