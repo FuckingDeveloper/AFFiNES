@@ -1,12 +1,12 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { Prisma, PrismaClient } from '@prisma/client';
-
-import { metrics } from '../../base';
 import {
   formatTaskKey,
   normalizeTaskKey,
   parseTaskKey,
 } from '@affine/trackwork';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Prisma, PrismaClient } from '@prisma/client';
+
+import { metrics } from '../../base';
 import type {
   AllocateTrackWorkTaskInput,
   TrackWorkLegacyTaskInput,
