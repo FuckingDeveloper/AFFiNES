@@ -127,6 +127,9 @@ export const serializeTrackWorkEnvelopeV1 = (
 export const parseTrackWorkEnvelopeV1 = (
   value: string
 ): TrackWorkEnvelopeParseResult => {
+  if (typeof value !== 'string') {
+    return { ok: false, error: 'malformed-envelope' };
+  }
   if (!value.startsWith('twenc')) {
     return { ok: false, error: 'not-new-envelope' };
   }
@@ -205,6 +208,9 @@ export const parseTrackWorkEnvelopeV1 = (
 export const classifyTrackWorkValue = (
   value: string
 ): TrackWorkValueClassification => {
+  if (typeof value !== 'string') {
+    return 'not-new-envelope';
+  }
   if (!value.startsWith('twenc')) {
     return 'not-new-envelope';
   }

@@ -31,6 +31,34 @@ import { isDataKeyId } from './identifiers';
 
 export const TRACKWORK_DEK_BYTES = 32;
 
+/**
+ * Authenticated metadata fed to AES-GCM setAAD():
+ *
+ *   canonicalCallerAadBytes || 0x00 || canonicalDataKeyIdBytes
+ *
+ * The DataKeyId is envelope metadata whose integrity is cryptographically
+ * bound here (preventing metadata substitution / key confusion) while the
+ * caller-derived semantic context remains the authoritative AAD. This is a
+ * documented OpenSpec 3.4 extension; the canonical 3.2 caller-AAD string is
+ * unchanged and the envelope still never self-authorizes
+ * domain/fieldPurpose/stableRecordId.
+ *
+ * Injectivity: the canonical AAD alphabet ([A-Za-z0-9:.-]) and the DataKeyId
+ * alphabet (dk_ + [0-9a-f]) both exclude NUL (0x00), so the first NUL splits
+ * the byte string uniquely - no ambiguous concatenation is possible.
+ */
+export const buildTrackWorkAuthenticatedBytes = (
+  canonicalAad: string,
+  dataKeyId: DataKeyId
+): Uint8Array =>
+  new Uint8Array(
+    Buffer.concat([
+      Buffer.from(canonicalAad, 'utf8'),
+      Buffer.from([0x00]),
+      Buffer.from(dataKeyId, 'utf8'),
+    ])
+  );
+
 export type TrackWorkCryptoError =
   | 'invalid-data-key-length'
   | 'invalid-aad-context'
@@ -91,7 +119,7 @@ export const encryptTrackWorkValue = (
   const cipher = createCipheriv('aes-256-gcm', dataKey, nonce, {
     authTagLength: TRACKWORK_ENVELOPE_TAG_BYTES,
   });
-  cipher.setAAD(Buffer.from(aad, 'utf8'));
+  cipher.setAAD(buildTrackWorkAuthenticatedBytes(aad, keyId));
   const ciphertext = Buffer.concat([
     cipher.update(Buffer.from(plaintext)),
     cipher.final(),
@@ -121,9 +149,11 @@ export const encryptTrackWorkValue = (
  *   fail closed (no downgrade);
  * - AAD must match EXACTLY (wrong domain/fieldPurpose/record fails
  *   authentication);
- * - an optional expectedKeyId makes a modified DataKeyId fail closed
- *   ('key-id-mismatch'); without it the parsed keyId is returned so the
- *   caller can detect mismatch itself.
+ * - the parsed envelope DataKeyId is cryptographically bound into the
+ *   authenticated bytes, so changing ONLY the DataKeyId of a valid envelope
+ *   fails authentication even without expectedKeyId;
+ * - expectedKeyId remains as a caller-side identity assertion
+ *   (defense-in-depth): a mismatch is reported as 'key-id-mismatch'.
  */
 export const decryptTrackWorkValue = (
   serialized: string,
@@ -161,7 +191,7 @@ export const decryptTrackWorkValue = (
     Buffer.from(envelope.nonce),
     { authTagLength: TRACKWORK_ENVELOPE_TAG_BYTES }
   );
-  decipher.setAAD(Buffer.from(aad, 'utf8'));
+  decipher.setAAD(buildTrackWorkAuthenticatedBytes(aad, envelope.keyId));
   decipher.setAuthTag(Buffer.from(envelope.tag));
 
   let plaintext: Buffer;
