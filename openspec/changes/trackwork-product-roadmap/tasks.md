@@ -105,7 +105,12 @@ Implementation agents such as Codex/DeepSeek SHALL read `proposal.md`, `design.m
 
 ## 3. Security and quorum-controlled encryption
 
-- [ ] 3.1 Produce a persisted-data/secrets classification identifying which values require application-level encryption.
+- [x] 3.1 Produce a persisted-data/secrets classification identifying which values require application-level encryption.
+  - Classification document: docs/trackwork-data-classification.md (S0-S5 model, complete persisted-data inventory with source/persistence/protection/decision for every relevant value, bootstrap external secrets, locked-mode dependency matrix, searchability/unique constraints, rotation implications, crypto-primitive inventory only).
+  - Key results: S4 YES candidates (11): ConnectedAccount OAuth tokens (currently PLAINTEXT at rest - primary candidate), AccessToken.token (unique+lookup -> design decision), VerificationToken (one-time), integration tokenCipher/webhookSecretCipher (existing AES-256-GCM ciphers, future envelope re-key), syncToken, Copilot provider API key, TOTP seed (existing cipher). Excluded from envelope: password hashes (argon2 verifier), invitation tokenHash (SHA-256 verifier), webhook dedupe UUIDs, revision numbers, audit action names, metrics labels, public provider names, task keys/IDs, timestamps, workflow user-authored names, task content (S2 authorization-bound, not credentials). PROHIBITED FROM PERSISTENCE: future DEK/KEK/quorum shares. BOOTSTRAP EXTERNAL SECRETS (8): DB/Redis/object-storage/SMTP credentials, OAuth client secrets, session/JWT secrets, license AES key, TLS keys - must remain externally sourced (no self-bootstrap cycle).
+  - User content (S2) explicitly distinguished from credentials: no whole-database/Yjs-document encryption proposed.
+  - Security finding (separate from future encryption): ConnectedAccount access/refresh tokens are plaintext at rest; no direct disclosure path found (masked on read, not logged); primary target for the 3.3+ envelope.
+  - 3.2 remains [ ] (no library selection made).
 - [ ] 3.2 Select mature libraries/primitives for AEAD envelope encryption and threshold secret sharing; document the exact algorithms/library versions before implementation.
 - [ ] 3.3 Introduce a versioned encrypted-value envelope and key identifier model.
 - [ ] 3.4 Generate a random DEK using the runtime CSPRNG and implement authenticated encryption/decryption through a dedicated crypto service.
