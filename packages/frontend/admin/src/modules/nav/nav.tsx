@@ -62,6 +62,12 @@ export function Nav({ isCollapsed = false }: NavProps) {
         />
         <SettingsItem isCollapsed={isCollapsed} />
         <NavItem
+          to={ROUTES.admin.quorum}
+          icon={<ListChecksIcon size={18} />}
+          label={t('nav.quorum')}
+          isCollapsed={isCollapsed}
+        />
+        <NavItem
           to={ROUTES.admin.about}
           icon={<SelfhostIcon fontSize={20} />}
           label={t('nav.about')}

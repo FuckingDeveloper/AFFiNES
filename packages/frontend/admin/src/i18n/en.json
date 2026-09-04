@@ -5,7 +5,8 @@
     "workspaces": "Workspaces",
     "queue": "Queue",
     "settings": "Settings",
-    "about": "About TrackWork"
+    "about": "About TrackWork",
+    "quorum": "Quorum shares"
   },
   "user": {
     "admin": "Admin",
@@ -249,5 +250,18 @@
     "switch": "Language",
     "en": "English",
     "ru": "Русский"
+  },
+  "quorum": {
+    "title": "Quorum share export (provisioning)",
+    "warning": "Each share is a bearer secret. Any 2 of 3 shares reconstruct the KEK. Distribute shares to separate trusted custodians. Losing 2 shares can make encrypted data unrecoverable. Do not store all shares together. This provisioning flow does not activate persistent quorum metadata yet.",
+    "generate": "Generate and export shares",
+    "generated": "Share set generated. Export each share separately and store it offline.",
+    "share": "Share",
+    "reveal": "Reveal",
+    "hide": "Hide",
+    "download": "Download as text file",
+    "close": "Close",
+    "failed": "Share export failed.",
+    "notConfigured": "The quorum KEK is not configured on this server."
   }
 }

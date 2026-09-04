@@ -16,6 +16,7 @@ export const ROUTES = {
     workspaces: '/admin/workspaces',
     queue: '/admin/queue',
     ai: '/admin/ai',
+    quorum: '/admin/quorum',
     settings: { index: '/admin/settings', module: '/admin/settings/:module' },
     about: '/admin/about',
     notFound: '/admin/404',
