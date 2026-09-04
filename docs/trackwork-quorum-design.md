@@ -393,3 +393,14 @@ the 3.8 keyset verification artifact is the authority (documented).
 - Admin UI: masked per-share reveal + per-share text-file downloads
   (client-side Blob, object URL revoked); no browser persistence, no images.
 - Repeated generation produces a NEW ShareSetId; nothing is re-downloadable.
+
+## 32. 3.8 implemented record
+
+- Persistent singleton TrackWorkQuorumMetadata (id='current', PK + CHECK
+  id='current' + fixed policy/version CHECKs) - DB-enforced.
+- Key-check artifact twkcheck1 (AES-256-GCM, AAD binds KeySetId+ShareSetId)
+  - canonical verifier usable with zero wrapped DEKs.
+- Canonical KeySetId: created once per KEK generation; exports keep it;
+  env KEK verified against the persisted key-check before any reshare.
+- CAS-reshare (revision), enrollment PK-serialization, last-write-wins
+  rejected; pre-3.8 exports provisioning-only.
