@@ -36,18 +36,26 @@ export {
   TRACKWORK_ENVELOPE_TAG_BYTES,
   TRACKWORK_ENVELOPE_VERSION_V1,
 } from './envelope';
-export type { DataKeyId, KeySetId, LookupKeyId } from './identifiers';
+export type {
+  DataKeyId,
+  KeySetId,
+  LookupKeyId,
+  ShareSetId,
+} from './identifiers';
 export {
   assertDataKeyId,
   assertKeySetId,
   assertLookupKeyId,
+  assertShareSetId,
   isDataKeyId,
   isKeySetId,
   isLookupKeyId,
+  isShareSetId,
   isTrackWorkKeyId,
   parseDataKeyId,
   parseKeySetId,
   parseLookupKeyId,
+  parseShareSetId,
 } from './identifiers';
 export {
   extractTrackWorkKeys,
