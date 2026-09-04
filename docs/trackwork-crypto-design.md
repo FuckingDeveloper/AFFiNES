@@ -15,21 +15,23 @@ Hierarchy (fixed):
 Administrator shares (2 of 3)
    -> reconstruct KEK material (32 bytes, random, never persisted)
         -> KEK unwraps wrapped DEK (AES-256-GCM)
+        -> KEK unwraps wrapped LookupKey (AES-256-GCM, separate purpose)
              -> DEK encrypts designated application values (AES-256-GCM)
+             -> LookupKey keyed-hashes VerificationToken lookup values (HMAC-SHA-256)
 ```
 
 ## 1. Normative decision table
 
-| Purpose                                         | Algorithm           | Parameters                                                            | Implementation                                            | Persisted algorithm ID | Rationale                                                                                        |
-| ----------------------------------------------- | ------------------- | --------------------------------------------------------------------- | --------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
-| Random generation                               | CSPRNG              | n/a                                                                   | `node:crypto.randomBytes` (server)                        | trackwork-rng-v1       | Native OpenSSL-backed CSPRNG; zero dependency; FIPS-compatible source                            |
-| Value AEAD                                      | AES-256-GCM         | key 32 B, nonce 12 B, tag 16 B, AAD required                          | `node:crypto.createCipheriv`/`createDecipheriv` (OpenSSL) | trackwork-aead-v1      | Native; already the repository pattern (CryptoHelper prior art); FIPS-capable; no new dependency |
-| DEK wrapping                                    | AES-256-GCM         | key 32 B (KEK), nonce 12 B, tag 16 B, AAD required (domain: dek-wrap) | `node:crypto`                                             | trackwork-wrap-v1      | Same native primitive; authenticated unwrap provides share-integrity detection                   |
-| Threshold secret sharing                        | Shamir over GF(2^8) | threshold 2, shares 3, secret 32 B                                    | `shamirs-secret-sharing@2.0.1` (exact pin)                | trackwork-share-v1     | Mature maintained library; zero deps; RNG injectable; server-only                                |
-| Keyed lookup (VerificationToken, 3.3 structure) | HMAC-SHA-256        | key 32 B                                                              | `node:crypto.createHmac`                                  | trackwork-lookup-v1    | Keyed PRF; no deterministic AEAD; no raw SHA-256 of low-entropy values                           |
-| KDF                                             | NONE                | -                                                                     | -                                                         | -                      | NO KDF: shares originate from random high-entropy machine-generated material                     |
-| Secure comparison                               | constant-time       | n/a                                                                   | `node:crypto.timingSafeEqual`                             | -                      | Share/token equality without timing leak                                                         |
-| Transport checksum (shares)                     | CRC-32              | 4 B                                                                   | `@node-rs/crc32` (already in server deps)                 | -                      | ERROR DETECTION only, never authentication                                                       |
+| Purpose                                         | Algorithm           | Parameters                                                                           | Implementation                                            | Persisted algorithm ID | Rationale                                                                                                     |
+| ----------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Random generation                               | CSPRNG              | n/a                                                                                  | `node:crypto.randomBytes` (server)                        | trackwork-rng-v1       | Native OpenSSL-backed CSPRNG; zero dependency; FIPS-compatible source                                         |
+| Value AEAD                                      | AES-256-GCM         | key 32 B, nonce 12 B, tag 16 B, AAD required                                         | `node:crypto.createCipheriv`/`createDecipheriv` (OpenSSL) | trackwork-aead-v1      | Native; already the repository pattern (CryptoHelper prior art); FIPS-capable; no new dependency              |
+| Key wrapping (DEK and LookupKey)                | AES-256-GCM         | key 32 B (KEK), nonce 12 B, tag 16 B, AAD required (wrap purpose: dek or lookup-key) | `node:crypto`                                             | trackwork-wrap-v1      | Same native primitive; authenticated unwrap provides share-integrity detection and protects both wrapped keys |
+| Threshold secret sharing                        | Shamir over GF(2^8) | threshold 2, shares 3, secret 32 B                                                   | `shamirs-secret-sharing@2.0.1` (exact pin)                | trackwork-share-v1     | Mature maintained library; zero deps; RNG injectable; server-only                                             |
+| Keyed lookup (VerificationToken, 3.3 structure) | HMAC-SHA-256        | key 32 B                                                                             | `node:crypto.createHmac`                                  | trackwork-lookup-v1    | Keyed PRF; no deterministic AEAD; no raw SHA-256 of low-entropy values                                        |
+| KDF                                             | NONE                | -                                                                                    | -                                                         | -                      | NO KDF: shares originate from random high-entropy machine-generated material                                  |
+| Secure comparison                               | constant-time       | n/a                                                                                  | `node:crypto.timingSafeEqual`                             | -                      | Share/token equality without timing leak                                                                      |
+| Transport checksum (shares)                     | CRC-32              | 4 B                                                                                  | `@node-rs/crc32` (already in server deps)                 | -                      | ERROR DETECTION only, never authentication                                                                    |
 
 Normative wording:
 
@@ -66,16 +68,16 @@ only third-party cryptographic dependency.
 
 ## 3. AEAD candidates compared
 
-| Criterion            | AES-256-GCM (node:crypto)                 | XChaCha20-Poly1305 (@noble/ciphers)                          | ChaCha20-Poly1305                                      |
-| -------------------- | ----------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------ |
-| Runtime support      | Native (OpenSSL)                          | Pure JS dep (not in server deps today)                       | Native? node:crypto has chacha20 but NOT poly1305 AEAD |
-| Nonce size           | 12 B (96-bit)                             | 24 B (192-bit)                                               | 12 B                                                   |
-| Nonce-reuse behavior | Catastrophic (zeroization)                | Same (auth fails)                                            | Same                                                   |
-| Tag                  | 16 B (configurable 12-16)                 | 16 B                                                         | 16 B                                                   |
-| FIPS/deployment      | FIPS-capable                              | Not FIPS                                                     | Not FIPS                                               |
-| External dependency  | none                                      | @noble/ciphers@2.4.0 (new direct dep)                        | no AEAD in node:crypto -> dep required                 |
-| Existing repo usage  | CryptoHelper uses AES-256-GCM (prior art) | none (noble/hashes transitive via @paralleldrive/cuid2 only) | none                                                   |
-| Audit                | NIST SP 800-38D standard                  | no public audit verified in this pass                        | -                                                      |
+| Criterion            | AES-256-GCM (node:crypto)                 | XChaCha20-Poly1305 (@noble/ciphers)                                                                           | ChaCha20-Poly1305                                                                            |
+| -------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Runtime support      | Native (OpenSSL)                          | Pure JS dep (not in server deps today)                                                                        | Native (OpenSSL 3: node:crypto 'chacha20-poly1305' - verified Node v24.14.0 / OpenSSL 3.5.5) |
+| Nonce size           | 12 B (96-bit)                             | 24 B (192-bit)                                                                                                | 12 B                                                                                         |
+| Nonce-reuse behavior | Catastrophic (zeroization)                | Forbidden/dangerous with same key; 192-bit nonce only makes random collisions vastly less likely - NOT "safe" | Same as XChaCha class                                                                        |
+| Tag                  | 16 B (configurable 12-16)                 | 16 B                                                                                                          | 16 B                                                                                         |
+| FIPS/deployment      | FIPS-capable                              | Not FIPS                                                                                                      | Not FIPS                                                                                     |
+| External dependency  | none                                      | @noble/ciphers@2.4.0 (new direct dep)                                                                         | none (native)                                                                                |
+| Existing repo usage  | CryptoHelper uses AES-256-GCM (prior art) | none (noble/hashes transitive via @paralleldrive/cuid2 only)                                                  | none                                                                                         |
+| Audit                | NIST SP 800-38D standard                  | no public audit verified in this pass                                                                         | -                                                                                            |
 
 Decision: AES-256-GCM (node:crypto). XChaCha's larger nonce does not change
 the decision: the collision probability at our scale is bounded (section 6);
@@ -118,33 +120,67 @@ uses 12 B; new envelopes MUST use 16 B).
 | 1e11          | 6.3e-8       |
 
 Consequence: the DEK MUST be rotated (re-wrapped under a fresh KEK ceremony)
-before ~1e9 encryptions under one DEK. This also respects the NIST SP 800-38D
-2^32-invocation guidance per key. At realistic TrackWork scales (< 1e8
-protected values per deployment) the risk is negligible; the bound is
-documented, not hand-waved.
+before ~1e9 encryptions under one DEK - the project's conservative rotation
+threshold (birthday collision probability ~6e-12 at 1e9), chosen
+independently of the standards limit. Separately, NIST SP 800-38D (sec. 8.3):
+for IVs generated by an approved RBG, the total number of invocations of the
+encryption function per key SHALL not exceed 2^32 (~4.3e9) - the standards
+bound; the project threshold is deliberately more conservative. At realistic
+TrackWork scales (< 1e8 protected values per deployment) the risk is
+negligible; the bounds are documented, not hand-waved.
 
 ## 6. AAD contract
 
 AAD = UTF-8 bytes of the canonical string:
 
 ```text
-trackwork:aead:v1:<domain>:<stableRecordId>
+trackwork:aead:v1:<domain>:<fieldPurpose>:<stableRecordId>
 ```
 
 - `<domain>`: fixed registry value from a closed enum (stable, not display
-  names): `integration-token`, `webhook-secret`, `totp-seed`, `sync-token`,
-  `copilot-key`, `connected-oauth`, `dek-wrap`.
+  names): `integration`, `connected-oauth`, `totp`, `copilot`.
+- `<fieldPurpose>`: stable closed-enum field identifier (per-field table
+  below). REQUIRED because two encrypted fields can share domain + record
+  (e.g. ConnectedAccount accessToken/refreshToken); without it, swapping
+  their complete ciphertext envelopes under the same DEK would still
+  authenticate.
 - `<stableRecordId>`: non-secret stable identifier `table:rowId` (e.g.
   `dev_int_conn:clxyz`), stable across migrations.
 - Canonical serialization: exactly the string above, UTF-8, no JSON, no
   whitespace, no ambiguity.
-- Purpose: binds ciphertext to its semantic record, preventing
+- Purpose: binds ciphertext to its semantic record AND field, preventing
   cross-field/cross-record ciphertext substitution.
-- Survives rotation/migration: domain + recordId are stable; envelope
-  version/algorithm are separate envelope fields, not AAD.
+- Survives rotation/migration: domain + fieldPurpose + recordId are stable;
+  envelope version/algorithm are separate envelope fields, not AAD.
 - AAD mismatch MUST cause authentication failure (fail closed).
 - NOT included: workspace ID (redundant for single-DEK scope), display names,
-  anything secret.
+  mutable property names, anything secret.
+
+Per-field AAD purposes (MUST NOT be shared by two fields of the same record):
+
+| 3.1 asset                                            | domain          | fieldPurpose   |
+| ---------------------------------------------------- | --------------- | -------------- |
+| ConnectedAccount accessToken                         | connected-oauth | access-token   |
+| ConnectedAccount refreshToken                        | connected-oauth | refresh-token  |
+| DevelopmentIntegrationConnection tokenCipher         | integration     | token          |
+| DevelopmentIntegrationConnection webhookSecretCipher | integration     | webhook-secret |
+| UserTwoFactorAuth secretEncrypted                    | totp            | seed           |
+| DevelopmentRepository syncToken                      | integration     | sync-token     |
+| CopilotProvider API key                              | copilot         | api-key        |
+
+accessToken vs refreshToken: distinct purposes (no shared AAD). Integration
+token vs webhook secret: distinct purposes. No mutable display/property names.
+
+Key-wrapping AAD (separate contract - identity semantics differ; binds to
+key-set + role, not to a record):
+
+```text
+trackwork:wrap:v1:<wrapPurpose>:<keySetId>
+```
+
+- `<wrapPurpose>`: closed enum `dek` | `lookup-key`.
+- `<keySetId>`: the deployment key-set identifier (also in share transport).
+- DEK and LookupKey MUST be wrapped with distinct wrap purposes.
 
 ## 7. DEK scope model
 
@@ -165,6 +201,11 @@ a single encryption state service and one unlock ceremony per deployment):
 - backup/restore: single wrapped DEK + key-set id;
 - future re-key: re-wrap one DEK without re-encrypting records (design.md
   explicit requirement).
+- LookupKey lives in the same hierarchy: wrapped by the KEK under
+  trackwork-wrap-v1 (purpose lookup-key), persisted only in wrapped form.
+  Unlock unwraps both DEK and LookupKey. If DEK unwrap succeeds but LookupKey
+  unwrap fails, the encryption state MUST NOT become fully unlocked (fail
+  closed; the deployment stays locked).
 
 ## 8. KEK semantics
 
@@ -215,8 +256,13 @@ shares -> reconstruct candidate KEK -> AES-256-GCM unwrap of wrapped DEK
 
 This is SUFFICIENT for the ceremony: any wrong share set produces a candidate
 KEK that fails the authenticated unwrap; the ceremony aborts with no partial
-state. The ceremony MUST additionally reject duplicate share indexes (same
-share supplied twice) as a malformed ceremony before reconstruction.
+state. Source-verified: combine() silently SKIPS duplicate share ids
+(if (x.indexOf(share.id) === -1)) and returns bytes for any input length -
+combine returning bytes is NOT evidence of a valid reconstruction. The
+ceremony MUST therefore enforce >= 2 distinct, format-valid shares BEFORE
+calling combine, MUST reject duplicate share indexes (same share supplied
+twice) and MUST treat only a successful authenticated unwrap as the final
+cryptographic validation.
 
 ## 11. Share identity and metadata
 
@@ -243,11 +289,17 @@ twshare-v1.<keySetId>.<index>.<base64url(shareBytes)>.<crc32hex>
 ```
 
 - base64url: unambiguous alphabet, no padding ambiguity (`Buffer.toString('base64url')`).
-- `<crc32hex>`: 8 hex chars of `@node-rs/crc32` over the base64url payload -
-  ERROR DETECTION ONLY (typo/truncation), never authentication.
+- `<crc32hex>`: 8 hex chars of `@node-rs/crc32` computed over the canonical
+  complete non-checksum portion
+  `twshare-v1.<keySetId>.<index>.<base64url(shareBytes)>` (version, keySetId
+  and index included) - ERROR DETECTION ONLY (typo/truncation), never
+  authentication.
 - Parsing MUST be strict: exact field count, version must equal v1,
   keySetId must match the persisted key-set, index within [1..3], checksum
   verified. Any deviation -> malformed-share error (fail closed).
+- Outer transport `<index>` MUST equal the inner Shamir share x-coordinate
+  (parsed from the library share encoding); the parser MUST reject
+  disagreement BEFORE combine() is called.
 - No QR codes / UI in this task.
 
 ## 13. RNG
@@ -310,9 +362,18 @@ Compatibility contract (implementation later):
   `node:crypto.createHmac`.
 - Separate lookup key vs DEK: YES - an independent random 32-byte lookup key;
   NOT derived from the DEK (no shared root material; no HKDF needed).
+- COMPLETE lifecycle (model A - no plaintext persistence): LookupKey =
+  `randomBytes(32)`; wrapped by the KEK independently from the DEK under
+  trackwork-wrap-v1 (wrap purpose `lookup-key`); persisted ONLY as
+  authenticated wrapped-key metadata next to the wrapped DEK. Unlock:
+  reconstruct KEK -> unwrap DEK and LookupKey. KEK/key-set rotation rewraps
+  BOTH. Lookup-key rotation is a separate operation (rebuilding lookup
+  indexes). The LookupKey is NOT counted as plaintext persisted key material.
+- Failure semantics: if DEK unwrap succeeds but LookupKey unwrap fails, the
+  encryption state MUST NOT become fully unlocked (fail closed).
 - Rotation: lookup-key rotation re-hashes tokens; independent of DEK rotation.
-- 3.2 selects the primitive; 3.3 defines the structure (key management,
-  index table).
+- 3.2 selects the primitive and lifecycle; 3.3 defines the structure (index
+  table, wrapped-key metadata model).
 - MUST NOT: raw SHA-256 for low-entropy tokens (VerificationToken is
   high-entropy randomUUID - the existing AccessToken raw-SHA-256 pattern is
   acceptable for that asset only); deterministic AEAD as search index.
@@ -334,13 +395,13 @@ is out of scope now.
 
 Persisted semantic IDs (NOT npm package names):
 
-| ID                  | Meaning                                                                      |
-| ------------------- | ---------------------------------------------------------------------------- |
-| trackwork-aead-v1   | AES-256-GCM value encryption, 32B key, 12B nonce, 16B tag, AAD per section 6 |
-| trackwork-wrap-v1   | AES-256-GCM DEK wrapping under KEK, same parameters, AAD domain dek-wrap     |
-| trackwork-share-v1  | Shamir GF(2^8), 2-of-3, 32B secret, transport encoding per section 12        |
-| trackwork-lookup-v1 | HMAC-SHA-256, 32B key                                                        |
-| trackwork-rng-v1    | node:crypto randomBytes                                                      |
+| ID                  | Meaning                                                                                                     |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| trackwork-aead-v1   | AES-256-GCM value encryption, 32B key, 12B nonce, 16B tag, AAD per section 6                                |
+| trackwork-wrap-v1   | AES-256-GCM key wrapping (DEK and LookupKey) under KEK, same parameters, AAD wrap purpose dek or lookup-key |
+| trackwork-share-v1  | Shamir GF(2^8), 2-of-3, 32B secret, transport encoding per section 12                                       |
+| trackwork-lookup-v1 | HMAC-SHA-256, 32B key                                                                                       |
+| trackwork-rng-v1    | node:crypto randomBytes                                                                                     |
 
 Envelope version field: v1 (design.md envelope shape). Formats remain decodable
 if implementation libraries change (IDs are semantic, not implementation).
@@ -409,19 +470,22 @@ Public vs internal: external callers MUST receive a generic
 create an oracle (auth-failure vs unwrap-failure vs malformed-share).
 Internal audit records the precise code.
 
-## 23. Size overhead
+## 23. Size overhead (PROJECTED - exact widths deferred to 3.3)
 
-Envelope: version(1) + algorithmId(1) + keyId(8) + nonce(12) + tag(16) =
-38 bytes + plaintext; base64url expansion x4/3.
+The exact 3.3 byte layout is NOT decided here. The figures below use the
+candidate COMPACT layout (version 1 B + algorithmId 1 B + keyId 8 B +
+nonce 12 B + tag 16 B = 38 B + plaintext; base64url expansion x4/3) and are
+ILLUSTRATIVE: 3.3 MUST fix the physical widths, and any change to them
+recomputes these numbers.
 
-| Value                  | binary envelope | base64url  |
-| ---------------------- | --------------- | ---------- |
-| 32-byte token          | 70 B            | 94 chars   |
-| 256-byte secret/config | 294 B           | 392 chars  |
-| 4 KiB protected value  | 4134 B          | 5512 chars |
+| Value                  | candidate binary envelope | base64url  |
+| ---------------------- | ------------------------- | ---------- |
+| 32-byte token          | 70 B                      | 94 chars   |
+| 256-byte secret/config | 294 B                     | 392 chars  |
+| 4 KiB protected value  | 4134 B                    | 5512 chars |
 
-Legacy CryptoHelper format overhead was 24 bytes (iv12+tag12) - the new
-envelope adds 14 bytes of versioning/keyId metadata.
+Legacy CryptoHelper format overhead was 24 bytes (iv12+tag12) - the candidate
+envelope adds ~14 bytes of versioning/keyId metadata.
 
 ## 24. Performance (measured, non-production spike)
 
@@ -449,13 +513,14 @@ or combine (unlock) - sub-millisecond; negligible. Per-value encryption at
 | corrupted ciphertext                   | authentication failure                                                                                               |
 | truncated ciphertext                   | malformed-envelope error (fail closed)                                                                               |
 | wrong share                            | unwrap authentication failure                                                                                        |
-| duplicate same share twice             | ceremony rejects duplicate share index (malformed ceremony)                                                          |
+| duplicate same share twice             | ceremony rejects duplicate share index BEFORE combine (combine itself silently skips duplicates)                     |
 | 1-of-3 attempt                         | combine returns a candidate; unwrap authentication fails; ceremony aborts                                            |
 | 2 correct shares                       | KEK reconstructed; unwrap succeeds                                                                                   |
 | 3 shares                               | same as 2 (threshold 2); extra share harmless if distinct                                                            |
 | shares from different key sets         | keySetId mismatch -> malformed-share; even if mixed, unwrap fails (wrong KEK)                                        |
 | old envelope version                   | unsupported-version error (fail closed; no silent downgrade)                                                         |
 | unknown algorithm                      | unsupported-version error                                                                                            |
+| DEK unwrap OK + LookupKey unwrap fail  | state stays locked (fail closed); no partial unlock                                                                  |
 | accidental plaintext passed to decrypt | envelope parse fails (version/algorithm mismatch) -> malformed-envelope                                              |
 
 ## 26. Backup/restore implications (cryptographic only)
@@ -467,6 +532,10 @@ or combine (unlock) - sub-millisecond; negligible. Per-value encryption at
   DEK).
 - Old backup + newer key generation -> keySetId in envelope and in shares
   MUST match; mismatch -> unwrap fails; no accidental silent decryption.
+- LookupKey is part of the same hierarchy: a backup without shares yields
+  neither DEK nor LookupKey; after a valid unlock the LookupKey is unwrapped
+  and the existing keyed-hash index remains valid (no index rebuild needed
+  for already-hashed tokens).
 
 ## 27. Threat model fit
 
@@ -494,19 +563,20 @@ specified. The implementation does not exist yet.
 
 ## 29. ADR-style rejected alternatives
 
-| Alternative                                           | Reason rejected                                                                                                                          |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Custom Shamir implementation                          | design.md forbids bespoke arithmetic; measured library behavior shows integrity must come from AEAD, not hand-rolled code                |
-| AES-CBC                                               | unauthenticated; padding-oracle class; no integrity                                                                                      |
-| Unauthenticated encryption (any)                      | tampering undetected; envelope must be authenticated                                                                                     |
-| Deterministic encryption for searchable secrets       | nonce-derivation misuse; 3.1 requires keyed lookup instead (HMAC)                                                                        |
-| Storing KEK directly                                  | defeats quorum (single point of compromise)                                                                                              |
-| Storing DEK plaintext                                 | defeats the entire hierarchy                                                                                                             |
-| Storing shares in Redis                               | design.md: Redis SHALL NOT contain KEK/DEK/shares                                                                                        |
-| Password-derived KEK                                  | no password-based design requirement; KDF misuse (NO KDF, section 8)                                                                     |
-| Whole-database encryption as Phase 3 mechanism        | 3.1: S2 user content explicitly excluded; envelope targets designated values                                                             |
-| XChaCha20-Poly1305 as primary                         | node:crypto lacks it; new pure-JS dep (@noble/ciphers, no public audit verified); AES-GCM native+FIPS+zero-dep; documented fallback only |
-| Reusing CryptoHelper format/key for the new hierarchy | format unversioned/no AAD/12B tag; RSA-derived env key must not become quorum KEK/DEK (section 14)                                       |
+| Alternative                                           | Reason rejected                                                                                                                                                                                                                     |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Custom Shamir implementation                          | design.md forbids bespoke arithmetic; measured library behavior shows integrity must come from AEAD, not hand-rolled code                                                                                                           |
+| AES-CBC                                               | unauthenticated; padding-oracle class; no integrity                                                                                                                                                                                 |
+| Unauthenticated encryption (any)                      | tampering undetected; envelope must be authenticated                                                                                                                                                                                |
+| Deterministic encryption for searchable secrets       | nonce-derivation misuse; 3.1 requires keyed lookup instead (HMAC)                                                                                                                                                                   |
+| Storing KEK directly                                  | defeats quorum (single point of compromise)                                                                                                                                                                                         |
+| Storing DEK plaintext                                 | defeats the entire hierarchy                                                                                                                                                                                                        |
+| Storing shares in Redis                               | design.md: Redis SHALL NOT contain KEK/DEK/shares                                                                                                                                                                                   |
+| Password-derived KEK                                  | no password-based design requirement; KDF misuse (NO KDF, section 8)                                                                                                                                                                |
+| Whole-database encryption as Phase 3 mechanism        | 3.1: S2 user content explicitly excluded; envelope targets designated values                                                                                                                                                        |
+| XChaCha20-Poly1305 as primary                         | node:crypto lacks XChaCha (only 12-byte-nonce chacha20-poly1305, which IS native); XChaCha needs a new pure-JS dep (@noble/ciphers, no public audit verified); AES-GCM native+FIPS+zero-dep; documented fallback only               |
+| ChaCha20-Poly1305 as primary                          | natively available (node:crypto 'chacha20-poly1305', verified Node v24/OpenSSL 3.5.5) but no advantage over AES-GCM for this workload (same 12 B nonce class, same tag); AES-GCM kept for FIPS compatibility + repository prior art |
+| Reusing CryptoHelper format/key for the new hierarchy | format unversioned/no AAD/12B tag; RSA-derived env key must not become quorum KEK/DEK (section 14)                                                                                                                                  |
 
 ## 30. OpenSpec completion rule
 
@@ -517,6 +587,14 @@ KEK->DEK protection (wrap-v1), 2-of-3 library and format
 (shamirs-secret-sharing@2.0.1 + trackwork-share-v1 transport), persisted
 algorithm/version IDs, failure semantics, migration compatibility constraints,
 dependency/version selection. No encryption implemented. 3.3 remains [ ].
+
+Corrected final pass (no primary selection changed): AAD now binds
+fieldPurpose; LookupKey lifecycle completed (wrapped by KEK, never plaintext);
+ChaCha20-Poly1305 factual correction (native in node:crypto); XChaCha
+nonce-reuse wording corrected; share transport CRC covers the full
+non-checksum portion and outer index MUST equal inner share id; size overhead
+marked PROJECTED; NIST 2^32 limit separated from the project rotation
+threshold; shamirs-secret-sharing@2.0.1 verified from source.
 
 ## 31. Evidence references
 
@@ -533,3 +611,9 @@ dependency/version selection. No encryption implemented. 3.3 remains [ ].
   jwerle/shamirs-secret-sharing repo state, @noble/ciphers@2.4.0 metadata.
 - Measured spike (temp, removed): AES-GCM and Shamir timings; library
   non-error behavior on 1-share/duplicate/corrupted input.
+- shamirs-secret-sharing@2.0.1 source (2026-09-04): split.js REQUIRES
+  options.random (TypeError otherwise); polynomial coefficients = one
+  GF(2^8) field byte from prng(1); share encoding = '0'-prefixed hex:
+  bit-count char + x id (fixed hex length) + y data; combine.js parses id via
+  regex and silently skips duplicate ids; no threshold validation at combine
+  time; zero runtime dependencies; ESM (type: module).
