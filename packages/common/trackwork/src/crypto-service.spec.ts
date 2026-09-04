@@ -6,6 +6,7 @@ import {
   type TrackWorkAadContext,
 } from './aad';
 import {
+  buildTrackWorkAuthenticatedBytes,
   decryptTrackWorkValue,
   encryptTrackWorkValue,
   generateTrackWorkDataEncryptionKey,
@@ -286,27 +287,56 @@ describe('TrackWork crypto service - misuse and adversarial input', () => {
     }
   });
 
-  it('modified DataKeyId does not silently decrypt', () => {
+  it('modifying ONLY the DataKeyId fails authentication (expectedKeyId omitted)', () => {
     const otherKeyId = assertDataKeyId('dk_' + 'b'.repeat(32));
     const tampered = replaceSegment(KEY_ID, otherKeyId);
-    const withoutExpectation = decryptTrackWorkValue(
-      tampered,
-      aadContext(),
-      key
-    );
-    expect(withoutExpectation.ok).toBe(true);
-    if (withoutExpectation.ok) {
-      expect(withoutExpectation.keyId).toBe(otherKeyId);
+    const result = decryptTrackWorkValue(tampered, aadContext(), key);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe('authentication-failure');
     }
-    const withExpectation = decryptTrackWorkValue(
-      tampered,
+  });
+
+  it('modifying ONLY the DataKeyId fails closed (expectedKeyId supplied)', () => {
+    const otherKeyId = assertDataKeyId('dk_' + 'b'.repeat(32));
+    const tampered = replaceSegment(KEY_ID, otherKeyId);
+    const result = decryptTrackWorkValue(tampered, aadContext(), key, KEY_ID);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe('key-id-mismatch');
+    }
+  });
+
+  it('original envelope with wrong expectedKeyId -> key-id-mismatch', () => {
+    const otherKeyId = assertDataKeyId('dk_' + 'b'.repeat(32));
+    const result = decryptTrackWorkValue(
+      envelope,
       aadContext(),
       key,
-      KEY_ID
+      otherKeyId
     );
-    expect(withExpectation.ok).toBe(false);
-    if (!withExpectation.ok) {
-      expect(withExpectation.error).toBe('key-id-mismatch');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe('key-id-mismatch');
+    }
+  });
+
+  it('envelopes with different legitimate DataKeyIds are not interchangeable', () => {
+    const keyId2 = assertDataKeyId('dk_' + 'b'.repeat(32));
+    const enc1 = encryptTrackWorkValue(secret(), aadContext(), key, KEY_ID);
+    const enc2 = encryptTrackWorkValue(secret(), aadContext(), key, keyId2);
+    expect(enc1.ok).toBe(true);
+    expect(enc2.ok).toBe(true);
+    if (!enc1.ok || !enc2.ok) return;
+    expect(enc1.envelope).not.toBe(enc2.envelope);
+    const tampered = enc1.envelope.replace(KEY_ID, keyId2);
+    expect(decryptTrackWorkValue(tampered, aadContext(), key).ok).toBe(false);
+    expect(decryptTrackWorkValue(enc2.envelope, aadContext(), key).ok).toBe(
+      true
+    );
+    const dec2 = decryptTrackWorkValue(enc2.envelope, aadContext(), key);
+    if (dec2.ok) {
+      expect(dec2.keyId).toBe(keyId2);
     }
   });
 
@@ -340,6 +370,25 @@ describe('TrackWork crypto service - misuse and adversarial input', () => {
     }
   });
 
+  it('non-string serialized inputs fail through the discriminated API', () => {
+    const inputs: unknown[] = [
+      null,
+      undefined,
+      {},
+      [],
+      123,
+      true,
+      new Uint8Array(8),
+    ];
+    for (const input of inputs) {
+      const result = decryptTrackWorkValue(input as never, aadContext(), key);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toBe('malformed-envelope');
+      }
+    }
+  });
+
   it('invalid key length fails before crypto', () => {
     const shortKey = new Uint8Array(16);
     expect(
@@ -363,6 +412,50 @@ describe('TrackWork crypto service - misuse and adversarial input', () => {
       expect(result.error).toBe('invalid-aad-context');
     }
     expect(serializeTrackWorkAad(badContext)).toBeNull();
+  });
+
+  it('authenticated bytes are the exact canonical AAD + NUL + DataKeyId vector', () => {
+    const aad = serializeTrackWorkAad(aadContext());
+    expect(aad).not.toBeNull();
+    if (!aad) return;
+    const expected = new Uint8Array(
+      Buffer.concat([
+        Buffer.from(aad, 'utf8'),
+        Buffer.from([0x00]),
+        Buffer.from(KEY_ID, 'utf8'),
+      ])
+    );
+    const actual = buildTrackWorkAuthenticatedBytes(aad, KEY_ID);
+    expect(Buffer.from(actual).equals(Buffer.from(expected))).toBe(true);
+    expect(new TextDecoder().decode(actual.slice(0, aad.length))).toBe(aad);
+    expect(actual[aad.length]).toBe(0);
+    expect(new TextDecoder().decode(actual.slice(aad.length + 1))).toBe(KEY_ID);
+  });
+
+  it('authenticated bytes are collision-free for distinct (AAD, DataKeyId) pairs', () => {
+    const aad1 = serializeTrackWorkAad(aadContext());
+    const otherRecord: TrackWorkAadContext = {
+      domain: 'integration',
+      fieldPurpose: 'token',
+      stableRecordId: 'development-integration-connection:row-456',
+    };
+    const aad2 = serializeTrackWorkAad(otherRecord);
+    const keyId2 = assertDataKeyId('dk_' + 'b'.repeat(32));
+    if (!aad1 || !aad2) throw new Error('setup failed');
+    const bytes1 = buildTrackWorkAuthenticatedBytes(aad1, KEY_ID);
+    const bytes2 = buildTrackWorkAuthenticatedBytes(aad2, keyId2);
+    expect(Buffer.from(bytes1).equals(Buffer.from(bytes2))).toBe(false);
+    const boundaryA = buildTrackWorkAuthenticatedBytes(aad1, keyId2);
+    const boundaryB = buildTrackWorkAuthenticatedBytes(aad2, KEY_ID);
+    expect(Buffer.from(boundaryA).equals(Buffer.from(boundaryB))).toBe(false);
+  });
+
+  it('canonical AAD and DataKeyId alphabets exclude NUL (framing safety)', () => {
+    const aad = serializeTrackWorkAad(aadContext());
+    if (!aad) throw new Error('setup failed');
+    expect(aad.includes(String.fromCharCode(0))).toBe(false);
+    expect(KEY_ID.includes(String.fromCharCode(0))).toBe(false);
+    expect(/^dk_[0-9a-f]{32}$/.test(KEY_ID)).toBe(true);
   });
 
   it('no secret material appears in thrown error messages', () => {

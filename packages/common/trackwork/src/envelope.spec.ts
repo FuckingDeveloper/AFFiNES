@@ -113,6 +113,25 @@ describe('TrackWork envelope V1 parsing', () => {
     expect(parseTrackWorkEnvelopeV1('not-an-envelope').ok).toBe(false);
   });
 
+  it('rejects non-string inputs as malformed without throwing', () => {
+    for (const input of [
+      null,
+      undefined,
+      {},
+      [],
+      123,
+      true,
+      new Uint8Array(4),
+    ]) {
+      const parsed = parseTrackWorkEnvelopeV1(input as never);
+      expect(parsed.ok).toBe(false);
+      if (!parsed.ok) {
+        expect(parsed.error).toBe('malformed-envelope');
+      }
+      expect(classifyTrackWorkValue(input as never)).toBe('not-new-envelope');
+    }
+  });
+
   it('rejects truncated serialization', () => {
     const serialized = serializeTrackWorkEnvelopeV1(fakeEnvelope());
     expect(parseTrackWorkEnvelopeV1(serialized.slice(0, -10)).ok).toBe(false);

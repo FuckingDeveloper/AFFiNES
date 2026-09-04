@@ -681,6 +681,26 @@ envelope.spec.ts (no drift).
 | 256 B     | 342 chars         | 443 chars        |
 | 4096 B    | 5462 chars        | 5563 chars       |
 
+### OpenSpec 3.4 extension: envelope key-metadata integrity binding
+
+The value-AEAD authenticated bytes are:
+
+```text
+canonicalCallerAadBytes || 0x00 || canonicalDataKeyIdBytes
+```
+
+- the canonical 3.2 caller-AAD string is UNCHANGED and remains caller-derived;
+- the DataKeyId is envelope metadata whose integrity is cryptographically
+  bound into setAAD() solely to prevent metadata substitution / key confusion
+  (it does NOT authorize the caller and does NOT replace caller AAD);
+- injective framing: both the canonical AAD alphabet ([A-Za-z0-9:.-]) and the
+  DataKeyId alphabet (dk\_ + [0-9a-f]) exclude NUL, so the first 0x00 splits
+  the byte string uniquely (proven by tests, incl. exact byte vector);
+- consequence: modifying ONLY the DataKeyId of a valid envelope now fails
+  authentication even when expectedKeyId is omitted;
+- expectedKeyId remains optional as a caller-side identity assertion
+  (defense-in-depth) reported as key-id-mismatch.
+
 ### Parser / downgrade semantics
 
 - classifyTrackWorkValue: `new-envelope-v1` | `malformed-new-envelope` |
