@@ -65,6 +65,7 @@ import {
   parseHistoryEntries,
   parseRelatedDocs,
   parseSubtasks,
+  parseTaskArchived,
   parseTaskRelations,
   resolveTaskTrackerBoards,
   sanitizeAutomationRules,
@@ -73,6 +74,7 @@ import {
   stringifyRelatedDocs,
   stringifySubtasks,
   stringifyTaskRelations,
+  TASK_ARCHIVED_PROPERTY,
   TASK_ASSIGNEE_PROPERTY,
   TASK_ATTACHMENTS_PROPERTY,
   TASK_AUTOMATION_APPLIED_PROPERTY,
@@ -92,6 +94,7 @@ import {
   TASK_TRACKER_FLAG_PROPERTY,
   TASK_TYPE_PROPERTY,
   buildTaskActivityEntry,
+  shouldMaterializeTrackWorkSchema,
   type TaskActivityOperation,
   type TaskActivitySource,
   type TaskAttachment,
@@ -107,7 +110,12 @@ import {
 } from './config';
 import * as styles from './task-tracker.css';
 
-import { AuthService } from '@affine/core/modules/cloud';
+import { AuthService, GraphQLService } from '@affine/core/modules/cloud';
+import { GuardService } from '@affine/core/modules/permissions';
+import {
+  updateTrackWorkWorkflowConfig,
+  useTrackWorkWorkflowConfig,
+} from './workflow-config';
 
 type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 type DueFilter = 'all' | 'overdue' | 'today' | 'next-7-days' | 'no-date';
@@ -131,6 +139,7 @@ type TaskCard = {
   subtasks: TaskSubtask[];
   history: TaskHistoryEntry[];
   relatedDocs: string[];
+  archived: boolean;
   relations: TaskRelations;
 };
 
@@ -981,6 +990,7 @@ const TaskPreview = ({
   onClose,
   onOpenTaskDoc,
   onDownloadAttachment,
+  onToggleArchive,
 }: {
   task: TaskCard;
   workspace: WorkspaceService['workspace'] | null;
@@ -989,6 +999,7 @@ const TaskPreview = ({
   onClose: () => void;
   onOpenTaskDoc: (taskId: string) => void;
   onDownloadAttachment: (attachment: TaskAttachment) => void;
+  onToggleArchive: () => void;
 }) => {
   const { t, locale } = useTaskTrackerI18n();
   const complexity = complexityMeta(task.complexity);
@@ -1009,6 +1020,9 @@ const TaskPreview = ({
         <div className={styles.expandedCardHeaderActions}>
           <Button variant="plain" onClick={onEdit}>
             {t('openEditor')}
+          </Button>
+          <Button variant="plain" onClick={onToggleArchive}>
+            {task.archived ? t('restoreTask') : t('archiveTask')}
           </Button>
           <button
             type="button"
@@ -2767,6 +2781,14 @@ const TaskTrackerPage = () => {
   const { t, locale } = useTaskTrackerI18n();
   const authService = useService(AuthService);
   const account = useLiveData(authService.session.account$);
+  const graphql = useService(GraphQLService);
+  const guardService = useService(GuardService);
+  const canManageProperties = useLiveData(
+    guardService.can$('Workspace_Properties_Update')
+  );
+  const canManageWorkflow = useLiveData(
+    guardService.can$('Workspace_TrackWork_Workflow_Manage')
+  );
   const docsService = useService(DocsService);
   const tagService = useService(TagService);
   const workbench = useService(WorkbenchService).workbench;
@@ -2970,6 +2992,22 @@ const TaskTrackerPage = () => {
     )
   );
 
+  const archivedValues = useLiveData(
+    useMemo(
+      () =>
+        docsService.list.docs$.map(
+          docs =>
+            new Map(
+              docs.map(doc => [
+                doc.id,
+                doc.customProperty$(TASK_ARCHIVED_PROPERTY).value,
+              ])
+            )
+        ),
+      [docsService.list]
+    )
+  );
+
   const historyValues = useLiveData(
     useMemo(
       () =>
@@ -3072,6 +3110,15 @@ const TaskTrackerPage = () => {
   const initializedPropertiesRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    // Provisioning of missing TrackWork property definitions is aligned with
+    // the server boundary: only users who may update the workspace
+    // custom-property schema (Workspace.Properties.Update) materialize rows.
+    // While the permission is still loading, nothing is written and no keys
+    // are marked, so a later transition to allowed re-runs provisioning.
+    if (!shouldMaterializeTrackWorkSchema(canManageProperties)) {
+      return;
+    }
+
     const ensureProperty = (
       key: string,
       exists: boolean,
@@ -3233,6 +3280,7 @@ const TaskTrackerPage = () => {
     assigneePropertyInfo,
     attachmentsPropertyInfo,
     boardPropertyInfo,
+    canManageProperties,
     complexityPropertyInfo,
     descriptionPropertyInfo,
     dueDatePropertyInfo,
@@ -3248,54 +3296,26 @@ const TaskTrackerPage = () => {
     workspacePropertyService,
   ]);
 
+  const workflowConfig = useTrackWorkWorkflowConfig(workspace.id);
+  const canonicalWorkflowDefaults = (workflowConfig.data?.revision ?? 0) === 0;
   const trackerAdditionalData = useMemo(() => {
+    const serverConfig = workflowConfig.data?.config as
+      | TaskTrackerPropertyAdditionalData
+      | undefined;
+    if (serverConfig?.taskTrackerBoards) {
+      return serverConfig;
+    }
     return (
       (statusPropertyInfo?.additionalData as
         | TaskTrackerPropertyAdditionalData
         | undefined) ?? {}
     );
-  }, [statusPropertyInfo]);
+  }, [statusPropertyInfo, workflowConfig.data]);
 
   const boards = useMemo(
     () => resolveTaskTrackerBoards(trackerAdditionalData),
     [trackerAdditionalData]
   );
-
-  useEffect(() => {
-    if (!statusPropertyInfo) {
-      return;
-    }
-
-    const hasBoards =
-      Array.isArray(trackerAdditionalData.taskTrackerBoards) &&
-      trackerAdditionalData.taskTrackerBoards.length > 0;
-
-    if (hasBoards) {
-      return;
-    }
-
-    const firstBoard = boards[0];
-    workspacePropertyService.updatePropertyInfo(TASK_STATUS_PROPERTY, {
-      additionalData: {
-        ...trackerAdditionalData,
-        taskTrackerBoards: boards.map(board => ({
-          id: board.id,
-          title: board.title,
-          flow: board.flow,
-          transitions: board.transitions,
-          typeTransitions: board.typeTransitions,
-        })),
-        taskTrackerFlow: firstBoard?.flow ?? DEFAULT_FLOW,
-        taskTrackerTransitions:
-          firstBoard?.transitions ?? buildDefaultTransitions(DEFAULT_FLOW),
-      },
-    });
-  }, [
-    boards,
-    statusPropertyInfo,
-    trackerAdditionalData,
-    workspacePropertyService,
-  ]);
 
   useEffect(() => {
     if (!boards.some(board => board.id === selectedBoardId)) {
@@ -3383,9 +3403,11 @@ const TaskTrackerPage = () => {
           complexity: sanitizeComplexity(complexityValues.get(docId)),
           subtasks: parseSubtasks(subtaskValues.get(docId)),
           history: parseHistoryEntries(historyValues.get(docId)),
+          archived: parseTaskArchived(archivedValues.get(docId)),
         };
       });
   }, [
+    archivedValues,
     assigneeValues,
     attachmentValues,
     boardValues,
@@ -3470,13 +3492,48 @@ const TaskTrackerPage = () => {
     workspaceTaskKey,
   ]);
 
+  const toggleTaskArchived = useCallback(
+    (task: TaskCard, archived: boolean) => {
+      const doc = docsService.list.doc$(task.id).value;
+      if (!doc) {
+        return;
+      }
+      doc.setCustomProperty(
+        TASK_ARCHIVED_PROPERTY,
+        archived ? 'true' : 'false'
+      );
+      const nextHistory = [
+        buildTaskActivityEntry(
+          'edited',
+          archived
+            ? `Task ${task.number} archived`
+            : `Task ${task.number} restored`,
+          {
+            operation: archived ? 'task.archived' : 'task.restored',
+            actorId: account?.id,
+            actorName: account?.label,
+            taskKey: task.number,
+          }
+        ),
+        ...(task.history ?? []),
+      ].slice(0, 30);
+      doc.setCustomProperty(
+        TASK_HISTORY_PROPERTY,
+        stringifyHistoryEntries(nextHistory)
+      );
+    },
+    [account?.id, account?.label, docsService.list]
+  );
+
   const selectedBoardTasks = useMemo(() => {
     const currentBoardId = selectedBoard?.id;
     if (!currentBoardId) {
       return [];
     }
 
-    return tasks.filter(task => task.boardId === currentBoardId);
+    return tasks.filter(
+      task => task.boardId === currentBoardId && !task.archived
+    );
   }, [selectedBoard?.id, tasks]);
 
   const assigneeOptions = useMemo(() => {
@@ -3750,7 +3807,8 @@ const TaskTrackerPage = () => {
       message: string,
       operation: TaskActivityOperation,
       taskKey?: string,
-      source: TaskActivitySource = 'user'
+      source: TaskActivitySource = 'user',
+      snapshots?: { stageId?: string; boardId?: string; boardTitle?: string }
     ): TaskHistoryEntry =>
       buildTaskActivityEntry(type, message, {
         operation,
@@ -3758,6 +3816,7 @@ const TaskTrackerPage = () => {
         actorName: source === 'user' ? account?.label : undefined,
         taskKey,
         source,
+        ...snapshots,
       }),
     [account]
   );
@@ -3851,7 +3910,13 @@ const TaskTrackerPage = () => {
           makeHistoryEntry(
             'edited',
             `${t('automationStatusChanged')}: ${
-              stage ? localizeTaskTrackerStageTitle(stage, t) : update.stageId
+              stage
+                ? localizeTaskTrackerStageTitle(
+                    stage,
+                    t,
+                    canonicalWorkflowDefaults
+                  )
+                : update.stageId
             }`,
             'task.status_changed',
             task.number,
@@ -4508,16 +4573,23 @@ const TaskTrackerPage = () => {
     []
   );
 
+  const [workflowSavePending, setWorkflowSavePending] = useState(false);
+
   const saveBoardsConfig = useCallback(
     (nextBoards: TaskTrackerBoard[]) => {
-      if (nextBoards.length === 0) {
+      if (nextBoards.length === 0 || workflowSavePending) {
         return;
       }
+      setWorkflowSavePending(true);
 
-      const firstBoard = nextBoards[0];
-      workspacePropertyService.updatePropertyInfo(TASK_STATUS_PROPERTY, {
-        additionalData: {
-          ...trackerAdditionalData,
+      // Workflow management goes through the authoritative semantic mutation;
+      // only the already-validated returned config is mirrored into the
+      // legacy additionalData copy. No draft is mirrored before server
+      // acceptance.
+      updateTrackWorkWorkflowConfig(graphql, {
+        workspaceId: workspace.id,
+        expectedRevision: workflowConfig.data?.revision ?? 0,
+        config: {
           taskTrackerBoards: nextBoards.map(board => ({
             id: board.id,
             title: board.title,
@@ -4525,12 +4597,41 @@ const TaskTrackerPage = () => {
             transitions: board.transitions,
             typeTransitions: board.typeTransitions,
           })),
-          taskTrackerFlow: firstBoard.flow,
-          taskTrackerTransitions: firstBoard.transitions,
+          taskTrackerAutomationRules:
+            trackerAdditionalData.taskTrackerAutomationRules,
         },
-      });
+      })
+        .then(result => {
+          const firstBoard = result.config.taskTrackerBoards?.[0];
+          workspacePropertyService.updatePropertyInfo(TASK_STATUS_PROPERTY, {
+            additionalData: {
+              ...trackerAdditionalData,
+              taskTrackerBoards: result.config.taskTrackerBoards,
+              taskTrackerFlow: firstBoard?.flow,
+              taskTrackerTransitions: firstBoard?.transitions,
+              taskTrackerAutomationRules:
+                result.config.taskTrackerAutomationRules,
+            },
+          });
+        })
+        .catch(error => {
+          notify.error({
+            title: error instanceof Error ? error.message : String(error),
+          });
+        })
+        .finally(() => {
+          setWorkflowSavePending(false);
+        });
     },
-    [trackerAdditionalData, workspacePropertyService]
+    [
+      graphql,
+      notify,
+      workflowSavePending,
+      trackerAdditionalData,
+      workflowConfig.data,
+      workspace.id,
+      workspacePropertyService,
+    ]
   );
 
   const handleCreateBoard = useCallback(() => {
@@ -4678,10 +4779,34 @@ const TaskTrackerPage = () => {
           TASK_STATUS_PROPERTY,
           fallbackBoard.flow[0]?.id ?? DEFAULT_FLOW[0].id
         );
+        appendTaskHistory(
+          task.id,
+          makeHistoryEntry(
+            'edited',
+            `Board changed: ${selectedBoard.title} removed, moved to ${fallbackBoard.title}`,
+            'task.board_changed',
+            task.number,
+            'user',
+            {
+              boardId: fallbackBoard.id,
+              boardTitle: fallbackBoard.title,
+              stageId: fallbackBoard.flow[0]?.id ?? DEFAULT_FLOW[0].id,
+            }
+          ),
+          task.history
+        );
       });
 
     setSelectedBoardId(fallbackBoard.id);
-  }, [boards, docsService.list, saveBoardsConfig, selectedBoard, tasks]);
+  }, [
+    appendTaskHistory,
+    boards,
+    docsService.list,
+    makeHistoryEntry,
+    saveBoardsConfig,
+    selectedBoard,
+    tasks,
+  ]);
 
   const handleRenameBoard = useCallback(
     (boardId: string, title: string) => {
@@ -4754,15 +4879,24 @@ const TaskTrackerPage = () => {
             >
               {boards.map(board => (
                 <option key={board.id} value={board.id}>
-                  {localizeTaskTrackerBoardTitle(board, t)}
+                  {localizeTaskTrackerBoardTitle(
+                    board,
+                    t,
+                    canonicalWorkflowDefaults
+                  )}
                 </option>
               ))}
             </select>
 
-            {selectedBoard ? (
+            {canManageWorkflow === true && selectedBoard ? (
               <input
                 className={styles.boardNameInput}
-                defaultValue={localizeTaskTrackerBoardTitle(selectedBoard, t)}
+                disabled={workflowSavePending}
+                defaultValue={localizeTaskTrackerBoardTitle(
+                  selectedBoard,
+                  t,
+                  canonicalWorkflowDefaults
+                )}
                 key={`${selectedBoard.id}:${locale}`}
                 onBlur={event => {
                   handleRenameBoard(selectedBoard.id, event.target.value);
@@ -4770,19 +4904,27 @@ const TaskTrackerPage = () => {
               />
             ) : null}
 
-            <Button variant="plain" onClick={handleCreateBoard}>
-              <PlusIcon />
-              {t('newBoard')}
-            </Button>
+            {canManageWorkflow === true ? (
+              <Button
+                variant="plain"
+                onClick={handleCreateBoard}
+                disabled={workflowSavePending}
+              >
+                <PlusIcon />
+                {t('newBoard')}
+              </Button>
+            ) : null}
 
-            <Button
-              variant="plain"
-              disabled={boards.length <= 1}
-              onClick={handleDeleteBoard}
-            >
-              <DeleteIcon />
-              {t('deleteBoard')}
-            </Button>
+            {canManageWorkflow === true ? (
+              <Button
+                variant="plain"
+                disabled={boards.length <= 1 || workflowSavePending}
+                onClick={handleDeleteBoard}
+              >
+                <DeleteIcon />
+                {t('deleteBoard')}
+              </Button>
+            ) : null}
           </div>
 
           <div className={styles.toolbar}>
@@ -5021,6 +5163,9 @@ const TaskTrackerPage = () => {
                 onOpenTaskDoc={handleOpenTaskDoc}
                 onDownloadAttachment={attachment => {
                   handleDownloadAttachment(attachment).catch(() => {});
+                }}
+                onToggleArchive={() => {
+                  toggleTaskArchived(selectedTask, !selectedTask.archived);
                 }}
               />
             </TaskModal>

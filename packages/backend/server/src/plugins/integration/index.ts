@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { CacheModule } from '../../base/cache';
+
 import { AuditModule } from '../../core/audit';
 import { AuthModule } from '../../core/auth';
 import { PermissionModule } from '../../core/permission';
@@ -20,6 +22,7 @@ import { TrackWorkModule } from '../trackwork';
 
 @Module({
   imports: [
+    CacheModule,
     AuditModule,
     AuthModule,
     PermissionModule,

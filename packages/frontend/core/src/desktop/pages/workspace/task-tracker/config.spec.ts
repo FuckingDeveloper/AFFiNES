@@ -431,3 +431,19 @@ describe('structured task lifecycle activity', () => {
     expect(parsed[0].message).toBe('Created in To Do');
   });
 });
+
+import { shouldMaterializeTrackWorkSchema } from '@affine/core/desktop/pages/workspace/task-tracker/config';
+
+describe('TrackWork property schema materialization permission state', () => {
+  it('does not materialize while the permission is still loading', () => {
+    expect(shouldMaterializeTrackWorkSchema(undefined)).toBe(false);
+  });
+
+  it('does not materialize when the permission is denied', () => {
+    expect(shouldMaterializeTrackWorkSchema(false)).toBe(false);
+  });
+
+  it('materializes when the permission is allowed', () => {
+    expect(shouldMaterializeTrackWorkSchema(true)).toBe(true);
+  });
+});

@@ -38,6 +38,25 @@ test('TrackWork capabilities map to the intended workspace roles', t => {
     WorkspaceRole.Collaborator
   );
   t.is(
+    workspaceActionRequiredRole('Workspace.TrackWork.Workflow.Manage'),
+    WorkspaceRole.Admin
+  );
+  t.false(
+    mapWorkspaceRoleToPermissions(WorkspaceRole.Collaborator)[
+      'Workspace.TrackWork.Workflow.Manage'
+    ]
+  );
+  t.true(
+    mapWorkspaceRoleToPermissions(WorkspaceRole.Admin)[
+      'Workspace.TrackWork.Workflow.Manage'
+    ]
+  );
+  t.true(
+    mapWorkspaceRoleToPermissions(WorkspaceRole.Owner)[
+      'Workspace.TrackWork.Workflow.Manage'
+    ]
+  );
+  t.is(
     workspaceActionRequiredRole('Workspace.TrackWork.Integrations.Manage'),
     WorkspaceRole.Owner
   );

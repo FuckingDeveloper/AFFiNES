@@ -71,6 +71,8 @@ export type TaskActivityOperation =
   | 'task.created'
   | 'task.renamed'
   | 'task.trashed'
+  | 'task.archived'
+  | 'task.restored'
   | 'task.status_changed'
   | 'task.reordered'
   | 'task.priority_changed'
@@ -85,7 +87,8 @@ export type TaskActivityOperation =
   | 'task.subtask_toggled'
   | 'task.attachments_changed'
   | 'task.relation_changed'
-  | 'task.related_documents_changed';
+  | 'task.related_documents_changed'
+  | 'task.board_changed';
 
 export type TaskActivitySource = 'user' | 'automation';
 
@@ -99,7 +102,17 @@ export type TaskHistoryEntry = {
   actorName?: string;
   taskKey?: string;
   source?: TaskActivitySource;
+  stageId?: string;
+  boardId?: string;
+  boardTitle?: string;
 };
+
+export const parseTaskArchived = (value: unknown): boolean =>
+  value === true || value === 'true';
+
+export const shouldMaterializeTrackWorkSchema = (
+  canManageProperties: boolean | undefined
+) => canManageProperties === true;
 
 export const buildTaskActivityEntry = (
   type: TaskHistoryEntry['type'],
@@ -110,6 +123,9 @@ export const buildTaskActivityEntry = (
     actorName?: string;
     taskKey?: string;
     source?: TaskActivitySource;
+    stageId?: string;
+    boardId?: string;
+    boardTitle?: string;
   }
 ): TaskHistoryEntry => ({
   id: nanoid(),
@@ -121,11 +137,15 @@ export const buildTaskActivityEntry = (
   actorName: options.actorName,
   taskKey: options.taskKey,
   source: options.source ?? 'user',
+  stageId: options.stageId,
+  boardId: options.boardId,
+  boardTitle: options.boardTitle,
 });
 
 export const TASK_TRACKER_FLAG_PROPERTY = 'taskTrackerEnabled';
 export const TASK_BOARD_PROPERTY = 'taskBoardId';
 export const TASK_STATUS_PROPERTY = 'taskStatus';
+export const TASK_ARCHIVED_PROPERTY = 'taskArchived';
 export const TASK_PRIORITY_PROPERTY = 'taskPriority';
 export const TASK_TYPE_PROPERTY = 'taskType';
 export const TASK_ASSIGNEE_PROPERTY = 'taskAssignee';
@@ -328,6 +348,10 @@ export const parseHistoryEntries = (value?: string): TaskHistoryEntry[] => {
             next.source === 'automation' || next.source === 'user'
               ? next.source
               : undefined,
+          stageId: typeof next.stageId === 'string' ? next.stageId : undefined,
+          boardId: typeof next.boardId === 'string' ? next.boardId : undefined,
+          boardTitle:
+            typeof next.boardTitle === 'string' ? next.boardTitle : undefined,
         } as TaskHistoryEntry;
       })
       .filter(item => item.id.length > 0 && item.message.length > 0)

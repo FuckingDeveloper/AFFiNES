@@ -65,8 +65,10 @@ type AdminAuditLogType {
   actorId: String!
   createdAt: DateTime!
   id: String!
+  metadata: JSON
   targetId: String
   targetType: String!
+  workspaceId: String
 }
 
 type AdminDashboard {
@@ -1907,6 +1909,7 @@ type Mutation {
   """Update user settings"""
   updateSettings(input: UpdateUserSettingsInput!): Boolean!
   updateSubscriptionRecurring(idempotencyKey: String @deprecated(reason: "use header `Idempotency-Key`"), plan: SubscriptionPlan = Pro, recurring: SubscriptionRecurring!, workspaceId: String): SubscriptionType!
+  updateTrackWorkWorkflowConfig(input: UpdateTrackWorkWorkflowConfigInput!): TrackWorkWorkflowConfigType!
 
   """Update an user"""
   updateUser(id: String!, input: ManageUserInput!): UserType!
@@ -2168,6 +2171,7 @@ type Query {
   trackWorkDocumentBacklinks(documentId: String!, workspaceId: String!): [TrackWorkTask!]!
   trackWorkTask(taskKey: String!, workspaceId: String!): TrackWorkTask
   trackWorkTaskDevelopment(taskKey: String!, workspaceId: String!): TrackWorkDevelopmentInfo!
+  trackWorkWorkflowConfig(workspaceId: String!): TrackWorkWorkflowConfigType!
 
   """Get user by email"""
   user(email: String!): UserOrLimitedUser
@@ -2669,6 +2673,11 @@ type TrackWorkTask {
   taskKey: String!
 }
 
+type TrackWorkWorkflowConfigType {
+  config: JSON!
+  revision: Int!
+}
+
 type TranscriptProviderMetaType {
   model: String
   provider: String
@@ -2775,6 +2784,12 @@ input UpdateDocUserRoleInput {
   docId: String!
   role: DocRole!
   userId: String!
+  workspaceId: String!
+}
+
+input UpdateTrackWorkWorkflowConfigInput {
+  config: JSON!
+  expectedRevision: Int!
   workspaceId: String!
 }
 
@@ -3058,6 +3073,9 @@ type WorkspacePermissions {
   Workspace_Settings_Read: Boolean!
   Workspace_Settings_Update: Boolean!
   Workspace_Sync: Boolean!
+  Workspace_TrackWork_Integrations_Manage: Boolean!
+  Workspace_TrackWork_Workflow_Manage: Boolean!
+  Workspace_TrackWork_Write: Boolean!
   Workspace_TransferOwner: Boolean!
   Workspace_Users_Manage: Boolean!
   Workspace_Users_Read: Boolean!

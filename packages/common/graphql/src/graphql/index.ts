@@ -2303,6 +2303,7 @@ export const getWorkspaceInfoQuery = {
       Workspace_Sync
       Workspace_TransferOwner
       Workspace_Users_Manage
+      Workspace_TrackWork_Workflow_Manage
       Workspace_Users_Read
     }
     role

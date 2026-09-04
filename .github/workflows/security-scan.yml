@@ -1,0 +1,134 @@
+name: Security Scan
+
+# Source-level security gates for TrackWork (OpenSpec 1.11/1.12):
+# - dependency vulnerability scanning (OSV-Scanner against yarn.lock, baseline-aware)
+# - secret scanning (Gitleaks, tracked content)
+# Static analysis (CodeQL) runs in build-test.yml (analyze job) with an
+# explicit SARIF security-result gate.
+# Reusable via workflow_call so release.yml runs the EXACT-commit gates as a
+# required dependency of the deploy/promotion jobs.
+# Policy: docs/security-ci.md. Actions follow the repository major-tag
+# convention; pinned binary downloads below verify official SHA256SUMS.
+
+on:
+  workflow_call:
+  pull_request:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    name: Secret scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        with:
+          config_path: .gitleaks.toml
+
+      - name: Gitleaks self-test (synthetic secret must be detected)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/gitleaks-self-test
+          printf 'API_KEY=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0\n' > /tmp/gitleaks-self-test/secret.txt
+          cd /tmp/gitleaks-self-test
+          curl -fsSL -o gitleaks \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_amd64
+          curl -fsSL -o SHA256SUMS \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_SHA256SUMS
+          grep 'gitleaks_8.24.3_linux_amd64' SHA256SUMS | sha256sum -c -
+          chmod +x gitleaks
+          set +e
+          ./gitleaks detect --source . --no-git --no-banner --exit-code 1
+          status=$?
+          set -e
+          if [ "$status" -eq 1 ]; then
+            echo "self-test passed: synthetic secret detected"
+            exit 0
+          fi
+          echo "self-test failed: synthetic secret was NOT detected"
+          exit 1
+
+      - name: Gitleaks allowlist bypass regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/gitleaks-bypass
+          cd /tmp/gitleaks-bypass
+          curl -fsSL -o gitleaks \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_amd64
+          curl -fsSL -o SHA256SUMS \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_SHA256SUMS
+          grep 'gitleaks_8.24.3_linux_amd64' SHA256SUMS | sha256sum -c -
+          chmod +x gitleaks
+          python3 "$GITHUB_WORKSPACE/.security/gitleaks-bypass-selftest.py" \
+            ./gitleaks "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/.gitleaks.toml"
+
+  dependency-scan:
+    name: Dependency scan (OSV-Scanner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Scan lockfile (full OSV report)
+        uses: google/osv-scanner-action@v1
+        with:
+          args: >-
+            --format json
+            --output osv-report.json
+            --lockfile yarn.lock
+
+      - name: Fail on NEW Critical/High advisories vs baseline
+        run: |
+          set -euo pipefail
+          python3 .security/check-osv-baseline.py .security/osv-baseline.json osv-report.json
+
+      - name: OSV baseline identity self-test
+        run: |
+          set -euo pipefail
+          python3 .security/check-osv-baseline.py --selftest
+
+      - name: Upload OSV report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-report
+          path: osv-report.json
+
+      - name: OSV self-test (known advisory fixture must be reported)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/osv-self-test
+          curl -fsSL -o osv-scanner \
+            https://github.com/google/osv-scanner/releases/download/v2.5.1/osv-scanner_linux_amd64
+          curl -fsSL -o SHA256SUMS \
+            https://github.com/google/osv-scanner/releases/download/v2.5.1/osv-scanner_SHA256SUMS
+          grep 'osv-scanner_linux_amd64' SHA256SUMS | sha256sum -c -
+          chmod +x osv-scanner
+          set +e
+          ./osv-scanner --format json .security/self-test/package-lock.json > /tmp/osv-self.json
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "self-test failed: osv-scanner errored on the fixture"
+            exit 1
+          fi
+          findings=$(python3 -c \
+            "import json; d=json.load(open('/tmp/osv-self.json')); \
+             print(sum(len(p.get('vulnerabilities', [])) for r in d.get('results', []) for p in r.get('packages', [])))")
+          if [ "$findings" -gt 0 ]; then
+            echo "self-test passed: fixture reported $findings known advisories"
+            exit 0
+          fi
+          echo "self-test failed: fixture with a known advisory was not reported"
+          exit 1

@@ -104,8 +104,10 @@ export interface AdminAuditLogType {
   actorId: Scalars['String']['output'];
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['String']['output'];
+  metadata: Maybe<Scalars['JSON']['output']>;
   targetId: Maybe<Scalars['String']['output']>;
   targetType: Scalars['String']['output'];
+  workspaceId: Maybe<Scalars['String']['output']>;
 }
 
 export interface AdminDashboard {
@@ -2102,6 +2104,7 @@ export interface Mutation {
   /** Update user settings */
   updateSettings: Scalars['Boolean']['output'];
   updateSubscriptionRecurring: SubscriptionType;
+  updateTrackWorkWorkflowConfig: TrackWorkWorkflowConfigType;
   /** Update an user */
   updateUser: UserType;
   /** update user enabled feature */
@@ -2617,6 +2620,10 @@ export interface MutationUpdateSubscriptionRecurringArgs {
   workspaceId?: InputMaybe<Scalars['String']['input']>;
 }
 
+export interface MutationUpdateTrackWorkWorkflowConfigArgs {
+  input: UpdateTrackWorkWorkflowConfigInput;
+}
+
 export interface MutationUpdateUserArgs {
   id: Scalars['String']['input'];
   input: ManageUserInput;
@@ -2900,6 +2907,7 @@ export interface Query {
   trackWorkDocumentBacklinks: Array<TrackWorkTask>;
   trackWorkTask: Maybe<TrackWorkTask>;
   trackWorkTaskDevelopment: TrackWorkDevelopmentInfo;
+  trackWorkWorkflowConfig: TrackWorkWorkflowConfigType;
   /** Get user by email */
   user: Maybe<UserOrLimitedUser>;
   /** Get user by email for admin */
@@ -2984,6 +2992,10 @@ export interface QueryTrackWorkTaskArgs {
 
 export interface QueryTrackWorkTaskDevelopmentArgs {
   taskKey: Scalars['String']['input'];
+  workspaceId: Scalars['String']['input'];
+}
+
+export interface QueryTrackWorkWorkflowConfigArgs {
   workspaceId: Scalars['String']['input'];
 }
 
@@ -3489,6 +3501,12 @@ export interface TrackWorkTask {
   taskKey: Scalars['String']['output'];
 }
 
+export interface TrackWorkWorkflowConfigType {
+  __typename?: 'TrackWorkWorkflowConfigType';
+  config: Scalars['JSON']['output'];
+  revision: Scalars['Int']['output'];
+}
+
 export interface TranscriptProviderMetaType {
   __typename?: 'TranscriptProviderMetaType';
   model: Maybe<Scalars['String']['output']>;
@@ -3608,6 +3626,12 @@ export interface UpdateDocUserRoleInput {
   docId: Scalars['String']['input'];
   role: DocRole;
   userId: Scalars['String']['input'];
+  workspaceId: Scalars['String']['input'];
+}
+
+export interface UpdateTrackWorkWorkflowConfigInput {
+  config: Scalars['JSON']['input'];
+  expectedRevision: Scalars['Int']['input'];
   workspaceId: Scalars['String']['input'];
 }
 
@@ -3910,6 +3934,9 @@ export interface WorkspacePermissions {
   Workspace_Settings_Read: Scalars['Boolean']['output'];
   Workspace_Settings_Update: Scalars['Boolean']['output'];
   Workspace_Sync: Scalars['Boolean']['output'];
+  Workspace_TrackWork_Integrations_Manage: Scalars['Boolean']['output'];
+  Workspace_TrackWork_Workflow_Manage: Scalars['Boolean']['output'];
+  Workspace_TrackWork_Write: Scalars['Boolean']['output'];
   Workspace_TransferOwner: Scalars['Boolean']['output'];
   Workspace_Users_Manage: Scalars['Boolean']['output'];
   Workspace_Users_Read: Scalars['Boolean']['output'];
@@ -7196,6 +7223,7 @@ export type GetWorkspaceInfoQuery = {
       Workspace_Sync: boolean;
       Workspace_TransferOwner: boolean;
       Workspace_Users_Manage: boolean;
+      Workspace_TrackWork_Workflow_Manage: boolean;
       Workspace_Users_Read: boolean;
     };
   };

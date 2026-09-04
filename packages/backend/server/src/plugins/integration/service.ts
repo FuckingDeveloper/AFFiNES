@@ -1,5 +1,7 @@
 import { PayloadTooLargeException } from '@nestjs/common';
 import { Injectable, Logger } from '@nestjs/common';
+
+import { Cache } from '../../base/cache';
 import { PrismaClient } from '@prisma/client';
 import {
   extractTrackWorkKeys,
@@ -62,7 +64,8 @@ export class IntegrationConnectionService {
     private readonly crypto: CryptoHelper,
     private readonly providers: ScmProviderRegistry,
     private readonly ciProviders: CiProviderRegistry,
-    private readonly queue: JobQueue
+    private readonly queue: JobQueue,
+    private readonly cache: Cache
   ) {}
 
   async create(input: CreateConnectionInput) {
@@ -700,6 +703,30 @@ export class IntegrationConnectionService {
       provider: providerType,
       payload: input.body,
     };
+
+    const eventUuid = input.headers['x-gitlab-event-uuid'];
+    if (typeof eventUuid === 'string' && eventUuid.length > 0) {
+      if (eventUuid.length > 64) {
+        recordOutcome('invalid_uuid');
+        throw new BadRequest('Invalid webhook event uuid');
+      }
+      const dedupeKey = `trackwork:webhook:${connectionId}:${eventUuid}`;
+      const acquired = await this.cache.setnx(dedupeKey, '1', {
+        ttl: 60 * 60 * 1000,
+      });
+      if (!acquired) {
+        recordOutcome('replayed');
+        return { accepted: true };
+      }
+      try {
+        await this.queue.add('integration.scm-webhook', payload);
+      } catch (error) {
+        await this.cache.delete(dedupeKey);
+        throw error;
+      }
+      recordOutcome('queued');
+      return { accepted: true };
+    }
 
     await this.queue.add('integration.scm-webhook', payload);
     recordOutcome('queued');

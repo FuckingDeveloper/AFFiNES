@@ -33,6 +33,12 @@ export class BadRequest extends UserFriendlyError {
     super('bad_request', 'bad_request', message);
   }
 }
+
+export class WorkflowConfigConflict extends UserFriendlyError {
+  constructor(message?: string) {
+    super('workflow_config_conflict', 'workflow_config_conflict', message);
+  }
+}
 @ObjectType()
 class GraphqlBadRequestDataType {
   @Field() code!: string
@@ -1160,6 +1166,7 @@ export enum ErrorNames {
   TOO_MANY_REQUEST,
   NOT_FOUND,
   BAD_REQUEST,
+  WORKFLOW_CONFIG_CONFLICT,
   GRAPHQL_BAD_REQUEST,
   HTTP_REQUEST_ERROR,
   SSRF_BLOCKED_ERROR,

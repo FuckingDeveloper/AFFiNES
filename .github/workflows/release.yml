@@ -122,11 +122,19 @@ jobs:
             core.info(`Latest canary tag ${lastCanary.name} -> ${lastCanary.commit.sha}; current ${currentSha}; should_release=${shouldRelease}`)
             core.setOutput('SHOULD_RELEASE', shouldRelease ? 'true' : 'false')
 
+  security-gates:
+    name: Security Gates (source)
+    needs:
+      - prepare
+    uses: ./.github/workflows/security-scan.yml
+    secrets: inherit
+
   cloud:
     name: Release Cloud
     if: ${{ inputs.web || github.event_name != 'workflow_dispatch' }}
     needs:
       - prepare
+      - security-gates
     uses: ./.github/workflows/release-cloud.yml
     secrets: inherit
     with:
@@ -142,6 +150,7 @@ jobs:
       - prepare
       - canary-gate
       - cloud
+      - security-gates
     steps:
       - uses: trstringer/manual-approval@v1
         if: ${{ needs.prepare.outputs.BUILD_TYPE == 'stable' }}

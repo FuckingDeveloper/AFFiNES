@@ -1,0 +1,4 @@
+# Baseline of Critical/High findings for the linux/arm64 platform image.
+# PENDING: generated from the first production candidate scan of this
+# platform (see docs/security-ci.md). Until reviewed, all Critical/High
+# findings on this platform block the release gate.

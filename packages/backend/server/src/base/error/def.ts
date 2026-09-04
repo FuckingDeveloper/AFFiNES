@@ -7,6 +7,7 @@ import { ClsServiceManager } from 'nestjs-cls';
 export type UserFriendlyErrorBaseType =
   | 'network_error'
   | 'bad_request'
+  | 'workflow_config_conflict'
   | 'too_many_requests'
   | 'resource_not_found'
   | 'resource_already_exists'
@@ -27,6 +28,7 @@ export type UserFriendlyErrorOptions = {
 };
 
 const BaseTypeToHttpStatusMap: Record<UserFriendlyErrorBaseType, HttpStatus> = {
+  workflow_config_conflict: HttpStatus.CONFLICT,
   network_error: HttpStatus.GATEWAY_TIMEOUT,
   too_many_requests: HttpStatus.TOO_MANY_REQUESTS,
   bad_request: HttpStatus.BAD_REQUEST,
@@ -263,6 +265,10 @@ export const USER_FRIENDLY_ERRORS = {
   bad_request: {
     type: 'bad_request',
     message: 'Bad request.',
+  },
+  workflow_config_conflict: {
+    type: 'workflow_config_conflict',
+    message: 'TrackWork workflow configuration has changed; refetch and retry',
   },
   graphql_bad_request: {
     type: 'bad_request',
