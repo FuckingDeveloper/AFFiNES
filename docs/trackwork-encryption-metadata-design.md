@@ -49,9 +49,15 @@ complete (section 14 of the test plan).
   current keyset (counterexample: K1 reshared 6x has revision 7; K2 created
   fresh has revision 1 - max would wrongly select K1).
 - Chosen model: **Option A - ONE installation-global singleton metadata row
-  with a FIXED id** (the well-known constant `'current'`). The PK on the
-  fixed id is the DB-ENFORCED singleton: a second row with the same id
-  cannot exist.
+  with a FIXED id** (the well-known constant `'current'`). DB-enforced
+  singleton via TWO database constraints: PRIMARY KEY(id) (uniqueness of the
+  value) PLUS CHECK(id = 'current') (only the canonical id is valid).
+  Together they make a second row IMPOSSIBLE: any other id value is rejected
+  by the CHECK, and a duplicate 'current' is rejected by the PK.
+  A PK alone would only enforce id-value uniqueness and would NOT prevent
+  rows with arbitrary ids ('foo', 'another') - that application-convention
+  gap is closed by the CHECK (repository convention: CHECK constraints are
+  already used in migrations, e.g. workspace_members_role_check).
 - The singleton IS the explicit authoritative current metadata identity:
   its keySetId field = canonicalKeySetId, its shareSetId = current share
   generation, its keyCheck = current verifier.
@@ -108,6 +114,8 @@ T2: CREATE (id='current', keySetId=K2, ...) -> PK violation (P2002) -> determini
 - T2 maps the P2002 to `metadata-revision-conflict` (or retries by reading
   the winner, then follows reshare semantics); T2's generated shares are
   discarded and never returned/logged/persisted.
+- An INSERT with id='other' (any non-canonical value) is rejected by the DB
+  CHECK constraint (distinct from the same-id race; needs its own test).
 
 ## 8. Reshare/export CAS transaction (3.7 integration correction)
 
@@ -157,7 +165,9 @@ if affected==0: DISCARD generated shares; return metadata-revision-conflict
 | B. modify current ShareSetId                          | AEAD (key-check AAD)                                                                      |
 | C. modify threshold/totalShares                       | runtime validation (must be 2/3)                                                          |
 | D. modify keyCheck alone                              | AEAD mismatch with ids -> 3.9 verification fails                                          |
-| E. create second keyset row                           | PK 'current' constraint (DB) - impossible                                                 |
+| E. duplicate id='current'                             | PK rejected (DB) - impossible                                                             |
+| E2. arbitrary second id='foo'                         | CHECK(id='current') rejected (DB) - impossible                                            |
+| E3. modify id 'current' -> 'foo'                      | CHECK rejected (DB) - impossible                                                          |
 | F. delete singleton                                   | 3.9 validation: metadata-absent (fail closed)                                             |
 | G. stale revision                                     | CAS detected (update affected==0)                                                         |
 | H. rollback entire singleton row (older valid pair)   | NOT detectable without external monotonic anchor (documented; ops/3.9 anchors out of 3.8) |
@@ -253,13 +263,38 @@ model TrackWorkQuorumMetadata {
 }
 ```
 
-- Singleton enforcement: the application ALWAYS writes id='current'; the PK
-  on a fixed id makes a second row impossible (DB-enforced, migration SQL =
-  plain CREATE TABLE with PRIMARY KEY; no extra unique index needed).
-- Migration: `20260905XXXXXXXX_trackwork_quorum_metadata` (create table);
-  rollback = drop table (no data exists); no secret/default test data.
-- Runtime validation is mandatory regardless of DB constraints (Prisma
-  types are not a security boundary).
+- Singleton enforcement: PRIMARY KEY(id) + CHECK(id = 'current') - the DB
+  itself enforces singleton cardinality (at most one row; only the canonical
+  id). Prisma does not emit CHECK constraints; the migration SQL is
+  hand-extended (repository convention: CHECKs already appear in generated
+  migrations, e.g. workspace_members_role_check).
+- Exact migration SQL:
+
+```sql
+CREATE TABLE "trackwork_quorum_metadata" (
+  "id" VARCHAR NOT NULL,
+  "key_set_id" VARCHAR NOT NULL,
+  "share_set_id" VARCHAR NOT NULL,
+  "threshold" INTEGER NOT NULL,
+  "total_shares" INTEGER NOT NULL,
+  "key_check" TEXT NOT NULL,
+  "metadata_version" INTEGER NOT NULL DEFAULT 1,
+  "revision" INTEGER NOT NULL DEFAULT 1,
+  "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMPTZ(3) NOT NULL,
+
+  CONSTRAINT "trackwork_quorum_metadata_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "trackwork_quorum_metadata_id_check" CHECK ("id" = 'current')
+);
+```
+
+No seed row; no secret defaults; rollback = DROP TABLE (no data exists).
+
+- Runtime defense (mandatory regardless of DB constraints): repository code
+  MUST use the canonical constant `TRACKWORK_QUORUM_METADATA_ID = 'current'`
+  for all queries/writes; no arbitrary metadata ids exposed through any API;
+  reads MUST use the canonical primary key - never findFirst()/orderBy()/
+  max(revision)/latest-timestamp selection.
 
 ## 22. Test plan (implementation)
 
@@ -283,6 +318,14 @@ KeySetId identical across successful reshares; G. KEK-rotation path later
 can create a new KeySetId without ambiguity; H. no max(revision) selection
 exists anywhere.
 
+DB-enforcement tests: A. DB rejects a second canonical row (duplicate
+id='current'); B. DB rejects an arbitrary non-'current' id ('foo' ->
+CHECK violation); C. repository only queries the canonical id (no
+findFirst/orderBy/max(revision) current-selection logic exists - static
+test); D. the canonical constant is used everywhere.
+Mutation proof: temporarily remove the CHECK constraint from the
+test/migration schema -> the arbitrary-id test (B) fails; restore -> passes.
+
 Migration test / repository evidence gate (BEFORE 3.8 completion): re-run
 the section 3 grep (production callers of wrap APIs, twkwrap1 persistence,
 wrapped-DEK columns) as an automated static test; if any production
@@ -297,7 +340,9 @@ identity mapping is defined.
 - permissive policy validation -> Q fails;
 - CAS -> last-write-wins -> R fails;
 - persist share plaintext -> L/M fails;
-- current selection via max(revision) -> concurrency test H fails.
+- current selection via max(revision) -> concurrency test H fails;
+- remove the CHECK constraint from the test schema -> arbitrary-id test B
+  fails.
 
 ## 24. 3.9 boundary
 
