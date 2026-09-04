@@ -2,8 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canonicalizeTrackWorkStableRecordId,
+  isTrackWorkAadFieldPurpose,
   serializeTrackWorkAad,
   serializeTrackWorkWrapAad,
+  TRACKWORK_STABLE_RECORD_ALIASES,
+  TRACKWORK_STABLE_RECORD_ID_MAX_LENGTH,
+  TRACKWORK_STABLE_RECORD_ROW_ID_MAX_LENGTH,
+  trackWorkAadRecordAlias,
 } from './aad';
 import type { TrackWorkEncryptedValueEnvelopeV1 } from './envelope';
 import {
@@ -437,6 +442,85 @@ describe('TrackWork AAD context', () => {
         stableRecordId: recordA,
       })
     ).toBeNull();
+  });
+
+  it('unknown runtime domain does not throw and returns null', () => {
+    const asUntrusted = serializeTrackWorkAad as (
+      context: unknown
+    ) => string | null;
+    expect(
+      asUntrusted({
+        domain: 'unknown-domain',
+        fieldPurpose: 'token',
+        stableRecordId: 'connected-account:row-1',
+      })
+    ).toBeNull();
+    expect(trackWorkAadRecordAlias('unknown-domain', 'token')).toBeUndefined();
+    expect(isTrackWorkAadFieldPurpose('unknown-domain', 'token')).toBe(false);
+  });
+
+  it('unknown runtime purpose returns null/false', () => {
+    expect(
+      trackWorkAadRecordAlias('integration', 'not-a-purpose')
+    ).toBeUndefined();
+    expect(isTrackWorkAadFieldPurpose('integration', 'not-a-purpose')).toBe(
+      false
+    );
+  });
+
+  it('prototype-chain names are rejected as field purposes', () => {
+    const asUntrusted = serializeTrackWorkAad as (
+      context: unknown
+    ) => string | null;
+    for (const key of [
+      'constructor',
+      'toString',
+      '__proto__',
+      'hasOwnProperty',
+    ]) {
+      expect(trackWorkAadRecordAlias('integration', key)).toBeUndefined();
+      expect(isTrackWorkAadFieldPurpose('integration', key)).toBe(false);
+      expect(
+        asUntrusted({
+          domain: 'integration',
+          fieldPurpose: key,
+          stableRecordId: 'development-integration-connection:row-1',
+        })
+      ).toBeNull();
+    }
+  });
+
+  it('valid AAD combinations still serialize identically', () => {
+    expect(
+      serializeTrackWorkAad({
+        domain: 'integration',
+        fieldPurpose: 'sync-token',
+        stableRecordId: 'development-repository:row-123',
+      })
+    ).toBe(
+      'trackwork:aead:v1:integration:sync-token:development-repository:row-123'
+    );
+    expect(
+      serializeTrackWorkAad({
+        domain: 'connected-oauth',
+        fieldPurpose: 'access-token',
+        stableRecordId: 'connected-account:row-123',
+      })
+    ).toBe(
+      'trackwork:aead:v1:connected-oauth:access-token:connected-account:row-123'
+    );
+  });
+
+  it('derives the full stableRecordId maximum from aliases and row-id limit', () => {
+    const longestAlias = Math.max(
+      ...TRACKWORK_STABLE_RECORD_ALIASES.map(alias => alias.length)
+    );
+    expect(longestAlias).toBe(34);
+    expect('development-integration-connection'.length).toBe(34);
+    const derived =
+      longestAlias + 1 + TRACKWORK_STABLE_RECORD_ROW_ID_MAX_LENGTH;
+    expect(derived).toBe(99);
+    expect(TRACKWORK_STABLE_RECORD_ID_MAX_LENGTH).toBe(derived);
   });
 
   it('every fieldPurpose maps to exactly its intended record alias', () => {

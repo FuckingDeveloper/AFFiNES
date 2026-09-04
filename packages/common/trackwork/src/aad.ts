@@ -91,18 +91,28 @@ export type TrackWorkAadFieldPurpose =
   | 'api-key';
 
 export const isTrackWorkAadFieldPurpose = (
-  domain: TrackWorkAadDomain,
+  domain: string,
   purpose: string
 ): purpose is TrackWorkAadFieldPurpose =>
-  purpose in TRACKWORK_AAD_RECORD_MATRIX[domain];
+  Object.hasOwn(TRACKWORK_AAD_RECORD_MATRIX, domain) &&
+  Object.hasOwn(
+    TRACKWORK_AAD_RECORD_MATRIX[domain as TrackWorkAadDomain],
+    purpose
+  );
 
 export const trackWorkAadRecordAlias = (
-  domain: TrackWorkAadDomain,
+  domain: string,
   purpose: string
-): TrackWorkStableRecordAlias | undefined =>
-  TRACKWORK_AAD_RECORD_MATRIX[domain][
-    purpose as keyof (typeof TRACKWORK_AAD_RECORD_MATRIX)[TrackWorkAadDomain]
-  ] as TrackWorkStableRecordAlias | undefined;
+): TrackWorkStableRecordAlias | undefined => {
+  if (!Object.hasOwn(TRACKWORK_AAD_RECORD_MATRIX, domain)) {
+    return undefined;
+  }
+  const purposeMap = TRACKWORK_AAD_RECORD_MATRIX[domain as TrackWorkAadDomain];
+  if (!Object.hasOwn(purposeMap, purpose)) {
+    return undefined;
+  }
+  return purposeMap[purpose as keyof typeof purposeMap];
+};
 
 /**
  * Compile-time discriminated union: obviously invalid domain/fieldPurpose/
