@@ -71,7 +71,8 @@ const BASE64URL_RE = /^[A-Za-z0-9_-]+$/;
 
 const PREFIX_RE = /^twenc(\d+)\./;
 
-const decodeStrictBase64Url = (input: string): Uint8Array | null => {
+/** Low-level canonical base64url decoder (internal utility for package crypto modules). */
+export const decodeStrictBase64Url = (input: string): Uint8Array | null => {
   if (!input || !BASE64URL_RE.test(input) || input.length % 4 === 1) {
     return null;
   }
@@ -82,7 +83,7 @@ const decodeStrictBase64Url = (input: string): Uint8Array | null => {
   return new Uint8Array(buf);
 };
 
-const encodeBase64Url = (bytes: Uint8Array): string =>
+export const encodeBase64Url = (bytes: Uint8Array): string =>
   Buffer.from(bytes).toString('base64url');
 
 const isNonEmptyBytes = (bytes: Uint8Array): boolean => bytes.length > 0;

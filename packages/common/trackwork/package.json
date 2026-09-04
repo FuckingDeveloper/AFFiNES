@@ -5,7 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./crypto": "./src/crypto-service.ts"
+    "./crypto": "./src/crypto.ts"
   },
   "devDependencies": {
     "vitest": "^4.0.18"
