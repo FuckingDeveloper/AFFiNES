@@ -61,6 +61,7 @@ export const WorkspaceTaskTrackerSetting = () => {
     guardService.can$('Workspace_TrackWork_Workflow_Manage')
   );
   const workflowConfig = useTrackWorkWorkflowConfig(workspace.id);
+  const canonicalWorkflowDefaults = (workflowConfig.data?.revision ?? 0) === 0;
   const [workflowSaveError, setWorkflowSaveError] = useState<string | null>(
     null
   );
@@ -119,8 +120,10 @@ export const WorkspaceTaskTrackerSetting = () => {
   }, [flow, selectedBoard?.typeTransitions, selectedTaskType]);
 
   const localizedBoardTitle = useCallback(
-    (board: TaskTrackerBoard) =>
-      board.id === DEFAULT_BOARD_ID && board.title === DEFAULT_BOARD_TITLE
+    (board: TaskTrackerBoard, canonicalDefaults = true) =>
+      canonicalDefaults &&
+      board.id === DEFAULT_BOARD_ID &&
+      board.title === DEFAULT_BOARD_TITLE
         ? t('defaultBoard')
         : board.title,
     [t]
@@ -481,7 +484,7 @@ export const WorkspaceTaskTrackerSetting = () => {
               setWorkflowSaveError(null);
             }}
           >
-            Refetch
+            {t('refetch')}
           </Button>
         </div>
       ) : null}
@@ -498,7 +501,7 @@ export const WorkspaceTaskTrackerSetting = () => {
           >
             {boards.map(board => (
               <option key={board.id} value={board.id}>
-                {localizedBoardTitle(board)}
+                {localizedBoardTitle(board, canonicalWorkflowDefaults)}
               </option>
             ))}
           </select>
@@ -507,7 +510,10 @@ export const WorkspaceTaskTrackerSetting = () => {
             <input
               className={styles.input}
               key={`${selectedBoard.id}:${t('defaultBoard')}`}
-              defaultValue={localizedBoardTitle(selectedBoard)}
+              defaultValue={localizedBoardTitle(
+                selectedBoard,
+                canonicalWorkflowDefaults
+              )}
               onBlur={event => {
                 onRenameBoard(selectedBoard.id, event.target.value);
               }}

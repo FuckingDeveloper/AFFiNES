@@ -31,6 +31,7 @@ const resources = {
       'Open Task Tracker board once to initialize workflow properties.',
     archiveTask: 'Archive',
     restoreTask: 'Restore',
+    refetch: 'Refetch',
     workflowSettingsLoading: 'Loading workflow settings…',
     noWorkflowManagePermission:
       'Workflow administration requires an administrator role; edits made by other members are not saved.',
@@ -258,6 +259,7 @@ const resources = {
     noWorkflowManagePermission:
       'Управление рабочим процессом требует роли администратора; изменения других участников не сохраняются.',
     workflowSettingsLoading: 'Загрузка настроек рабочего процесса…',
+    refetch: 'Обновить',
     archiveTask: 'Архивировать',
     restoreTask: 'Восстановить',
     defaultBoard: 'Основная доска',
@@ -487,25 +489,41 @@ const localizeKnownStageName = (title: string, t: TaskTrackerTranslator) => {
   return title;
 };
 
-export const localizeTaskTrackerBoardTitle = (
-  board: { id: string; title: string },
+export const trackWorkActivityLabel = (
+  operation: string,
   t: TaskTrackerTranslator
 ) =>
-  board.id === 'default' && board.title === 'Main board'
+  t(
+    (operation.startsWith('task.') ? operation : 'trackwork.activity') as Parameters<
+      TaskTrackerTranslator
+    >[0]
+  );
+
+export const localizeTaskTrackerBoardTitle = (
+  board: { id: string; title: string },
+  t: TaskTrackerTranslator,
+  canonicalDefaults = true
+) =>
+  canonicalDefaults && board.id === 'default' && board.title === 'Main board'
     ? t('defaultBoard')
     : board.title;
 
 export const localizeTaskTrackerStageTitle = (
   stage: { id: string; title: string },
-  t: TaskTrackerTranslator
+  t: TaskTrackerTranslator,
+  canonicalDefaults = true
 ) => {
-  if (stage.id === 'todo' && stage.title === 'To Do') {
+  if (canonicalDefaults && stage.id === 'todo' && stage.title === 'To Do') {
     return t('defaultTodo');
   }
-  if (stage.id === 'in-progress' && stage.title === 'In Progress') {
+  if (
+    canonicalDefaults &&
+    stage.id === 'in-progress' &&
+    stage.title === 'In Progress'
+  ) {
     return t('defaultInProgress');
   }
-  if (stage.id === 'done' && stage.title === 'Done') {
+  if (canonicalDefaults && stage.id === 'done' && stage.title === 'Done') {
     return t('defaultDone');
   }
   return stage.title;

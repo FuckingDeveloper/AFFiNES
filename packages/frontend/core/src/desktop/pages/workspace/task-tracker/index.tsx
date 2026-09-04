@@ -3297,6 +3297,7 @@ const TaskTrackerPage = () => {
   ]);
 
   const workflowConfig = useTrackWorkWorkflowConfig(workspace.id);
+  const canonicalWorkflowDefaults = (workflowConfig.data?.revision ?? 0) === 0;
   const trackerAdditionalData = useMemo(() => {
     const serverConfig = workflowConfig.data?.config as
       | TaskTrackerPropertyAdditionalData
@@ -3909,7 +3910,13 @@ const TaskTrackerPage = () => {
           makeHistoryEntry(
             'edited',
             `${t('automationStatusChanged')}: ${
-              stage ? localizeTaskTrackerStageTitle(stage, t) : update.stageId
+              stage
+                ? localizeTaskTrackerStageTitle(
+                    stage,
+                    t,
+                    canonicalWorkflowDefaults
+                  )
+                : update.stageId
             }`,
             'task.status_changed',
             task.number,
@@ -4872,7 +4879,11 @@ const TaskTrackerPage = () => {
             >
               {boards.map(board => (
                 <option key={board.id} value={board.id}>
-                  {localizeTaskTrackerBoardTitle(board, t)}
+                  {localizeTaskTrackerBoardTitle(
+                    board,
+                    t,
+                    canonicalWorkflowDefaults
+                  )}
                 </option>
               ))}
             </select>
@@ -4881,7 +4892,11 @@ const TaskTrackerPage = () => {
               <input
                 className={styles.boardNameInput}
                 disabled={workflowSavePending}
-                defaultValue={localizeTaskTrackerBoardTitle(selectedBoard, t)}
+                defaultValue={localizeTaskTrackerBoardTitle(
+                  selectedBoard,
+                  t,
+                  canonicalWorkflowDefaults
+                )}
                 key={`${selectedBoard.id}:${locale}`}
                 onBlur={event => {
                   handleRenameBoard(selectedBoard.id, event.target.value);
