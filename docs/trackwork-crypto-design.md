@@ -22,16 +22,16 @@ Administrator shares (2 of 3)
 
 ## 1. Normative decision table
 
-| Purpose                                         | Algorithm           | Parameters                                                                           | Implementation                                            | Persisted algorithm ID | Rationale                                                                                                     |
-| ----------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Random generation                               | CSPRNG              | n/a                                                                                  | `node:crypto.randomBytes` (server)                        | trackwork-rng-v1       | Native OpenSSL-backed CSPRNG; zero dependency; FIPS-compatible source                                         |
-| Value AEAD                                      | AES-256-GCM         | key 32 B, nonce 12 B, tag 16 B, AAD required                                         | `node:crypto.createCipheriv`/`createDecipheriv` (OpenSSL) | trackwork-aead-v1      | Native; already the repository pattern (CryptoHelper prior art); FIPS-capable; no new dependency              |
-| Key wrapping (DEK and LookupKey)                | AES-256-GCM         | key 32 B (KEK), nonce 12 B, tag 16 B, AAD required (wrap purpose: dek or lookup-key) | `node:crypto`                                             | trackwork-wrap-v1      | Same native primitive; authenticated unwrap provides share-integrity detection and protects both wrapped keys |
-| Threshold secret sharing                        | Shamir over GF(2^8) | threshold 2, shares 3, secret 32 B                                                   | `shamirs-secret-sharing@2.0.1` (exact pin)                | trackwork-share-v1     | Mature maintained library; zero deps; RNG injectable; server-only                                             |
-| Keyed lookup (VerificationToken, 3.3 structure) | HMAC-SHA-256        | key 32 B                                                                             | `node:crypto.createHmac`                                  | trackwork-lookup-v1    | Keyed PRF; no deterministic AEAD; no raw SHA-256 of low-entropy values                                        |
-| KDF                                             | NONE                | -                                                                                    | -                                                         | -                      | NO KDF: shares originate from random high-entropy machine-generated material                                  |
-| Secure comparison                               | constant-time       | n/a                                                                                  | `node:crypto.timingSafeEqual`                             | -                      | Share/token equality without timing leak                                                                      |
-| Transport checksum (shares)                     | CRC-32              | 4 B                                                                                  | `@node-rs/crc32` (already in server deps)                 | -                      | ERROR DETECTION only, never authentication                                                                    |
+| Purpose                                         | Algorithm           | Parameters                                                                           | Implementation                                            | Persisted algorithm ID | Rationale                                                                                                            |
+| ----------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Random generation                               | CSPRNG              | n/a                                                                                  | `node:crypto.randomBytes` (server)                        | trackwork-rng-v1       | Native OpenSSL-backed CSPRNG; zero dependency; FIPS-compatible source                                                |
+| Value AEAD                                      | AES-256-GCM         | key 32 B, nonce 12 B, tag 16 B, AAD required                                         | `node:crypto.createCipheriv`/`createDecipheriv` (OpenSSL) | trackwork-aead-v1      | Native; already the repository pattern (CryptoHelper prior art); FIPS-capable; no new dependency                     |
+| Key wrapping (DEK and LookupKey)                | AES-256-GCM         | key 32 B (KEK), nonce 12 B, tag 16 B, AAD required (wrap purpose: dek or lookup-key) | `node:crypto`                                             | trackwork-wrap-v1      | Same native primitive; authenticated unwrap provides share-integrity detection and protects both wrapped keys        |
+| Threshold secret sharing                        | Shamir over GF(2^8) | threshold 2, shares 3, secret 32 B                                                   | `shamirs-secret-sharing@2.0.1` (exact pin)                | trackwork-share-v1     | Mature maintained library; zero deps; RNG optional-with-default but MUST be injected (trackwork-rng-v1); server-only |
+| Keyed lookup (VerificationToken, 3.3 structure) | HMAC-SHA-256        | key 32 B                                                                             | `node:crypto.createHmac`                                  | trackwork-lookup-v1    | Keyed PRF; no deterministic AEAD; no raw SHA-256 of low-entropy values                                               |
+| KDF                                             | NONE                | -                                                                                    | -                                                         | -                      | NO KDF: shares originate from random high-entropy machine-generated material                                         |
+| Secure comparison                               | constant-time       | n/a                                                                                  | `node:crypto.timingSafeEqual`                             | -                      | Share/token equality without timing leak                                                                             |
+| Transport checksum (shares)                     | CRC-32              | 4 B                                                                                  | `@node-rs/crc32` (already in server deps)                 | -                      | ERROR DETECTION only, never authentication                                                                           |
 
 Normative wording:
 
@@ -39,7 +39,9 @@ Normative wording:
   encryption; tag 16 B; AAD always provided; DEK and KEK generated with
   `randomBytes(32)`; wrapped DEK is the only persisted DEK form; shares via
   `shamirs-secret-sharing@2.0.1` exactly; share transport encoding as defined
-  in section 12; algorithm IDs as defined in section 18.
+  in section 12; algorithm IDs as defined in section 18; explicitly inject
+  `node:crypto.randomBytes` as the Shamir RNG (options.random) and MUST NOT
+  rely on the library default RNG (Buffer.random / WebCrypto getRandomValues).
 - MUST NOT: implement Shamir arithmetic by hand; use AES-CBC; use
   unauthenticated encryption; use deterministic encryption as a search index;
   persist plaintext KEK/DEK/shares anywhere (DB, Redis, files, logs); store
@@ -223,9 +225,13 @@ Decision: the reconstructed threshold value IS directly the KEK
 - threshold = 2, shares = 3, secret = 32-byte random KEK.
 - Arbitrary high-entropy binary secret: supported (measured: 82-byte shares
   for a 32-byte secret).
-- Cryptographically secure coefficient generation: library uses its default
-  random source; RNG injectable via `opts.random` (library API) - the
-  implementation MUST inject `randomBytes` (trackwork-rng-v1).
+- Cryptographically secure coefficient generation: random is OPTIONAL in the
+  library (if omitted it defaults to Buffer.random = globalThis.crypto.
+  getRandomValues) and injectable via `opts.random` (library API); a
+  non-function random value is rejected with TypeError. TRACKWORK NORMATIVE
+  REQUIREMENT (our security contract, not a library requirement): the
+  implementation MUST explicitly inject `node:crypto.randomBytes`
+  (trackwork-rng-v1) and MUST NOT rely on the library default RNG.
 - Integrity/error behavior: NONE in the library (measured: 1 share, duplicate
   same share, and corrupted share all return without error) - see section 10.
 - Share serialization: library binary format (Buffer); transport encoding
@@ -307,7 +313,8 @@ twshare-v1.<keySetId>.<index>.<base64url(shareBytes)>.<crc32hex>
 - DEK: `randomBytes(32)` (trackwork-rng-v1)
 - KEK: `randomBytes(32)`
 - AEAD nonce: `randomBytes(12)` per encryption
-- Shamir coefficients: library `opts.random` injected with `randomBytes`
+- Shamir coefficients: library `opts.random` explicitly injected with
+  `randomBytes` (MUST NOT rely on the library default Buffer.random)
 - Lookup key: `randomBytes(32)`
 - IDs: only if security-relevant (none currently)
 - MUST NOT: Math.random, UUID-as-secret-entropy, timestamps.
@@ -611,8 +618,10 @@ threshold; shamirs-secret-sharing@2.0.1 verified from source.
   jwerle/shamirs-secret-sharing repo state, @noble/ciphers@2.4.0 metadata.
 - Measured spike (temp, removed): AES-GCM and Shamir timings; library
   non-error behavior on 1-share/duplicate/corrupted input.
-- shamirs-secret-sharing@2.0.1 source (2026-09-04): split.js REQUIRES
-  options.random (TypeError otherwise); polynomial coefficients = one
+- shamirs-secret-sharing@2.0.1 source (2026-09-04): options.random is
+  OPTIONAL in split.js (if (!('random' in options)) options.random =
+  Buffer.random; the default uses globalThis.crypto.getRandomValues); a
+  non-function random value throws TypeError; polynomial coefficients = one
   GF(2^8) field byte from prng(1); share encoding = '0'-prefixed hex:
   bit-count char + x id (fixed hex length) + y data; combine.js parses id via
   regex and silently skips duplicate ids; no threshold validation at combine
