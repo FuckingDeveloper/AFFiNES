@@ -73,6 +73,7 @@ stage "shared: TrackWork envelope/identifier/AAD model"
 run_vitest "packages/common/trackwork/src/envelope.spec.ts"
 run_vitest "packages/common/trackwork/src/crypto-service.spec.ts"
 run_vitest "packages/common/trackwork/src/kek-wrap.spec.ts"
+run_vitest "packages/common/trackwork/src/quorum-shares.spec.ts"
 
 stage "frontend: Task Tracker config + large-workspace data handling"
 run_vitest "packages/frontend/core/src/desktop/pages/workspace/task-tracker/config.spec.ts"
